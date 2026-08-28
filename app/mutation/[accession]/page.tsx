@@ -2,11 +2,13 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { DecisionConsole } from '@/components/registry/DecisionConsole';
+import { ProvenanceViewer } from '@/components/registry/ProvenanceViewer';
 import { EvidenceChipRow } from '@/components/ui/EvidenceChip';
 import { FitnessVector } from '@/components/ui/FitnessVector';
 import { StatRail } from '@/components/ui/Panel';
 import { StateBadge } from '@/components/ui/StateBadge';
 import { getMutationRecord, type DecisionView } from '@/lib/registry/mutation';
+import { getProvenanceForMutation } from '@/lib/registry/provenance';
 
 /**
  * The mutation record, read as a variant interpretation report.
@@ -52,6 +54,7 @@ export default async function MutationPage({
    * origin is the last resort rather than the first.
    */
   const decidingFor = record.offered[0] ?? record.undecided[0] ?? record.origin;
+  const provenance = getProvenanceForMutation(record.accession);
 
   return (
     <div className="shell py-10 md:py-14">
@@ -355,71 +358,17 @@ export default async function MutationPage({
         </div>
       </section>
 
-      {/* =========================================================== attestations */}
-      {record.attestations.length > 0 && (
+      {/* =========================================================== provenance */}
+      {provenance && (
         <section className="mt-14">
-          <h2 className="text-[22px] leading-tight font-semibold tracking-tight">Attestations</h2>
+          <h2 className="text-[22px] leading-tight font-semibold tracking-tight">Provenance</h2>
           <p className="text-muted mt-2 max-w-[74ch] leading-relaxed">
-            Claims bound to immutable artifacts, in the in-toto tradition. An attestation is not a
-            promise that the change is good — it is a signed statement about how it was produced.
+            Claims bound to immutable artifacts. An attestation is not a promise that the change is
+            good — it is a signed statement about how it was produced, read here as SLSA, in-toto,
+            CycloneDX pedigree and W3C PROV triples.
           </p>
-
-          <div className="border-line bg-panel mt-5 overflow-x-auto rounded-lg border">
-            <table className="w-full min-w-[640px] border-collapse text-left">
-              <caption className="sr-only">
-                Attestations attached to {record.shortId}, with issuer and verification status.
-              </caption>
-              <thead>
-                <tr className="border-line bg-panel-2/70 border-b">
-                  {['Type', 'Predicate', 'Subject digest', 'Issuer', 'Issued', 'Verified'].map(
-                    (heading) => (
-                      <th
-                        key={heading}
-                        scope="col"
-                        className="text-faint px-3 py-2 font-mono text-nano uppercase"
-                      >
-                        {heading}
-                      </th>
-                    ),
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {record.attestations.map((attestation) => (
-                  <tr
-                    key={`${attestation.type}:${attestation.subjectDigest}`}
-                    className="border-line/60 border-b last:border-0"
-                  >
-                    <th scope="row" className="text-text-soft px-3 py-2.5 font-mono text-[12px]">
-                      {attestation.type}
-                    </th>
-                    <td className="text-muted px-3 py-2.5 font-mono text-[11.5px] break-all">
-                      {attestation.predicateType}
-                    </td>
-                    <td className="text-muted px-3 py-2.5 font-mono text-[11.5px] break-all">
-                      {attestation.subjectDigest}
-                    </td>
-                    <td className="text-muted px-3 py-2.5 font-mono text-[11.5px]">
-                      {attestation.issuer}
-                    </td>
-                    <td className="text-muted px-3 py-2.5 font-mono text-[11.5px]">
-                      {attestation.issuedAt}
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <span
-                        className={
-                          attestation.verified
-                            ? 'text-acid font-mono text-nano uppercase'
-                            : 'text-amber font-mono text-nano uppercase'
-                        }
-                      >
-                        {attestation.verified ? '✓ verified' : 'unverified'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="mt-5">
+            <ProvenanceViewer record={provenance} />
           </div>
         </section>
       )}

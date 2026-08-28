@@ -2,9 +2,13 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { CodePaintingStrip } from '@/components/registry/CodePaintingStrip';
+import { ExportPanel } from '@/components/registry/ExportPanel';
+import { ProvenanceViewer } from '@/components/registry/ProvenanceViewer';
 import { StatRail } from '@/components/ui/Panel';
 import { GenomeBrowser } from '@/components/viz/genome/GenomeBrowser';
 import { getGenomeBrowserModel } from '@/lib/registry/genome';
+import { getDataPackage } from '@/lib/registry/pack';
+import { getProvenanceForGenome } from '@/lib/registry/provenance';
 import { EVIDENCE_TIER_META } from '@/lib/schema/vocabulary';
 
 /**
@@ -53,6 +57,8 @@ export default async function ProjectPage({
   const { genome, stats, parents, children, painting } = model;
   const tier = EVIDENCE_TIER_META[genome.lineageAssurance];
   const compareTarget = parents[0]?.accession ?? children[0]?.accession ?? null;
+  const provenance = getProvenanceForGenome(genome.accession);
+  const pack = getDataPackage(genome.accession);
 
   return (
     <div className="shell-wide py-10 md:py-14">
@@ -209,6 +215,36 @@ export default async function ProjectPage({
               </li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {/* ========================================================== provenance */}
+      {provenance && (
+        <section className="mt-14">
+          <h2 className="text-[22px] leading-tight font-semibold tracking-tight">Provenance</h2>
+          <p className="text-muted mt-2 max-w-[74ch] leading-relaxed">
+            How this genome was produced, in the vocabulary of the standards it already sits on:
+            W3C PROV triples, in-toto statements, an inferred SLSA Build level, and a CycloneDX
+            pedigree. The genetic language on the rest of this page is a reading of this graph, not
+            a replacement for it.
+          </p>
+          <div className="mt-5">
+            <ProvenanceViewer record={provenance} />
+          </div>
+        </section>
+      )}
+
+      {/* ============================================================== export */}
+      {pack && (
+        <section className="mt-14">
+          <h2 className="text-[22px] leading-tight font-semibold tracking-tight">Export</h2>
+          <p className="text-muted mt-2 max-w-[74ch] leading-relaxed">
+            An NCBI-style data package: named files, a README, and nothing invented. Download the
+            archive or save one file.
+          </p>
+          <div className="mt-5">
+            <ExportPanel pack={pack} />
+          </div>
         </section>
       )}
 

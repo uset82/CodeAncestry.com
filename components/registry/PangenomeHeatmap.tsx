@@ -57,7 +57,10 @@ export function PangenomeHeatmap({ pangenome }: { pangenome: Pangenome }) {
           <button
             type="button"
             aria-pressed={frequency === 'all'}
-            onClick={() => setFrequency('all')}
+            onClick={() => {
+              setFrequency('all');
+              setSelected(null);
+            }}
             className={cn(
               'rounded border px-2.5 py-1 font-mono text-nano uppercase transition-colors',
               frequency === 'all'
@@ -73,7 +76,10 @@ export function PangenomeHeatmap({ pangenome }: { pangenome: Pangenome }) {
               type="button"
               aria-pressed={frequency === value}
               disabled={pangenome.counts[value] === 0}
-              onClick={() => setFrequency(value)}
+              onClick={() => {
+                setFrequency(value);
+                setSelected(null);
+              }}
               title={FREQUENCY_META[value].detail}
               className={cn(
                 'rounded border px-2.5 py-1 font-mono text-nano uppercase transition-colors',

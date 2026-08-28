@@ -90,6 +90,10 @@ export default async function FamilyPage({ params }: { params: Promise<{ slug: s
           <Link href="/explore" className="text-text-soft underline decoration-dotted">
             Search the same records
           </Link>
+          , or skip the tree and read the{' '}
+          <a href="#pangenome" className="text-text-soft underline decoration-dotted">
+            family pangenome
+          </a>
           .
         </p>
       </div>
@@ -98,8 +102,7 @@ export default async function FamilyPage({ params }: { params: Promise<{ slug: s
         <CodeTree family={family} pulseEdgeId={PULSE_EDGE_ID} />
       </div>
 
-      {/* ============================================================== pangenome */}
-      <section className="mt-16">
+      <section id="pangenome" className="mt-16 scroll-mt-8">
         <h2 className="text-[22px] leading-tight font-semibold tracking-tight">
           The family pangenome
         </h2>
@@ -107,8 +110,8 @@ export default async function FamilyPage({ params }: { params: Promise<{ slug: s
           The tree shows how the family is related. This shows what it is made of: every project
           against every capability, with {pangenome.counts.core} genes carried by all{' '}
           {pangenome.columns.length} and {pangenome.counts.cloud} carried by exactly one. Bacterial
-          pangenomics draws the same distinction, and for the same reason — the core is the family&rsquo;s
-          identity, and the cloud is where members are actually experimenting.
+          pangenomics draws the same distinction, and for the same reason — the core is the
+          family&rsquo;s identity, and the cloud is where members are actually experimenting.
         </p>
 
         <StatRail
@@ -123,9 +126,7 @@ export default async function FamilyPage({ params }: { params: Promise<{ slug: s
             { label: 'Cloud genes', value: pangenome.counts.cloud, hint: 'in one' },
             {
               label: 'Matrix filled',
-              value: `${Math.round(
-                (pangenome.totals.present / pangenome.totals.cells) * 100,
-              )}%`,
+              value: `${Math.round((pangenome.totals.present / pangenome.totals.cells) * 100)}%`,
               hint: `${pangenome.totals.present} of ${pangenome.totals.cells} cells`,
             },
             { label: 'Busiest cell', value: pangenome.peak, hint: 'mutation events' },
