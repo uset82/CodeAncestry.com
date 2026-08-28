@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useId, useState } from 'react';
 import { cn } from '@/lib/cn';
+import { useRadioGroup } from '@/lib/hooks/useRadioGroup';
 import { diffAlleles, type AlleleDiffRow, type AlleleView } from '@/lib/registry/gene';
 
 /**
@@ -31,8 +32,22 @@ export function AlleleLineage({ alleles, geneName }: { alleles: AlleleView[]; ge
   const [against, setAgainst] = useState<string>('');
   const compareId = useId();
 
-  const primary = alleles.find((allele) => allele.accession === selected) ?? alleles[0];
+  const primaryIndex = Math.max(
+    0,
+    alleles.findIndex((allele) => allele.accession === selected),
+  );
+  const primary = alleles[primaryIndex];
   const secondary = alleles.find((allele) => allele.accession === against) ?? null;
+
+  const { groupProps, radioProps } = useRadioGroup({
+    count: alleles.length,
+    index: primaryIndex,
+    onSelect: (index) => {
+      const next = alleles[index];
+      if (next) setSelected(next.accession);
+    },
+    orientation: 'horizontal',
+  });
 
   if (!primary) return null;
 
@@ -40,8 +55,8 @@ export function AlleleLineage({ alleles, geneName }: { alleles: AlleleView[]; ge
     <div>
       {/* ------------------------------------------------------------- the chain */}
       <div
+        {...groupProps}
         className="flex flex-wrap items-stretch gap-x-1 gap-y-2"
-        role="radiogroup"
         aria-label={`Alleles of ${geneName}`}
       >
         {alleles.map((allele, index) => (
@@ -55,12 +70,9 @@ export function AlleleLineage({ alleles, geneName }: { alleles: AlleleView[]; ge
               </span>
             )}
             <button
-              type="button"
-              role="radio"
-              aria-checked={allele.accession === primary.accession}
-              onClick={() => setSelected(allele.accession)}
+              {...radioProps(index)}
               className={cn(
-                'rounded border px-2.5 py-1.5 text-left transition-colors',
+                'focus-visible:outline-acid rounded border px-2.5 py-1.5 text-left transition-colors focus-visible:outline-2',
                 allele.accession === primary.accession
                   ? 'border-cyan/50 bg-cyan/10'
                   : 'border-line hover:border-line-strong',

@@ -39,12 +39,6 @@ const DIRECTION_TONE: Record<FitnessDelta['direction'], string> = {
   neutral: 'text-muted',
 };
 
-const DIRECTION_GLYPH: Record<FitnessDelta['direction'], string> = {
-  better: '▲',
-  worse: '▼',
-  neutral: '–',
-};
-
 /**
  * A six-axis fitness profile. There is deliberately no aggregate score: a
  * change that cuts latency while harming accessibility is a trade-off, and
@@ -190,11 +184,10 @@ export function FitnessVector({ scores, baseline, deltas, className }: Props) {
                         DIRECTION_TONE[delta.direction],
                       )}
                     >
-                      <span aria-hidden="true" className="mr-1 text-nano">
-                        {DIRECTION_GLYPH[delta.direction]}
-                      </span>
                       {delta.change}
-                      <span className="sr-only"> ({delta.direction})</span>
+                      {delta.direction !== 'neutral' && (
+                        <span className="ml-1.5 text-nano uppercase">{delta.direction}</span>
+                      )}
                     </td>
                   </tr>
                 ))}
