@@ -14,6 +14,8 @@ import {
   type Group,
   type InstancedMesh,
   type Mesh,
+  type Points,
+  type ShaderMaterial,
 } from 'three';
 import {
   LOCUS_LABELS,
@@ -26,6 +28,7 @@ import {
   strandBasis,
 } from './strands';
 import { BASE_PAIR_TOKENS, TRACK_SEGMENTS, type BeatState } from './beats';
+import { createStrandMaterial } from './StrandMaterial';
 
 /* --------------------------------------------------------------- constants */
 
@@ -114,9 +117,27 @@ function Backbones({ state, tier }: Props) {
 
   const group = useRef<Mesh[]>([]);
 
-  useFrame(() => {
+  /* One rim-lit material per strand per side. Built here rather than inline so
+     each mesh keeps a stable material instance whose uniforms can be advanced
+     every frame. */
+  const materials = useMemo(
+    () =>
+      strands.flatMap((strand) =>
+        [0.62, 0.26].map((opacity) =>
+          createStrandMaterial(
+            strand.generation === 0 ? ACID : strand.origin ? VIOLET : CYAN,
+            opacity,
+          ),
+        ),
+      ),
+    [strands],
+  );
+
+  useFrame(({ clock }) => {
     const current = state.current;
     if (!current) return;
+
+    const time = clock.elapsedTime;
 
     strands.forEach((strand, i) => {
       // Each generation reveals as the beat counter passes it.
@@ -131,6 +152,11 @@ function Backbones({ state, tier }: Props) {
         // The unfold. Same value the rungs and loci read, so the three stay
         // locked together through the transformation.
         if (mesh.morphTargetInfluences) mesh.morphTargetInfluences[0] = current.flatten;
+
+        // Advance the rim shader through the mesh rather than the memoised
+        // array, so nothing outside this frame's own scene graph is touched.
+        const uniforms = (mesh.material as ShaderMaterial).uniforms;
+        if (uniforms?.uTime) uniforms.uTime.value = time;
       }
     });
   });
@@ -145,14 +171,11 @@ function Backbones({ state, tier }: Props) {
               if (node) group.current[i * 2 + side] = node;
             }}
             geometry={geometry}
-          >
-            <meshBasicMaterial
-              color={strand.generation === 0 ? ACID : strand.origin ? VIOLET : CYAN}
-              transparent
-              opacity={side === 0 ? 0.62 : 0.26}
-              toneMapped={false}
-            />
-          </mesh>
+            material={materials[i * 2 + side]}
+            /* Draw far strands first so the additive accumulation layers
+               back-to-front and the near ones stay legible on top. */
+            renderOrder={-strand.generation}
+          />
         )),
       )}
     </>
@@ -218,7 +241,7 @@ function Rungs({ state }: Pick<Props, 'state'>) {
 
   return (
     <instancedMesh ref={mesh} args={[undefined, undefined, total]} frustumCulled={false}>
-      <cylinderGeometry args={[0.009, 0.009, 1, 4]} />
+      <cylinderGeometry args={[0.01, 0.01, 1, 6]} />
       <meshBasicMaterial color={DIM} transparent opacity={0.95} toneMapped={false} />
     </instancedMesh>
   );
@@ -768,6 +791,58 @@ function FamilyField({ state, tier }: Props) {
   );
 }
 
+/* ------------------------------------------------------------ atmosphere
+
+   Report 11 asks for "subtle depth / particle movement". Without something
+   suspended between the strands the scene has no sense of volume — the helix
+   floats in a vacuum and every strand reads at the same distance.
+
+   Deterministic positions, so the field is identical on every load and never
+   shimmers between renders.
+   ------------------------------------------------------------------------ */
+
+function Atmosphere({ tier }: Pick<Props, 'tier'>) {
+  const points = useRef<Points>(null);
+  const count = tier === 'low' ? 120 : 320;
+
+  const positions = useMemo(() => {
+    const array = new Float32Array(count * 3);
+    for (let i = 0; i < count; i += 1) {
+      // Golden-angle spiral through a tall cylinder around the family.
+      const angle = i * 2.399963;
+      const radius = 1.5 + Math.sqrt((i % 97) / 97) * 11;
+      array[i * 3] = Math.cos(angle) * radius;
+      array[i * 3 + 1] = 5 - ((i * 3.77) % 17);
+      array[i * 3 + 2] = Math.sin(angle) * radius - 2;
+    }
+    return array;
+  }, [count]);
+
+  useFrame(({ clock }) => {
+    const node = points.current;
+    if (!node) return;
+    // A slow drift, well under the threshold where it reads as "particles".
+    node.rotation.y = clock.elapsedTime * 0.012;
+  });
+
+  return (
+    <points ref={points} frustumCulled={false}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+      </bufferGeometry>
+      <pointsMaterial
+        color={CYAN}
+        size={0.035}
+        sizeAttenuation
+        transparent
+        opacity={0.32}
+        depthWrite={false}
+        toneMapped={false}
+      />
+    </points>
+  );
+}
+
 /* --------------------------------------------------------------- camera */
 
 /**
@@ -826,6 +901,7 @@ export function HelixScene({ state, tier }: Props) {
   return (
     <>
       <CameraRig state={state} />
+      <Atmosphere tier={tier} />
       <Backbones state={state} tier={tier} />
       <Rungs state={state} />
       <Loci state={state} tier={tier} />
