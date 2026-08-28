@@ -53,15 +53,15 @@ export function WaitlistForm() {
     return (
       <div
         role="status"
-        className="border-acid bg-panel-2 border-t-[3px] px-6 py-7 md:px-8 md:py-8"
+        className="border-acid/30 bg-acid/[0.05] rounded-xl border p-6 md:p-8"
       >
-        <p className="text-acid label text-[9.5px]">Noted locally</p>
-        <p className="font-sans mt-4 text-[26px] leading-[1.1] tracking-[-0.015em]">
+        <p className="text-acid font-mono text-micro uppercase">Noted locally</p>
+        <p className="mt-3 text-[19px] leading-snug font-semibold tracking-[-0.02em]">
           Thanks — {email} is on the list.
         </p>
         <p className="text-muted mt-3 text-[14.5px] leading-relaxed">
-          Soon you will be able to join the official list. Full disclosure: this prototype has no
-          server yet, so nothing was transmitted. When the alpha opens, this form will send one message and never a newsletter.
+          Full disclosure: this prototype has no server, so nothing was transmitted anywhere. When
+          the alpha is real, this form will send one message and never a newsletter.
         </p>
         <button
           type="button"
@@ -81,7 +81,7 @@ export function WaitlistForm() {
     <form onSubmit={handleSubmit} noValidate className="max-w-[520px]">
       <div className="flex flex-col gap-4">
         <div>
-          <label htmlFor={emailId} className="text-muted label block text-[9.5px]">
+          <label htmlFor={emailId} className="text-muted block font-mono text-nano uppercase">
             Email
           </label>
           <input
@@ -98,9 +98,9 @@ export function WaitlistForm() {
             aria-invalid={status === 'invalid'}
             aria-describedby={status === 'invalid' ? errorId : undefined}
             className={cn(
-              'bg-panel-2 mt-2.5 w-full border px-3.5 py-3 text-[15px] transition-colors',
+              'bg-panel-2 mt-2 w-full rounded-md border px-3.5 py-3 text-[15px] transition-colors',
               'placeholder:text-faint',
-              status === 'invalid' ? 'border-rose' : 'border-line focus:border-line',
+              status === 'invalid' ? 'border-rose/60' : 'border-line focus:border-line-strong',
             )}
           />
           {status === 'invalid' && (
@@ -111,7 +111,7 @@ export function WaitlistForm() {
         </div>
 
         <div>
-          <label htmlFor={roleId} className="text-muted label block text-[9.5px]">
+          <label htmlFor={roleId} className="text-muted block font-mono text-nano uppercase">
             What brings you here
           </label>
           <select
@@ -119,7 +119,7 @@ export function WaitlistForm() {
             name="role"
             value={role}
             onChange={(event) => setRole(event.target.value)}
-            className="border-line bg-panel-2 focus:border-line mt-2.5 w-full border px-3.5 py-3 text-[15px] transition-colors"
+            className="border-line bg-panel-2 focus:border-line-strong mt-2 w-full rounded-md border px-3.5 py-3 text-[15px] transition-colors"
           >
             {ROLES.map((option) => (
               <option key={option.value} value={option.value}>
@@ -133,9 +133,7 @@ export function WaitlistForm() {
           <Button type="submit" size="lg" disabled={status === 'submitting'}>
             {status === 'submitting' ? 'Adding…' : 'Join the alpha list'}
           </Button>
-          <p className="text-faint text-[13px]">
-            Soon you will be able to join the list. No newsletter. One message when it opens.
-          </p>
+          <p className="text-faint text-[13px]">No newsletter. One message when it opens.</p>
         </div>
       </div>
     </form>

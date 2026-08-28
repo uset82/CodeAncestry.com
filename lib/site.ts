@@ -36,7 +36,6 @@ export const demo = {
 
 export const nav = [
   { href: '/explore', label: 'Explore' },
-  { href: '/lineage', label: 'Lineage' },
   { href: demo.family, label: 'CodeTree' },
   { href: demo.rootGenome, label: 'Genome' },
   { href: '/blast', label: 'CodeBLAST' },

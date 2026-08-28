@@ -1,12 +1,8 @@
 import { cn } from '@/lib/cn';
 
 /**
- * The page's structural rhythm.
- *
- * Nightglass rule: every section gets one job, one focal point, one primary
- * action. Sections are separated by a hairline and generous space, never by a
- * card boundary — the boundary is only earned when it communicates interaction,
- * selection, grouping or elevation.
+ * The homepage's structural rhythm. One section per idea, each announced by a
+ * numbered eyebrow so a reader can tell how far through the argument they are.
  */
 export function Section({
   id,
@@ -26,8 +22,8 @@ export function Section({
       id={id}
       className={cn(
         'relative',
-        bordered && 'border-line border-t',
-        tight ? 'py-16 md:py-20' : 'py-20 md:py-24',
+        bordered && 'border-line/60 border-t',
+        tight ? 'py-16 md:py-20' : 'py-24 md:py-32',
         className,
       )}
     >
@@ -36,10 +32,6 @@ export function Section({
   );
 }
 
-/**
- * The section kicker: an index, a hairline, and the label. Mono and tracked,
- * so it reads as a coordinate rather than a marketing eyebrow.
- */
 export function Eyebrow({
   index,
   children,
@@ -50,10 +42,9 @@ export function Eyebrow({
   className?: string;
 }) {
   return (
-    <p className={cn('flex items-center gap-3', className)}>
-      {index && <span className="text-acid label">{index}</span>}
-      <span aria-hidden="true" className="bg-line h-px w-8" />
-      <span className="text-muted label">{children}</span>
+    <p className={cn('flex items-center gap-3 font-mono text-micro uppercase', className)}>
+      {index && <span className="text-acid">{index}</span>}
+      <span className="text-muted">{children}</span>
     </p>
   );
 }

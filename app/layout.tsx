@@ -1,27 +1,25 @@
 import type { Metadata, Viewport } from 'next';
-import { Archivo, IBM_Plex_Mono } from 'next/font/google';
-import { site } from '@/lib/site';
-import { SiteHeader } from '@/components/marketing/SiteHeader';
-import { SiteFooter } from '@/components/marketing/SiteFooter';
-import { EvidenceThresholdProvider } from '@/components/providers/EvidenceThresholdProvider';
+import { Inter, JetBrains_Mono } from 'next/font/google';
 import { ChatDock } from '@/components/chat/ChatDock';
+import { SiteFooter } from '@/components/marketing/SiteFooter';
+import { SiteHeader } from '@/components/marketing/SiteHeader';
+import { EvidenceThresholdProvider } from '@/components/providers/EvidenceThresholdProvider';
+import { NoiseOverlay } from '@/components/ui/NoiseOverlay';
+import { JsonLd } from '@/components/seo/JsonLd';
+import { websiteJsonLd } from '@/lib/seo/jsonld';
+import { site } from '@/lib/site';
 import './globals.css';
 
-/* Interface and display. Variable, with a width axis available for display
-   sizes — wide technical type reads futurist without reaching for neon. */
-const archivo = Archivo({
+const inter = Inter({
   subsets: ['latin'],
-  variable: '--font-archivo',
+  variable: '--font-inter',
   display: 'swap',
-  axes: ['wdth'],
 });
 
-/* Every accession, coordinate, measurement and control on the site. */
-const plexMono = IBM_Plex_Mono({
+const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
-  variable: '--font-plex-mono',
+  variable: '--font-jetbrains-mono',
   display: 'swap',
-  weight: ['400', '500', '600'],
 });
 
 export const metadata: Metadata = {
@@ -56,20 +54,23 @@ export const metadata: Metadata = {
     description: site.description,
   },
   robots: { index: true, follow: true },
+  alternates: { canonical: site.url },
 };
 
 export const viewport: Viewport = {
-  themeColor: '#090b0e',
+  themeColor: '#07090d',
   colorScheme: 'dark',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${archivo.variable} ${plexMono.variable}`}>
+    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
       <body>
+        <JsonLd data={websiteJsonLd()} />
+        <NoiseOverlay />
         <a
           href="#main"
-          className="sr-only-focusable bg-acid text-on-acid label fixed top-3 left-3 z-100 rounded-md px-4 py-3"
+          className="sr-only-focusable bg-acid text-void fixed top-3 left-3 z-100 rounded-sm px-4 py-2 text-sm font-bold"
         >
           Skip to content
         </a>

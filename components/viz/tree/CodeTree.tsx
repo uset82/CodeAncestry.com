@@ -19,7 +19,7 @@ const ForceGraph = dynamic(() => import('./ForceGraph').then((m) => m.ForceGraph
   loading: () => (
     <div
       role="status"
-      className="border-line bg-panel text-muted grid h-[clamp(420px,62vh,720px)] place-items-center rounded-xl border font-mono text-nano uppercase"
+      className="border-line bg-panel/30 text-muted grid h-[clamp(420px,62vh,720px)] place-items-center rounded-xl border font-mono text-nano uppercase"
     >
       Loading the graph engine…
     </div>
@@ -132,40 +132,35 @@ export function CodeTree({
         )}
       >
         <div className="min-w-0">
-          {/* The graph itself is an : a lit elevated into the
-              page. The nested list is prose, so it stays on paper. */}
-          {layout === 'list' ? (
+          {(layout === 'tidy' || layout === 'radial') && (
+            // Keyed so switching layouts starts from a fitted viewport rather
+            // than leaving the reader panned into empty space.
+            <TreeCanvas
+              key={layout}
+              family={family}
+              mode={layout}
+              zoom={zoom}
+              selected={selected}
+              onSelect={setSelected}
+              pulseEdgeId={pulseEdgeId}
+              animate={animate}
+            />
+          )}
+
+          {layout === 'force' && (
+            <ForceGraph
+              family={family}
+              zoom={zoom}
+              selected={selected}
+              onSelect={setSelected}
+              animate={animate}
+            />
+          )}
+
+          {layout === 'sankey' && <SankeyView family={family} />}
+          {layout === 'arcs' && <ArcsView family={family} />}
+          {layout === 'list' && (
             <NestedList family={family} selected={selected} onSelect={setSelected} />
-          ) : (
-            <div className=" border-line border p-1">
-              {(layout === 'tidy' || layout === 'radial') && (
-                // Keyed so switching layouts starts from a fitted viewport
-                // rather than leaving the reader panned into empty space.
-                <TreeCanvas
-                  key={layout}
-                  family={family}
-                  mode={layout}
-                  zoom={zoom}
-                  selected={selected}
-                  onSelect={setSelected}
-                  pulseEdgeId={pulseEdgeId}
-                  animate={animate}
-                />
-              )}
-
-              {layout === 'force' && (
-                <ForceGraph
-                  family={family}
-                  zoom={zoom}
-                  selected={selected}
-                  onSelect={setSelected}
-                  animate={animate}
-                />
-              )}
-
-              {layout === 'sankey' && <SankeyView family={family} />}
-              {layout === 'arcs' && <ArcsView family={family} />}
-            </div>
           )}
 
           {spatial && <EdgeLegend />}

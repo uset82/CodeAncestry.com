@@ -15,10 +15,10 @@ import { cn } from '@/lib/cn';
 type Turn = { role: 'user' | 'assistant'; content: string };
 
 const OPENERS = [
-  'What is CodeAncestry & Code DNA?',
-  'How is semantic lineage different from Git?',
-  'How does Agent DNA track AI code authoring?',
-  'Explore the KEYLIT demo family lineage',
+  'What is CodeAncestry?',
+  'How is this different from Git?',
+  'Who benefits from this?',
+  'Explain mutation M-83F12',
 ];
 
 export function ChatDock() {
@@ -124,11 +124,10 @@ export function ChatDock() {
         aria-expanded={open}
         aria-controls={panelId}
         className={cn(
-          /* A tab clipped to the corner of the sheet, not a floating bubble. */
-          'fixed right-4 bottom-4 z-90 flex items-center gap-2.5 border px-4 py-3 transition-[background-color,border-color,color] duration-[160ms] sm:right-6 sm:bottom-6',
+          'fixed right-4 bottom-4 z-90 flex items-center gap-2 rounded-full border px-4 py-3 shadow-lg transition-colors sm:right-6 sm:bottom-6',
           open
-            ? 'border-line bg-panel-2 text-text shadow-[2px_2px_0_0_var(--color-line-strong)]'
-            : 'border-line bg-panel-2 text-text shadow-[3px_3px_0_0_var(--color-line-strong)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[1px_1px_0_0_var(--color-line-strong)]',
+            ? 'border-line-strong bg-panel-2 text-text-soft'
+            : 'border-acid/50 bg-acid/12 text-acid hover:bg-acid/20',
         )}
       >
         <span aria-hidden="true" className="font-mono text-[13px]">
@@ -143,7 +142,7 @@ export function ChatDock() {
           role="dialog"
           aria-label="CodeAncestry assistant"
           className={cn(
-            'border-line bg-void fixed z-90 flex flex-col rounded-xl border shadow-2xl',
+            'border-line bg-void/95 fixed z-90 flex flex-col rounded-xl border shadow-2xl backdrop-blur-xl',
             'inset-x-3 bottom-20 max-h-[min(640px,78vh)]',
             'sm:inset-x-auto sm:right-6 sm:bottom-24 sm:w-[420px]',
           )}
@@ -192,7 +191,7 @@ export function ChatDock() {
                       <button
                         type="button"
                         onClick={() => void send(opener)}
-                        className="border-line bg-panel hover:border-line-strong hover:bg-panel-2 w-full rounded-md border px-3 py-2 text-left text-[13.5px] transition-colors"
+                        className="border-line bg-panel/50 hover:border-line-strong hover:bg-panel-2 w-full rounded-md border px-3 py-2 text-left text-[13.5px] transition-colors"
                       >
                         {opener}
                       </button>

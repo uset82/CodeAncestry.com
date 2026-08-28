@@ -1,96 +1,54 @@
 'use client';
 
+import { Canvas } from '@react-three/fiber';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useEffect, useRef, useState, type ComponentType } from 'react';
-import { gsap } from 'gsap';
-import { useGSAP } from '@gsap/react';
+import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
-import { useHeroMode, type HeroMode } from '@/lib/hooks/useHeroMode';
+import { useReducedMotion } from '@/lib/hooks/useReducedMotion';
+import { useWebGL } from '@/lib/hooks/useWebGL';
 import { ButtonLink } from '@/components/ui/Button';
 import { BEATS, beatStateAt, type BeatState } from './beats';
 import { HeroFallback } from './HeroFallback';
 
-type LiveCanvas = ComponentType<{
-  tier: Exclude<HeroMode, 'static'>;
-  state: React.RefObject<BeatState>;
-}>;
+const HelixScene = dynamic(() => import('./HelixScene').then((m) => m.HelixScene), {
+  ssr: false,
+});
 
-/* ==========================================================================
-   Hero
-
-   The scroll runway is declared in CSS, never in JavaScript:
-
-     md:h-[720vh]                 seven beats of runway once the scene fits
-     motion-reduce:md:h-auto      collapsed for anyone who asked for less motion
-
-   That matters because the previous version chose its height from a JS state
-   flip that lands one painted frame after hydration — swapping a ~1.5-viewport
-   section for a multi-viewport one on every load. Height is now identical on the
-   server and the client, so there is nothing to lurch.
-
-   WebGL only decides what fills the frame. The beat narrative is DOM text
-   driven by scroll, so it works with or without a GPU.
-   ========================================================================== */
-
+/** The eyebrow, headline and calls to action, shared by both hero variants. */
 function HeroCopy({ children }: { children?: React.ReactNode }) {
-  const root = useRef<HTMLDivElement>(null);
-
-  /* The one entrance sequence Nightglass allows per view: a short staggered
-     reveal that establishes hierarchy, then gets out of the way. `useGSAP`
-     scopes and reverts it automatically on unmount.
-
-     Guarded on prefers-reduced-motion — GSAP writes inline styles, so the CSS
-     kill-switch in globals.css cannot reach it. */
-  useGSAP(
-    () => {
-      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-      gsap.from('[data-reveal]', {
-        opacity: 0,
-        y: 16,
-        duration: 0.52,
-        ease: 'power3.out',
-        stagger: 0.08,
-        clearProps: 'opacity,transform',
-      });
-    },
-    { scope: root },
-  );
-
   return (
-    <div ref={root} className="max-w-[34rem] md:self-center">
-      <p data-reveal className="flex items-center gap-3">
-        <span className="text-acid label">Living registry</span>
-        <span aria-hidden="true" className="bg-line h-px w-8" />
-        <span className="text-muted label">Seeded · KEYLIT family</span>
+    <div className="max-w-[720px]">
+      <p className="text-acid mb-5 flex items-center gap-3 font-mono text-micro uppercase">
+        <span
+          aria-hidden="true"
+          className="bg-acid size-[7px] animate-[breathe_4s_ease-in-out_infinite] rounded-full shadow-[0_0_16px_var(--color-acid)]"
+        />
+        A living genealogy for software
       </p>
 
-      <h1 data-reveal id="hero-title" className="text-hero mt-6">
+      <h1 id="hero-title" className="text-hero">
         Every machine
         <br />
-        <span className="text-acid">has ancestors.</span>
+        <span className="text-outline">has ancestors.</span>
       </h1>
-
-      <p data-reveal className="text-text-soft mt-5 text-lead">
-        Trace what your software inherited, what it changed, and what it passes on.
-      </p>
 
       {children}
 
-      <div data-reveal className="mt-8 flex flex-wrap items-center gap-3">
+      <div className="mt-7 flex flex-wrap items-center gap-3">
         <ButtonLink href="/family/keylit" size="lg">
           Open the CodeTree
         </ButtonLink>
-        <ButtonLink href="/explore" variant="secondary" size="lg">
-          Explore the registry
+        <ButtonLink href="/mutation/CAMUT:882" variant="secondary" size="lg">
+          Follow one mutation
         </ButtonLink>
       </div>
 
-      <div data-reveal className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-3">
+      <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2">
         <WhatAmILookingAt />
         <p className="text-faint text-[13px]">
-          Eight seeded projects.{' '}
-          <Link href="/docs" className="text-muted hover:text-acid underline underline-offset-2">
+          Seeded with a real eight-project family.{' '}
+          <Link href="/docs" className="text-muted hover:text-text underline decoration-dotted">
             Read the protocol
           </Link>
           .
@@ -105,12 +63,6 @@ function WhatAmILookingAt() {
   const [open, setOpen] = useState(false);
   const panelId = 'hero-explainer';
 
-  const LINES = [
-    'Each strand is one software project. Each dot on it is one thing that project can do.',
-    'Strands branching downward are projects that came from the one above them.',
-    'The violet dot travelling upward is an improvement a descendant found, being offered back to its ancestors.',
-  ];
-
   return (
     <>
       <button
@@ -118,25 +70,33 @@ function WhatAmILookingAt() {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-controls={panelId}
-        className="border-line text-muted hover:text-text hover:bg-hover inline-flex h-11 items-center gap-2 rounded-md border px-4 text-[13px] transition-colors"
+        className="border-line text-muted hover:border-line-strong hover:text-text inline-flex items-center gap-2 rounded-full border px-3 py-1.5 font-mono text-nano uppercase transition-colors"
       >
         <span aria-hidden="true" className="text-acid">
-          {open ? '−' : '+'}
+          ?
         </span>
         What am I looking at
       </button>
 
       {open && (
-        <div id={panelId} className="bg-panel border-line order-last w-full rounded-lg border p-5">
-          <ol className="flex flex-col gap-3">
-            {LINES.map((line, i) => (
-              <li key={line} className="text-text-soft flex gap-3 text-[14px] leading-relaxed">
-                <span className="text-acid label shrink-0 pt-1">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                {line}
-              </li>
-            ))}
+        <div
+          id={panelId}
+          className="border-line bg-panel/80 order-last w-full max-w-[560px] rounded-md border p-4 backdrop-blur-sm"
+        >
+          <ol className="text-text-soft space-y-2 text-[14px] leading-relaxed">
+            <li>
+              <span className="text-acid mr-2 font-mono text-nano">01</span>
+              Each strand is one software project. Each dot on it is one thing that project can do.
+            </li>
+            <li>
+              <span className="text-acid mr-2 font-mono text-nano">02</span>
+              Strands branching downward are projects that came from the one above them.
+            </li>
+            <li>
+              <span className="text-acid mr-2 font-mono text-nano">03</span>
+              The violet dot travelling upward is an improvement a descendant found, being offered
+              back to its ancestors.
+            </li>
           </ol>
         </div>
       )}
@@ -147,58 +107,65 @@ function WhatAmILookingAt() {
 function BeatBody({ index, headline, outlined, body }: (typeof BEATS)[number]) {
   return (
     <>
-      <p className="text-faint label" data-numeric>
+      <p className="text-muted font-mono text-micro uppercase">
         {index} / {String(BEATS.length).padStart(2, '0')}
       </p>
-      <p className="text-title mt-2.5">
+      <p className="text-title mt-3">
         {headline}
-        {outlined && <span className="text-acid"> {outlined}</span>}
+        {outlined && (
+          <>
+            {' '}
+            <span className="text-outline">{outlined}</span>
+          </>
+        )}
       </p>
-      <p className="text-muted mt-2 max-w-[46ch] text-[15px] leading-relaxed">{body}</p>
+      <p className="text-text-soft mt-3 max-w-[560px] leading-relaxed">{body}</p>
     </>
   );
 }
 
 /**
- * The scene column: the 3D canvas when the GPU allows, the SVG otherwise.
+ * Reduced-motion and no-WebGL hero.
  *
- * The height is explicit because `HelixCanvas` positions itself absolutely, so
- * this frame has no in-flow content to be measured from — left to size itself it
- * collapses to a hairline and the scene renders into nothing.
+ * Not the animated hero with the animation removed: the five beats become a
+ * single readable list and the scroll runway collapses, so nobody scrolls five
+ * viewports to reach content that never moves.
  */
-function SceneFrame({ mode, state }: { mode: HeroMode; state: React.RefObject<BeatState> }) {
-  const [Canvas, setCanvas] = useState<LiveCanvas | null>(null);
-
-  /* Import three.js only after we know the scene will actually mount. A
-     module-level `dynamic()` still preloads the chunk on first paint, which
-     put ~400 KB of WebGL on phones that never show the canvas. */
-  useEffect(() => {
-    if (mode === 'static') return;
-    let cancelled = false;
-    void import('./HelixCanvas').then((mod) => {
-      if (!cancelled) setCanvas(() => mod.HelixCanvas);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [mode]);
-
+function StaticHero() {
   return (
-    <div className="border-line bg-panel/40 relative hidden overflow-hidden rounded-lg border md:block md:h-full md:min-h-[26rem]">
-      {mode === 'static' || !Canvas ? (
-        <div className="grid size-full place-items-center p-6">
+    <section aria-labelledby="hero-title" className="border-line relative -mt-[74px] border-b">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute top-0 right-0 hidden h-full w-[46%] place-items-center opacity-90 lg:grid"
+      >
+        <HeroFallback />
+      </div>
+
+      <div className="shell-wide relative pt-[168px] pb-24">
+        <HeroCopy />
+
+        <ol className="mt-14 grid max-w-[1080px] gap-x-12 gap-y-10 sm:grid-cols-2 xl:max-w-[640px] xl:grid-cols-1">
+          {BEATS.map((beat) => (
+            <li key={beat.id} className="border-line/70 border-l pl-5">
+              <BeatBody {...beat} />
+            </li>
+          ))}
+        </ol>
+
+        <div className="mt-12 lg:hidden">
           <HeroFallback />
         </div>
-      ) : (
-        <Canvas tier={mode} state={state} />
-      )}
-      <p className="text-faint label absolute bottom-3 left-4">Fig. 1 · KEYLIT lineage</p>
-    </div>
+
+        <p className="text-faint mt-10 font-mono text-nano uppercase">
+          Static view · reduced motion
+        </p>
+      </div>
+    </section>
   );
 }
 
-export function HelixHero() {
-  const mode = useHeroMode();
+/** Scroll-driven hero: five pinned beats over a procedural helix. */
+function AnimatedHero({ tier }: { tier: 'low' | 'high' }) {
   const track = useRef<HTMLElement>(null);
   const state = useRef<BeatState>(beatStateAt(0));
   const [active, setActive] = useState(0);
@@ -208,17 +175,9 @@ export function HelixHero() {
     if (!node) return;
 
     /* Measured straight out of the scroll event, never deferred into
-       requestAnimationFrame.
-
-       DO NOT reintroduce an rAF hop here "for throttling". Browsers already
-       coalesce scroll events to at most one per frame, so it buys nothing — and
-       it costs correctness: rAF does not fire in a tab that is not compositing,
-       which leaves the whole sequence frozen on beat 00 forever. This codebase
-       has hit that same trap three times now (feature detection in useWebGL and
-       useReducedMotion, then this driver).
-
-       `state.current` is a ref the 3D scene samples in useFrame; only the beat
-       index goes through setState, and only when it actually changes. */
+       requestAnimationFrame. Browsers already coalesce scroll events to one per
+       frame, so the rAF hop bought nothing — and rAF does not fire in a
+       non-compositing tab, which froze the sequence on the first beat. */
     const measure = () => {
       const rect = node.getBoundingClientRect();
       const scrollable = rect.height - window.innerHeight;
@@ -239,37 +198,55 @@ export function HelixHero() {
     };
   }, []);
 
-  const handleBeatSelect = (index: number) => {
-    const node = track.current;
-    if (!node) return;
-
-    const scrollable = node.offsetHeight - window.innerHeight;
-    if (scrollable <= 0) return;
-
-    const progress = BEATS[index]?.at ?? 0;
-    const top = window.scrollY + node.getBoundingClientRect().top + progress * scrollable;
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    window.scrollTo({ top, behavior: reduced ? 'auto' : 'smooth' });
-  };
-
   return (
     <section
       ref={track}
       aria-labelledby="hero-title"
-      /* Height is pure CSS — identical on server and client. */
-      className="relative md:h-[720vh] motion-reduce:md:h-auto"
+      /* Five beats of scroll runway, plus one viewport for the closing frame.
+         Pulled under the 74px sticky header so the pinned frame is full-height
+         from the first paint. */
+      className="relative -mt-[74px] h-[560vh]"
     >
-      <div className="md:sticky md:top-16 md:flex md:h-[calc(100vh-4rem)] md:flex-col motion-reduce:md:static motion-reduce:md:h-auto">
-        <div className="shell-wide grid flex-1 items-center gap-12 py-16 md:grid-cols-[minmax(0,1fr)_minmax(0,42%)] md:items-stretch md:gap-16 md:py-10">
+      <div className="sticky top-0 flex h-screen flex-col overflow-hidden">
+        {/* Offset right of the copy column on wide screens; dimmed and centred
+            on narrow ones, where the copy needs the whole width. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 opacity-45 lg:translate-x-[14%] lg:opacity-100"
+        >
+          <div
+            className="absolute top-1/2 left-1/2 size-[min(900px,90vw)] -translate-1/2 rounded-full opacity-70 blur-3xl"
+            style={{
+              background:
+                'radial-gradient(circle, rgb(99 231 255 / 0.1), rgb(183 255 57 / 0.05) 45%, transparent 68%)',
+            }}
+          />
+          <Canvas
+            dpr={tier === 'low' ? [1, 1.4] : [1, 1.9]}
+            camera={{ position: [0, 2.2, 8.4], fov: 42, near: 0.1, far: 100 }}
+            gl={{ antialias: tier === 'high', alpha: true, powerPreference: 'high-performance' }}
+            style={{ position: 'absolute', inset: 0 }}
+          >
+            <HelixScene state={state} tier={tier} />
+          </Canvas>
+        </div>
+
+        {/* Keeps the copy legible over the brightest part of the helix. */}
+        <div
+          aria-hidden="true"
+          className="from-void via-void/70 lg:via-void/20 pointer-events-none absolute inset-0 bg-gradient-to-r to-transparent"
+        />
+
+        <div className="shell-wide relative flex flex-1 flex-col justify-center pt-20 pb-24">
           <HeroCopy>
-            {/* Pinned mode crossfades the beats; collapsed mode lists them. */}
-            <div className="relative mt-8 hidden min-h-[180px] md:block motion-reduce:md:hidden">
+            {/* All five beats stay in the DOM; the active one is emphasised. */}
+            <div className="relative mt-8 min-h-[188px]">
               {BEATS.map((beat, i) => (
                 <div
                   key={beat.id}
                   aria-hidden={i !== active}
                   className={cn(
-                    'transition-[opacity,transform] duration-[520ms] ease-[cubic-bezier(0.16,1,0.3,1)]',
+                    'transition-[opacity,transform] duration-500 ease-out',
                     i === active
                       ? 'relative opacity-100'
                       : 'pointer-events-none absolute inset-0 translate-y-3 opacity-0',
@@ -279,108 +256,49 @@ export function HelixHero() {
                 </div>
               ))}
             </div>
-
-            {/* The sequence ends where the report ends it: on the ask. */}
-            <div
-              aria-hidden={active !== BEATS.length - 1}
-              className={cn(
-                'mt-6 hidden transition-[opacity,transform] duration-[520ms] ease-[cubic-bezier(0.16,1,0.3,1)] md:block motion-reduce:md:hidden',
-                active === BEATS.length - 1
-                  ? 'translate-y-0 opacity-100'
-                  : 'pointer-events-none translate-y-2 opacity-0',
-              )}
-            >
-              <ButtonLink href="/explore" size="lg">
-                Connect your first ancestor
-              </ButtonLink>
-            </div>
           </HeroCopy>
-
-          <SceneFrame mode={mode} state={state} />
         </div>
 
-        {/* Beat register — a measuring scale, not a progress bar. */}
-        <div className="border-line hidden shrink-0 border-t md:block motion-reduce:md:hidden">
-          <div className="shell-wide flex items-center justify-between gap-6 py-4">
-            <ol className="flex items-center gap-1.5" aria-label="Hero progress">
+        <div className="shell-wide relative pb-8">
+          <div className="flex items-center justify-between gap-6">
+            <ol className="flex items-center gap-2" aria-label="Hero progress">
               {BEATS.map((beat, i) => (
                 <li key={beat.id}>
-                  <button
-                    type="button"
-                    aria-current={i === active ? 'step' : undefined}
-                    aria-label={`${beat.index} ${beat.headline} ${beat.outlined ?? ''}${i === active ? ' (current)' : ''}`}
-                    onClick={() => handleBeatSelect(i)}
-                    className="rounded-sm p-1"
+                  <span
+                    className={cn(
+                      'block h-[3px] rounded-full transition-all duration-500',
+                      i <= active ? 'bg-acid w-9' : 'bg-line w-5',
+                    )}
                   >
-                    {/* Fixed track, scaled fill — transform composites, width
-                        does not. Colour is paired with scale so the current
-                        beat is not colour-only. */}
-                    <span
-                      aria-hidden="true"
-                      className={cn(
-                        'block h-0.5 w-10 origin-left rounded-full transition-[transform,background-color] duration-[520ms]',
-                        i <= active ? 'bg-acid scale-x-100' : 'bg-line scale-x-[0.6]',
-                      )}
-                    />
-                  </button>
+                    <span className="sr-only">
+                      {beat.index} {beat.headline} {beat.outlined ?? ''}
+                      {i === active ? ' (current)' : ''}
+                    </span>
+                  </span>
                 </li>
               ))}
             </ol>
-            <p className="text-faint label">Scroll to descend the lineage</p>
+
+            <p className="text-faint hidden font-mono text-nano uppercase sm:block">
+              Scroll to descend the lineage
+            </p>
           </div>
         </div>
       </div>
 
-      {/* ------------------------------------------------------------------
-          Collapsed composition: phones, and anyone who asked for less motion.
-
-          This used to be the seven beats dumped into a two-column text grid
-          with the lineage diagram buried underneath — a wall of prose with no
-          visual anchor and no hierarchy. It is now a designed sequence:
-
-            the diagram first, because it is the argument in one picture
-            then the beats strung along a lineage spine, numbered at the node
-
-          The spine is not decoration. It is the same descent the animated
-          version walks, drawn as a line, so the collapsed page still says
-          "this is a family" rather than "here are seven paragraphs".
-          ------------------------------------------------------------------ */}
-      <div className="shell-wide pb-20 md:hidden motion-reduce:md:block">
-        <figure className="border-line bg-panel/40 m-0 overflow-hidden rounded-lg border px-4 py-8">
-          <HeroFallback />
-          <figcaption className="text-faint label mt-6 text-center">
-            Fig. 1 · KEYLIT lineage · eight projects, four generations
-          </figcaption>
-        </figure>
-
-        <ol className="border-line mt-14 border-l">
-          {BEATS.map((beat) => (
-            <li key={beat.id} className="relative pb-10 pl-7 last:pb-0">
-              {/* The node on the spine. */}
-              <span
-                aria-hidden="true"
-                className="bg-acid absolute top-[7px] -left-[4.5px] size-[9px] rounded-full"
-              />
-              <p className="text-faint label" data-numeric>
-                {beat.index} / {String(BEATS.length).padStart(2, '0')}
-              </p>
-              <p className="text-title mt-2">
-                {beat.headline}
-                {beat.outlined && <span className="text-acid"> {beat.outlined}</span>}
-              </p>
-              <p className="text-muted mt-2 max-w-[46ch] text-[15px] leading-relaxed">
-                {beat.body}
-              </p>
-            </li>
-          ))}
-        </ol>
-
-        <div className="border-line mt-12 border-t pt-8">
-          <ButtonLink href="/explore" size="lg">
-            Connect your first ancestor
-          </ButtonLink>
-        </div>
+      {/* Text and diagram equivalent of the animation, for assistive tech. */}
+      <div className="sr-only">
+        <h2>The KEYLIT lineage</h2>
+        <HeroFallback />
       </div>
     </section>
   );
+}
+
+export function HelixHero() {
+  const reducedMotion = useReducedMotion();
+  const { tier, supported } = useWebGL();
+
+  if (!supported || reducedMotion) return <StaticHero />;
+  return <AnimatedHero tier={tier === 'high' ? 'high' : 'low'} />;
 }

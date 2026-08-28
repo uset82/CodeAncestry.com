@@ -194,7 +194,7 @@ export function ExploreShell({
 
       <div className="mt-10 grid gap-8 lg:grid-cols-[248px_1fr] lg:gap-12">
         <aside className="lg:sticky lg:top-24 lg:self-start">
-          <div className="border-line bg-panel rounded-xl border p-4">
+          <div className="border-line bg-panel/40 rounded-xl border p-4">
             <EvidenceThresholdControl
               className="max-w-[420px]"
               hidden={suppressed}
@@ -218,7 +218,7 @@ export function ExploreShell({
             type="button"
             onClick={() => setRailOpen((prev) => !prev)}
             aria-expanded={railOpen}
-            className="border-line bg-panel hover:border-line-strong mt-4 flex w-full items-center justify-between rounded-xl border px-4 py-3 transition-colors lg:hidden"
+            className="border-line bg-panel/40 hover:border-line-strong mt-4 flex w-full items-center justify-between rounded-xl border px-4 py-3 transition-colors lg:hidden"
           >
             <span className="text-text-soft font-mono text-nano uppercase">
               Ontology and filters
@@ -235,7 +235,7 @@ export function ExploreShell({
               railOpen ? 'grid md:grid-cols-2 lg:grid-cols-1' : 'hidden',
             )}
           >
-            <div className="border-line bg-panel rounded-xl border p-4">
+            <div className="border-line bg-panel/40 rounded-xl border p-4">
               <OntologyExplorer
                 tree={ontology}
                 selected={ontologyTerm}
@@ -243,7 +243,7 @@ export function ExploreShell({
               />
             </div>
 
-            <div className="border-line bg-panel rounded-xl border p-4">
+            <div className="border-line bg-panel/40 rounded-xl border p-4">
               <FacetRail
                 groups={payload.facetGroups}
                 selection={selection}

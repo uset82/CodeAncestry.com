@@ -155,7 +155,7 @@ export function TreeCanvas({
           setGrabbing(false);
         }}
         className={cn(
-          'bg-panel border-line block w-full rounded-xl border',
+          'bg-panel/30 border-line block w-full rounded-xl border',
           // A square layout in a wide, short frame would be scaled down until the
           // labels stopped being readable, so the radial view gets more height.
           mode === 'radial'
@@ -351,8 +351,8 @@ function EdgeLabel({ placed, dimmed }: { placed: PlacedEdge; dimmed: boolean }) 
 
   const style = edgeStyle(placed.edge);
   // Monospace at 9px runs about 6.2 units per character, close enough to size a
-  // elevated that hides the line behind the text.
-  const elevated = label.length * 6.2 + 12;
+  // plate that hides the line behind the text.
+  const plate = label.length * 6.2 + 12;
 
   return (
     <g
@@ -361,9 +361,9 @@ function EdgeLabel({ placed, dimmed }: { placed: PlacedEdge; dimmed: boolean }) 
       className="transition-opacity duration-300"
     >
       <rect
-        x={-elevated / 2}
+        x={-plate / 2}
         y={-8}
-        width={elevated}
+        width={plate}
         height={16}
         rx={4}
         fill="var(--color-void)"
@@ -641,7 +641,7 @@ function ViewControls({
   return (
     <div className="absolute right-3 bottom-3 flex flex-col items-end gap-2">
       <div className="flex items-center gap-1.5">
-        <span className="text-faint bg-void rounded-sm px-1.5 py-0.5 font-mono text-nano tabular-nums">
+        <span className="text-faint bg-void/70 rounded-sm px-1.5 py-0.5 font-mono text-nano tabular-nums">
           {Math.round(scale * 100)}%
         </span>
         <button type="button" onClick={onZoomOut} aria-label="Zoom out" className={button}>

@@ -1,202 +1,119 @@
 @import 'tailwindcss';
 
 /* ==========================================================================
-   CodeAncestry — Nightglass
+   CodeAncestry design tokens
 
-   Visual system derived from the bundled WebDesigner "Nightglass" contract
-   (~/.webdesigner/skills/webdesigner-design-system). Nightglass describes
-   itself as "a precision-built midnight interface: matte near-black surfaces,
-   crisp low-weight typography, hairline structure, and one electric-aqua
-   signal" — which is research report 11's brief almost verbatim:
+   Palette carried forward from the original static prototype (reference/)
+   and extended with the two states the registry layer needs: quarantined
+   and rejected.
 
-     BLACK / NEAR-BLACK SPACE
-       -> restrained luminous genome strands
-       -> precise typography
-       -> scientific coordinate labels
-       -> evidence indicators
-       -> subtle depth / particle movement
-
-   Two grounds, one token set:
-
-     :root         DARK. The homepage, the 3D surfaces, the narrative.
-     .ground-light LIGHT. The registry: genome browser, tables, records.
-                   Real genomics tooling (UCSC, Ensembl, IGV, Nextstrain) is
-                   light because dense data is read for hours at a time.
-
-   Components speak only the semantic vocabulary below (bg-panel, text-muted,
-   text-acid, border-line...). Neither ground is branched on in component code.
-
-   DEVIATIONS FROM STOCK NIGHTGLASS, and why:
-     - Typeface. Nightglass ships Inter; Inter is the single most recognisable
-       AI-generated-site tell and is what the rejected first build used.
-       Nightglass's own contract says an explicit brief and an established
-       product identity take precedence over its defaults. Sans is Archivo
-       (variable, width axis available for display); mono is IBM Plex Mono,
-       which is the correct register for accessions and coordinates.
-     - A fifth accent. Nightglass carries four semantic colours; typed lineage
-       needs five distinguishable channels, so --color-violet (agent /
-       knowledge) is a documented project extension, not a stock token.
-
-   Hard rule carried through from the research: colour is never the only
-   encoding for a state. Every StateBadge pairs colour with icon, pattern and
-   a text label.
+   Hard rule from the research: colour is never the only encoding for a
+   state. Every StateBadge pairs colour with an icon, a pattern fill and a
+   text label.
    ========================================================================== */
 
 @theme {
-  /* --- ground: dark (default) ----------------------------------------- */
-  --color-void: #090b0e; /* canvas */
-  --color-panel: #101318; /* navigation, panels, grouped content */
-  --color-panel-2: #171b21; /* elevated and nested surfaces */
-  --color-panel-3: #20252d; /* selected rows, stronger separation */
-  --color-hover: #242a33;
+  /* --- surfaces ------------------------------------------------------- */
+  --color-void: #07090d;
+  --color-panel: #0d1118;
+  --color-panel-2: #111722;
+  --color-panel-3: #161d29;
+  --color-line: #202937;
+  --color-line-soft: #1a2230;
+  --color-line-strong: #303b4c;
+  /* Hover surface for neutral controls, added with the registry record pages. */
+  --color-hover: #1b2331;
 
-  --color-line: #2a3039; /* default hairline structure */
-  --color-line-soft: #1e242b;
-  --color-line-strong: #3a424f; /* focus-adjacent, high emphasis */
+  /* --- text ----------------------------------------------------------- */
+  --color-text: #f4f6f8;
+  --color-text-soft: #aab3c0;
+  --color-muted: #8993a3;
+  --color-faint: #5c6675;
 
-  --color-text: #f4f7fb;
-  --color-text-soft: #c6cdd7;
-  --color-muted: #9aa3af;
-  --color-faint: #68717d;
+  /* --- semantic accents ----------------------------------------------- */
+  /* acid   = verified / primary action / origin DNA */
+  --color-acid: #b7ff39;
+  --color-acid-dim: #8ecb22;
+  /* Content placed on a filled acid surface. */
+  --color-on-acid: #07090d;
+  /* cyan   = inherited / data / lineage */
+  --color-cyan: #63e7ff;
+  --color-cyan-dim: #3aa9c4;
+  /* violet = agent / mutation / knowledge */
+  --color-violet: #a985ff;
+  --color-violet-dim: #7d5ec7;
+  /* amber  = quarantined / needs review */
+  --color-amber: #ffb340;
+  --color-amber-dim: #c4832a;
+  /* rose   = rejected / security finding */
+  --color-rose: #ff5c7a;
+  --color-rose-dim: #c4425c;
 
-  /* --- semantic lineage channels --------------------------------------
-     acid   = verified / origin / primary action   (Nightglass accent)
-     cyan   = inherited / lineage / data           (Nightglass info)
-     violet = agent / knowledge                    (project extension)
-     amber  = quarantined / needs review           (Nightglass warning)
-     rose   = rejected / security finding          (Nightglass danger)
-     ------------------------------------------------------------------- */
-  --color-acid: #7ee7d7;
-  --color-acid-dim: #64cbbd;
-  --color-on-acid: #07100f;
-  --color-cyan: #70a5ff;
-  --color-cyan-dim: #4d80d8;
-  --color-violet: #a99cf0;
-  --color-violet-dim: #8377c9;
-  --color-amber: #f4c76b;
-  --color-amber-dim: #c9a047;
-  --color-rose: #f07178;
-  --color-rose-dim: #c4555c;
+  /* --- radii ---------------------------------------------------------- */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+  --radius-2xl: 32px;
 
-  --color-focus: #a6fff1;
+  /* --- typography ----------------------------------------------------- */
+  --font-sans:
+    var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    sans-serif;
+  --font-mono:
+    var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-  /* --- radii ----------------------------------------------------------
-     Nightglass: sm for tags, md for buttons/fields, lg for panels. Do not
-     put a large radius on every container.
-     ------------------------------------------------------------------- */
-  --radius-xs: 0.25rem;
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 0.75rem;
-  --radius-2xl: 1rem;
+  /* display: the tight negative-tracking headline voice */
+  --text-display: clamp(3.25rem, 9vw, 8rem);
+  --text-display--line-height: 0.83;
+  --text-display--letter-spacing: -0.075em;
+  --text-display--font-weight: 750;
 
-  /* --- typography ------------------------------------------------------
-     Headings are weight 500 with tight tracking and compact leading, not
-     heavy bold. Nightglass rule: no more than two typefaces.
-     ------------------------------------------------------------------- */
-  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: var(--font-plex-mono), ui-monospace, 'SFMono-Regular', Consolas, monospace;
+  /* hero: display voice, sized to survive a two-line headline in one viewport */
+  --text-hero: clamp(2.75rem, 6.6vw, 5.75rem);
+  --text-hero--line-height: 0.86;
+  --text-hero--letter-spacing: -0.07em;
+  --text-hero--font-weight: 750;
 
-  --text-display: clamp(3rem, 7vw, 4.5rem);
-  --text-display--line-height: 1;
-  --text-display--letter-spacing: -0.028em;
-  --text-display--font-weight: 500;
+  --text-headline: clamp(2.375rem, 5vw, 4rem);
+  --text-headline--line-height: 0.95;
+  --text-headline--letter-spacing: -0.055em;
+  --text-headline--font-weight: 700;
 
-  --text-hero: clamp(2.75rem, 6.2vw, 4.25rem);
-  --text-hero--line-height: 1.02;
-  --text-hero--letter-spacing: -0.026em;
-  --text-hero--font-weight: 500;
+  --text-title: clamp(1.5rem, 2.6vw, 2rem);
+  --text-title--line-height: 1.15;
+  --text-title--letter-spacing: -0.035em;
+  --text-title--font-weight: 700;
 
-  --text-headline: clamp(2rem, 4vw, 3rem);
-  --text-headline--line-height: 1.08;
-  --text-headline--letter-spacing: -0.022em;
-  --text-headline--font-weight: 500;
+  --text-lead: 1.25rem;
+  --text-lead--line-height: 1.55;
 
-  --text-title: clamp(1.25rem, 2vw, 1.5rem);
-  --text-title--line-height: 1.2;
-  --text-title--letter-spacing: -0.014em;
-  --text-title--font-weight: 500;
-
-  --text-lead: 1.125rem;
-  --text-lead--line-height: 1.6;
-
-  /* the tracked-out mono label: accessions, coordinates, controls */
+  /* micro-label: the uppercase tracked-out registry voice */
   --text-micro: 0.6875rem;
   --text-micro--line-height: 1.1;
-  --text-micro--letter-spacing: 0.08em;
-  --text-micro--font-weight: 500;
+  --text-micro--letter-spacing: 0.18em;
+  --text-micro--font-weight: 800;
 
-  --text-nano: 0.625rem;
+  --text-nano: 0.5625rem;
   --text-nano--line-height: 1.1;
-  --text-nano--letter-spacing: 0.08em;
-  --text-nano--font-weight: 500;
+  --text-nano--letter-spacing: 0.14em;
+  --text-nano--font-weight: 700;
 
-  /* --- motion ----------------------------------------------------------
-     Nightglass durations, plus the semantic vocabulary from report 10:
-     slow rotation = idle, pulse along edge = transmission, branch grow =
-     child creation, dashed = proposed, frozen = quarantined.
-     ------------------------------------------------------------------- */
-  --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-out-quint: cubic-bezier(0.16, 1, 0.3, 1);
+  /* --- motion --------------------------------------------------------- */
+  /* semantic motion vocabulary: slow rotation = idle, pulse = transmission,
+     branch grow = child creation, glow = active propagation */
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
   --animate-idle-rotate: idle-rotate 24s linear infinite;
   --animate-transmit: transmit 2.4s var(--ease-in-out-quart) infinite;
   --animate-breathe: breathe 4s ease-in-out infinite;
-  --animate-grow: grow 0.7s var(--ease-emphasized) forwards;
-  --animate-reveal: reveal 0.52s var(--ease-emphasized) both;
+  --animate-grow: grow 0.7s var(--ease-out-quint) forwards;
+  --animate-rise: rise 0.6s var(--ease-out-quint) forwards;
   --animate-dash: dash 1.6s linear infinite;
 }
-
-/* ==========================================================================
-   Light ground — the registry
-
-   Re-declares every semantic token. Accents are darkened to hold WCAG AA
-   against near-white; the aqua signal in particular is unreadable as text on
-   white at its dark-ground value.
-   ========================================================================== */
-
-.ground-light {
-  color-scheme: light;
-
-  --color-void: #fbfbfc;
-  --color-panel: #ffffff;
-  --color-panel-2: #f3f4f6;
-  --color-panel-3: #e8eaee;
-  --color-hover: #eef0f3;
-
-  --color-line: #dcdfe4;
-  --color-line-soft: #e8eaee;
-  --color-line-strong: #b9bfc8;
-
-  --color-text: #0d1014;
-  --color-text-soft: #3f4753;
-  --color-muted: #5b6470;
-  --color-faint: #828b97;
-
-  --color-acid: #0f7a6b;
-  --color-acid-dim: #14957f;
-  --color-on-acid: #ffffff;
-  --color-cyan: #1d5fd0;
-  --color-cyan-dim: #4b81dd;
-  --color-violet: #5b46b8;
-  --color-violet-dim: #7d6cc9;
-  --color-amber: #8a5d00;
-  --color-amber-dim: #a8792a;
-  --color-rose: #c0392f;
-  --color-rose-dim: #d0655d;
-
-  --color-focus: #0f7a6b;
-
-  color: var(--color-text);
-  background-color: var(--color-void);
-}
-
-/* ==========================================================================
-   Keyframes
-   ========================================================================== */
 
 @keyframes idle-rotate {
   to {
@@ -225,10 +142,12 @@
 @keyframes breathe {
   0%,
   100% {
-    opacity: 0.4;
+    opacity: 0.45;
+    transform: scale(1);
   }
   50% {
     opacity: 1;
+    transform: scale(1.06);
   }
 }
 
@@ -242,11 +161,10 @@
   }
 }
 
-/* the single entrance sequence Nightglass allows per view */
-@keyframes reveal {
+@keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(var(--reveal-distance, 1rem));
+    transform: translateY(14px);
   }
   to {
     opacity: 1;
@@ -275,42 +193,24 @@
   html {
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
-    color-scheme: dark;
   }
 
   body {
     margin: 0;
     background-color: var(--color-void);
+    background-image:
+      radial-gradient(circle at 72% 6%, rgb(99 231 255 / 0.07), transparent 30%),
+      radial-gradient(circle at 22% 30%, rgb(183 255 57 / 0.05), transparent 26%);
+    background-attachment: fixed;
     color: var(--color-text);
     font-family: var(--font-sans);
-    font-size: 1rem;
-    line-height: 1.5;
-    font-synthesis-weight: none;
+    font-feature-settings: 'cv11', 'ss01';
     -webkit-font-smoothing: antialiased;
-  }
-
-  /* Headings orient; they do not shout. Weight 500, tight, compact. */
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    font-weight: 500;
-    letter-spacing: -0.022em;
-    line-height: 1.2;
-    text-wrap: balance;
-  }
-
-  /* Numbers in a registry must align. */
-  table,
-  time,
-  [data-numeric] {
-    font-variant-numeric: tabular-nums;
+    text-rendering: optimizeLegibility;
   }
 
   ::selection {
-    background: color-mix(in oklab, var(--color-acid) 30%, transparent);
+    background: rgb(183 255 57 / 0.25);
     color: var(--color-text);
   }
 
@@ -331,13 +231,14 @@
     cursor: pointer;
   }
 
-  /* Focus is a ring, and never only a border-colour change. */
+  /* one consistent focus treatment everywhere */
   :focus-visible {
-    outline: 2px solid var(--color-focus);
+    outline: 2px solid var(--color-acid);
     outline-offset: 2px;
     border-radius: var(--radius-xs);
   }
 
+  /* thin, dark scrollbars so dense registry panels stay quiet */
   * {
     scrollbar-width: thin;
     scrollbar-color: var(--color-line-strong) transparent;
@@ -353,14 +254,14 @@
   }
 
   *::-webkit-scrollbar-thumb {
-    background: var(--color-line-strong);
+    background: var(--color-line);
     border: 3px solid transparent;
     border-radius: 99px;
     background-clip: content-box;
   }
 
   *::-webkit-scrollbar-thumb:hover {
-    background: var(--color-muted);
+    background: var(--color-line-strong);
     background-clip: content-box;
   }
 }
@@ -370,53 +271,23 @@
    ========================================================================== */
 
 @utility shell {
-  width: min(75rem, calc(100% - 2.5rem));
+  width: min(1180px, calc(100% - 40px));
   margin-inline: auto;
 }
 
 @utility shell-wide {
-  width: min(90rem, calc(100% - 2.5rem));
+  width: min(1480px, calc(100% - 40px));
   margin-inline: auto;
 }
 
-/* Tracked mono label: coordinates, accessions, section kickers. */
-@utility label {
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  letter-spacing: 0.08em;
-  font-weight: 500;
-  text-transform: uppercase;
+/* the outlined display word used in the hero and section headings */
+@utility text-outline {
+  color: transparent;
+  -webkit-text-stroke: 1px rgb(255 255 255 / 0.5);
 }
 
-/* Hairline structure before shadows — the Nightglass default. */
 @utility hairline {
   border: 1px solid var(--color-line);
-}
-
-/* Multi-layer stacked elevation, never a single blur. Hairline ring first. */
-@utility elevated {
-  background-color: var(--color-panel);
-  box-shadow:
-    inset 0 0 0 1px var(--color-line),
-    0 17.5px 23.4px 0 rgb(0 0 0 / 0.18),
-    0 9.4px 12.5px 0 rgb(0 0 0 / 0.13),
-    0 5.3px 7px 0 rgb(0 0 0 / 0.09),
-    0 2.8px 3.7px -2px rgb(0 0 0 / 0.05);
-}
-
-@utility floating {
-  background-color: var(--color-panel-2);
-  box-shadow:
-    inset 0 0 0 1px var(--color-line),
-    0 36px 45px 0 rgb(0 0 0 / 0.34),
-    0 24px 30px 0 rgb(0 0 0 / 0.26),
-    0 15px 19px 0 rgb(0 0 0 / 0.2),
-    0 9px 11px 0 rgb(0 0 0 / 0.14);
-}
-
-/* Staggered entrance. One sequence per view, per the motion contract. */
-@utility reveal {
-  animation: var(--animate-reveal);
 }
 
 /* screen-reader-only, used heavily for visualisation text equivalents */
@@ -436,9 +307,9 @@
 /* ==========================================================================
    Reduced motion
 
-   Report 10 mandates every animation be disable-able. This kills decorative
-   animation wholesale; components additionally read the media query in JS to
-   swap 3D and scroll-linked views for static compositions.
+   Report 10 mandates that every animation be disable-able. This kills all
+   decorative animation; components additionally read the media query in JS
+   to swap 3D/animated views for static compositions.
    ========================================================================== */
 
 @media (prefers-reduced-motion: reduce) {
@@ -453,5 +324,43 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* ==========================================================================
+   Compatibility utilities
+
+   Added with the registry record pages and the documentation system. They are
+   structural rather than stylistic — reverting the palette must not break the
+   pages that rely on them, so they map onto the tokens above.
+   ========================================================================== */
+
+/* The tracked-out mono label. Same voice as text-micro. */
+@utility label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1.1;
+  letter-spacing: 0.18em;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+/* Grouped surface used by the record and documentation pages. */
+@utility elevated {
+  background-color: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+}
+
+@utility reveal {
+  animation: rise 0.6s var(--ease-out-quint) both;
+}
+
+@layer base {
+  /* Numbers in a registry must align. */
+  table,
+  time,
+  [data-numeric] {
+    font-variant-numeric: tabular-nums;
   }
 }

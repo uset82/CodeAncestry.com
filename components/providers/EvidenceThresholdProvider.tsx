@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useMemo, useSyncExternalStore }
 import { EVIDENCE_TIERS, EVIDENCE_TIER_RANK, type EvidenceTier } from '@/lib/schema/vocabulary';
 
 /**
- * The Evidence Threshold is a site-wide , not a page filter.
+ * The Evidence Threshold is a site-wide instrument, not a page filter.
  *
  * Raising it toward `verified` dissolves speculative material everywhere at
  * once — AI-inferred genes, uncertain parent edges, unmeasured mutations — so a

@@ -115,7 +115,7 @@ function FacetCheckbox({
           checked ? 'border-acid bg-acid text-void' : 'border-line-strong group-hover:border-muted',
         )}
       >
-        {checked ? '◆' : ''}
+        {checked ? '✓' : ''}
       </span>
       <span className="min-w-0 flex-1 truncate text-[13.5px]">{label}</span>
       {count !== undefined && (

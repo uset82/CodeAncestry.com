@@ -1,16 +1,12 @@
 import { cn } from '@/lib/cn';
 
 /**
- * The light ground.
+ * Registry page shell.
  *
- * The homepage is near-black because it is narrative. The registry is not: it
- * is read for hours, densely, in daylight — which is why UCSC, Ensembl, IGV and
- * Nextstrain are all light interfaces. `.ground-light` re-declares every
- * semantic token, so the same components render correctly here without any
- * component knowing which ground it is on.
- *
- * `min-h-screen` matters: without it the dark page background shows through
- * below short pages.
+ * Previously this switched the registry onto a light ground. That was a
+ * stylistic choice that has been reverted — the whole site is the original
+ * dark palette again — so the shell is now purely structural: it reserves
+ * full height and nothing else.
  */
 export function RegistryShell({
   children,
@@ -19,7 +15,7 @@ export function RegistryShell({
   children: React.ReactNode;
   className?: string;
 }) {
-  return <div className={cn('ground-light min-h-screen', className)}>{children}</div>;
+  return <div className={cn('min-h-screen', className)}>{children}</div>;
 }
 
 /**

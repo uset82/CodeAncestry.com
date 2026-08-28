@@ -99,7 +99,7 @@ export function BlastConsole({
                   setSnippet(example.snippet);
                   run(example.snippet);
                 }}
-                className="border-line bg-panel hover:border-line-strong hover:bg-panel w-full rounded-md border px-3.5 py-3 text-left transition-colors"
+                className="border-line bg-panel/40 hover:border-line-strong hover:bg-panel w-full rounded-md border px-3.5 py-3 text-left transition-colors"
               >
                 <span className="text-text-soft text-[14px]">{example.label}</span>
                 <span aria-hidden="true" className="text-faint float-right text-[13px]">
@@ -119,7 +119,7 @@ export function BlastConsole({
             </span>
             <div className="mt-4 flex flex-col gap-3" aria-hidden="true">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="border-line bg-panel rounded-lg border p-4">
+                <div key={i} className="border-line bg-panel/40 rounded-lg border p-4">
                   <Bar className="w-40" />
                   <Bar className="mt-3 h-1.5 w-full" />
                   <div className="mt-4 flex gap-2">
@@ -172,7 +172,7 @@ function BlastHitCard({ hit }: { hit: BlastHit }) {
     identity >= 60 ? 'text-acid' : identity >= 35 ? 'text-cyan' : 'text-muted';
 
   return (
-    <li className="border-line bg-panel rounded-lg border p-4 md:p-5">
+    <li className="border-line bg-panel/40 rounded-lg border p-4 md:p-5">
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="min-w-0">
           <h3 className="text-[16.5px] leading-tight font-semibold tracking-[-0.025em]">

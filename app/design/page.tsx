@@ -25,24 +25,21 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-/* Paper ground. The same six slots render as the dark elevated inside
-   . — see the  row in globals.css. */
 const SURFACES = [
-  ['void', '#e7e2d5'],
-  ['panel', '#efeae0'],
-  ['panel-2', '#dcd5c3'],
-  ['panel-3', '#d3ccb6'],
-  ['line', '#c7c0aa'],
-  ['line-strong', '#a39a80'],
+  ['void', '#07090d'],
+  ['panel', '#0d1118'],
+  ['panel-2', '#111722'],
+  ['panel-3', '#161d29'],
+  ['line', '#202937'],
+  ['line-strong', '#303b4c'],
 ] as const;
 
-/* Five printing inks. Names are historical; the values are what ships. */
 const ACCENTS = [
-  ['acid', '#2c5a3b', 'verified · primary action'],
-  ['cyan', '#1c4a86', 'inherited · data'],
-  ['violet', '#58347f', 'agent · mutation'],
-  ['amber', '#96620d', 'quarantined'],
-  ['rose', '#ad2f19', 'rejected · security'],
+  ['acid', '#b7ff39', 'verified · primary action'],
+  ['cyan', '#63e7ff', 'inherited · data'],
+  ['violet', '#a985ff', 'agent · mutation'],
+  ['amber', '#ffb340', 'quarantined'],
+  ['rose', '#ff5c7a', 'rejected · security'],
 ] as const;
 
 function Block({ title, children }: { title: string; children: React.ReactNode }) {
@@ -102,33 +99,17 @@ export default function DesignPage() {
 
         <Block title="Type scale">
           <div className="flex flex-col gap-5">
-            <p className="font-sans text-display">Ancestors</p>
-            <p className="font-sans text-headline">Follow the bloodline</p>
-            <p className="font-sans text-title">Code becomes traits</p>
-            <p className="text-acid text-title">Plate-caption emphasis</p>
+            <p className="text-display leading-[0.83]">Ancestors</p>
+            <p className="text-headline">Follow the bloodline</p>
+            <p className="text-title">Code becomes traits</p>
             <p className="text-lead text-text-soft">
               Git stores lines. CodeAncestry stores meaning.
             </p>
-            <p className="text-[15px]">Body copy in Newsreader, the registry default.</p>
-            <p className="text-acid label text-[10px]">01 / Micro label</p>
-            <p className="text-muted label text-[9px]">Nano label</p>
+            <p className="text-[15px]">Body copy at fifteen pixels, the registry default.</p>
+            <p className="text-acid font-mono text-micro uppercase">01 / Micro label</p>
+            <p className="text-muted font-mono text-nano uppercase">Nano label</p>
             <p className="font-mono text-[11px]">CAGENE:MIDI-SCHEDULING · sha256:8c20…</p>
           </div>
-
-          <dl className="border-line mt-6 grid gap-2 border-t pt-4 text-[12.5px]">
-            <div className="flex gap-3">
-              <dt className="text-faint label w-16 shrink-0 text-[9px]">Display</dt>
-              <dd className="font-sans">Bodoni Moda — headings only</dd>
-            </div>
-            <div className="flex gap-3">
-              <dt className="text-faint label w-16 shrink-0 text-[9px]">Prose</dt>
-              <dd>Newsreader — body copy</dd>
-            </div>
-            <div className="flex gap-3">
-              <dt className="text-faint label w-16 shrink-0 text-[9px]">Data</dt>
-              <dd className="font-mono">IBM Plex Mono — labels, accessions, controls</dd>
-            </div>
-          </dl>
         </Block>
 
         <Block title="Buttons">
