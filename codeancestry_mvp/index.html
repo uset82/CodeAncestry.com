@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#07090d" />
+  <title>CodeAncestry — Every machine has ancestors</title>
+  <meta name="description" content="Trace software ancestry, inherited capabilities, mutations, and agent knowledge across generations." />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="noise"></div>
+
+  <header class="nav shell">
+    <a class="brand" href="#top" aria-label="CodeAncestry home">
+      <span class="helix-mark" aria-hidden="true">⌁</span>
+      <span>CodeAncestry</span>
+      <small>concept</small>
+    </a>
+    <nav>
+      <a href="#lineage">Lineage</a>
+      <a href="#genome">Genome</a>
+      <a href="#agents">Agents</a>
+      <a class="nav-cta" href="#join">Join alpha</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero shell">
+      <div class="eyebrow">SOFTWARE DOESN'T HAVE TO DIE. IT CAN EVOLVE.</div>
+      <h1>Every machine<br><span>has ancestors.</span></h1>
+      <p class="hero-copy">
+        A living genealogy for software, AI agents and robots.
+        Trace what a project inherited, what it mutated, what it learned,
+        and which descendant made the family smarter.
+      </p>
+
+      <div class="hero-actions">
+        <button class="primary" id="exploreBtn">Explore a lineage</button>
+        <button class="secondary" id="dnaBtn">Inspect digital DNA</button>
+      </div>
+
+      <div class="hero-meta">
+        <div><b>GEN 0</b><span>Original project</span></div>
+        <div><b>⇄</b><span>Agent knowledge</span></div>
+        <div><b>∞</b><span>Living descendants</span></div>
+      </div>
+    </section>
+
+    <section class="lineage-section shell" id="lineage">
+      <div class="section-head">
+        <div>
+          <span class="section-index">01 / LINEAGE</span>
+          <h2>Follow the bloodline.</h2>
+        </div>
+        <p>Every node knows its parent, inherited capabilities, local mutations and agent memory.</p>
+      </div>
+
+      <div class="tree-panel">
+        <div class="tree-toolbar">
+          <div class="status"><i></i> LIVE FAMILY</div>
+          <button id="evolveBtn">Simulate evolution</button>
+        </div>
+
+        <div class="tree" id="tree">
+          <svg class="lines" viewBox="0 0 1000 560" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M500,70 C500,130 260,120 260,195" />
+            <path d="M500,70 C500,130 500,120 500,195" />
+            <path d="M500,70 C500,130 740,120 740,195" />
+            <path d="M260,245 C260,330 180,315 180,390" />
+            <path d="M260,245 C260,330 340,315 340,390" />
+            <path d="M740,245 C740,330 690,315 690,390" />
+            <path d="M740,245 C740,330 820,315 820,390" />
+          </svg>
+
+          <button class="node root selected" data-id="keylit">
+            <span class="gen">GEN 0</span>
+            <strong>KEYLIT</strong>
+            <small>Origin genome</small>
+          </button>
+
+          <button class="node n1" data-id="kids">
+            <span class="gen">GEN 1</span>
+            <strong>KEYLIT Kids</strong>
+            <small>12 mutations</small>
+          </button>
+
+          <button class="node n2" data-id="studio">
+            <span class="gen">GEN 1</span>
+            <strong>KEYLIT Studio</strong>
+            <small>8 mutations</small>
+          </button>
+
+          <button class="node n3" data-id="access">
+            <span class="gen">GEN 1</span>
+            <strong>Accessible</strong>
+            <small>15 mutations</small>
+          </button>
+
+          <button class="node n4" data-id="quechua">
+            <span class="gen">GEN 2</span>
+            <strong>Quechua</strong>
+            <small>New language gene</small>
+          </button>
+
+          <button class="node n5" data-id="autism">
+            <span class="gen">GEN 2</span>
+            <strong>Sensory Mode</strong>
+            <small>Adaptive UI</small>
+          </button>
+
+          <button class="node n6" data-id="robot">
+            <span class="gen">GEN 2</span>
+            <strong>Teacher Bot</strong>
+            <small>Embodied agent</small>
+          </button>
+
+          <button class="node n7" data-id="school">
+            <span class="gen">GEN 2</span>
+            <strong>Classroom</strong>
+            <small>Fleet learning</small>
+          </button>
+        </div>
+
+        <aside class="inspector" id="inspector">
+          <div class="inspector-top">
+            <div>
+              <span id="inspectorGen">GEN 0</span>
+              <h3 id="inspectorTitle">KEYLIT</h3>
+            </div>
+            <div class="dna-score"><span id="dnaScore">100</span>%<small>origin DNA</small></div>
+          </div>
+
+          <div class="trait-list" id="traitList"></div>
+          <div class="mutation-box">
+            <span>AGENT MEMORY</span>
+            <p id="agentMemory">Created the original piano-learning genome and capability map.</p>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="genome-section shell" id="genome">
+      <div class="section-head">
+        <div>
+          <span class="section-index">02 / GENOME</span>
+          <h2>Code becomes traits.</h2>
+        </div>
+        <p>Git stores lines. The genome layer stores meaning: inheritance, intent, compatibility and fitness.</p>
+      </div>
+
+      <div class="genome-grid">
+        <article class="gene-card">
+          <span>GENE G-001</span>
+          <h3>MIDI Engine</h3>
+          <p>Inherited from Generation 0</p>
+          <div class="bar"><i style="width:96%"></i></div>
+          <footer><b>96%</b> family compatibility</footer>
+        </article>
+        <article class="gene-card">
+          <span>GENE G-109</span>
+          <h3>Adaptive Buffering</h3>
+          <p>Mutation discovered by descendant</p>
+          <div class="bar"><i style="width:84%"></i></div>
+          <footer><b>+31%</b> latency improvement</footer>
+        </article>
+        <article class="gene-card">
+          <span>GENE G-234</span>
+          <h3>Learning Strategy</h3>
+          <p>Promoted upstream by agent consensus</p>
+          <div class="bar"><i style="width:91%"></i></div>
+          <footer><b>+14%</b> lesson completion</footer>
+        </article>
+      </div>
+    </section>
+
+    <section class="agents-section shell" id="agents">
+      <div class="section-head">
+        <div>
+          <span class="section-index">03 / AGENTS</span>
+          <h2>The family talks.</h2>
+        </div>
+        <p>Descendants do not blindly sync. Their agents exchange discoveries, test mutations and selectively inherit what improves fitness.</p>
+      </div>
+
+      <div class="agent-network">
+        <div class="agent a"><b>A0</b><span>Ancestor</span></div>
+        <div class="pulse p1"></div>
+        <div class="agent b"><b>A7</b><span>Kids branch</span></div>
+        <div class="pulse p2"></div>
+        <div class="agent c"><b>A19</b><span>Robot branch</span></div>
+
+        <div class="network-copy">
+          <span class="packet-label">MUTATION PACKET #109</span>
+          <h3>Descendant discovered a better trait.</h3>
+          <p>
+            Agent A19 found an optimization. The network tests it against relatives.
+            Compatible ancestors and siblings can adopt it without overwriting their own adaptations.
+          </p>
+          <div class="decision">
+            <span>SIMULATE</span><i>→</i><span>TEST</span><i>→</i><span>SHARE</span><i>→</i><span>EVOLVE</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="future shell">
+      <span class="section-index">THE ENDGAME</span>
+      <blockquote>
+        “In 2045, a robot should be able to ask:<br>
+        <em>Who was my great-great-grandfather?</em>”
+      </blockquote>
+      <p>And receive a verifiable answer.</p>
+    </section>
+
+    <section class="join shell" id="join">
+      <div>
+        <span class="section-index">PRIVATE ALPHA</span>
+        <h2>Become Generation 0.</h2>
+        <p>Connect a repository. Create its genome. Let the lineage begin.</p>
+      </div>
+      <form id="waitlistForm">
+        <input type="email" id="email" placeholder="you@future.ai" required />
+        <button class="primary" type="submit">Join waitlist</button>
+        <small id="formMsg">Prototype only — no data is sent anywhere.</small>
+      </form>
+    </section>
+  </main>
+
+  <footer class="shell">
+    <div class="brand"><span class="helix-mark">⌁</span><span>CodeAncestry</span></div>
+    <p>Working concept · Software genealogy + digital genomes + connected agents.</p>
+    <span>2026 → ∞</span>
+  </footer>
+
+  <script src="./app.js"></script>
+</body>
+</html>
