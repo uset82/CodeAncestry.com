@@ -34,6 +34,27 @@ export const EVIDENCE_TIER_RANK: Record<EvidenceTier, number> = {
   verified: 2,
 };
 
+export const EVIDENCE_TIER_META: Record<
+  EvidenceTier,
+  { label: string; description: string; tone: string }
+> = {
+  inferred: {
+    label: 'Inferred',
+    description: 'Proposed by a model or read off ancestry. Nothing has confirmed it yet.',
+    tone: 'text-muted',
+  },
+  reviewed: {
+    label: 'Reviewed',
+    description: 'Backed by static analysis, declared metadata or an upstream maintainer.',
+    tone: 'text-cyan',
+  },
+  verified: {
+    label: 'Verified',
+    description: 'Backed by an executed test, a runtime measurement or a human sign-off.',
+    tone: 'text-acid',
+  },
+};
+
 export type EvidenceCodeMeta = {
   code: EvidenceCode;
   label: string;

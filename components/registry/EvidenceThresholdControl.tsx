@@ -3,25 +3,21 @@
 import { useId } from 'react';
 import { cn } from '@/lib/cn';
 import { useEvidenceThreshold } from '@/components/providers/EvidenceThresholdProvider';
-import { EVIDENCE_TIERS, type EvidenceTier } from '@/lib/schema/vocabulary';
+import { EVIDENCE_TIER_META, EVIDENCE_TIERS, type EvidenceTier } from '@/lib/schema/vocabulary';
 
-const TIER_COPY: Record<EvidenceTier, { label: string; effect: string; tone: string }> = {
-  inferred: {
-    label: 'Inferred',
-    effect: 'Everything, including what a model merely proposed.',
-    tone: 'text-muted',
-  },
-  reviewed: {
-    label: 'Reviewed',
-    effect: 'Drops raw AI inference. Keeps static analysis and declared metadata.',
-    tone: 'text-cyan',
-  },
-  verified: {
-    label: 'Verified',
-    effect: 'Only tests, runtime measurement and human review survive.',
-    tone: 'text-acid',
-  },
+/** What moving the slider to each tier does. The tier's own meaning lives in the vocabulary. */
+const TIER_EFFECT: Record<EvidenceTier, string> = {
+  inferred: 'Everything, including what a model merely proposed.',
+  reviewed: 'Drops raw AI inference. Keeps static analysis and declared metadata.',
+  verified: 'Only tests, runtime measurement and human review survive.',
 };
+
+const TIER_COPY = Object.fromEntries(
+  EVIDENCE_TIERS.map((tier) => [
+    tier,
+    { ...EVIDENCE_TIER_META[tier], effect: TIER_EFFECT[tier] },
+  ]),
+) as Record<EvidenceTier, { label: string; description: string; tone: string; effect: string }>;
 
 /**
  * The registry's most opinionated control. It is a slider rather than a
