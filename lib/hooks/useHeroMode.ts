@@ -25,8 +25,12 @@ export type HeroMode = 'static' | 'low' | 'high';
  * and the hero would silently stay static forever.
  */
 
-/* Matches the `lg` breakpoint at which the scene column appears. */
-const WIDE = '(min-width: 64rem)';
+/* Matches the breakpoint at which the scene column appears.
+   Deliberately `md` (768px), not `lg`. The scene is ~18 draw calls and a few
+   instanced meshes — any laptop runs it. Gating at 1024 meant a 1012px window
+   fell through to a static text list with half the hero empty, which is the
+   worst version of this page and a very common width. */
+const WIDE = '(min-width: 48rem)';
 
 function detectWebGL(): boolean {
   try {
