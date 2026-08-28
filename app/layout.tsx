@@ -1,23 +1,38 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, JetBrains_Mono } from 'next/font/google';
+import { Bodoni_Moda, IBM_Plex_Mono, Newsreader } from 'next/font/google';
 import { site } from '@/lib/site';
 import { SiteHeader } from '@/components/marketing/SiteHeader';
 import { SiteFooter } from '@/components/marketing/SiteFooter';
 import { EvidenceThresholdProvider } from '@/components/providers/EvidenceThresholdProvider';
 import { ChatDock } from '@/components/chat/ChatDock';
-import { NoiseOverlay } from '@/components/ui/NoiseOverlay';
+import { PressLayer } from '@/components/ui/PressLayer';
 import './globals.css';
 
-const inter = Inter({
+/* Display: the plate-caption voice. Variable optical size, so the hairlines
+   thicken as the headline shrinks instead of disappearing. */
+const bodoni = Bodoni_Moda({
   subsets: ['latin'],
-  variable: '--font-inter',
+  variable: '--font-bodoni',
   display: 'swap',
+  style: ['normal', 'italic'],
+  axes: ['opsz'],
 });
 
-const jetbrainsMono = JetBrains_Mono({
+/* Prose: warm, optical, built for paragraphs rather than product copy. */
+const newsreader = Newsreader({
   subsets: ['latin'],
-  variable: '--font-jetbrains-mono',
+  variable: '--font-newsreader',
   display: 'swap',
+  style: ['normal', 'italic'],
+  axes: ['opsz'],
+});
+
+/* Data: every label, accession, measurement and control on the site. */
+const plexMono = IBM_Plex_Mono({
+  subsets: ['latin'],
+  variable: '--font-plex-mono',
+  display: 'swap',
+  weight: ['400', '500', '600', '700'],
 });
 
 export const metadata: Metadata = {
@@ -55,21 +70,24 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#07090d',
-  colorScheme: 'dark',
+  themeColor: '#e7e2d5',
+  colorScheme: 'light',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
+    <html
+      lang="en"
+      className={`${bodoni.variable} ${newsreader.variable} ${plexMono.variable}`}
+    >
       <body>
         <a
           href="#main"
-          className="sr-only-focusable bg-acid text-void fixed top-3 left-3 z-100 rounded-sm px-4 py-2 text-sm font-bold"
+          className="sr-only-focusable bg-press-vermilion runhead fixed top-3 left-3 z-100 px-4 py-2 text-paper"
         >
           Skip to content
         </a>
-        <NoiseOverlay />
+        <PressLayer />
         <EvidenceThresholdProvider>
           <SiteHeader />
           <main id="main">{children}</main>

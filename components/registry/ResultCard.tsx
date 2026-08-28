@@ -49,7 +49,7 @@ export function ResultCard({
     <li className={cn('bg-line/40 transition-opacity', below && 'opacity-40')}>
       <article
         className={cn(
-          'bg-void hover:bg-panel/60 border-l-2 p-5 transition-colors md:p-6',
+          'bg-void hover:bg-panel border-l-2 p-5 transition-colors md:p-6',
           meta.border,
         )}
       >

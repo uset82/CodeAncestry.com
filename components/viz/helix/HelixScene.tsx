@@ -28,10 +28,10 @@ import type { BeatState } from './beats';
 
 /* --------------------------------------------------------------- constants */
 
-const ACID = new Color('#b7ff39');
-const CYAN = new Color('#63e7ff');
-const VIOLET = new Color('#a985ff');
-const DIM = new Color('#1d2735');
+const ACID = new Color('#86ab68');
+const CYAN = new Color('#6ea4d4');
+const VIOLET = new Color('#a58ad2');
+const DIM = new Color('#2b2f22');
 
 const RUNGS_PER_STRAND = 9;
 const UPSTREAM_PULSES = 3;
@@ -345,10 +345,10 @@ function LocusLabels({ state }: Pick<Props, 'state'>) {
             >
               <button
                 type="button"
-                className={`hover:border-current focus-visible:border-current inline-flex items-center gap-1.5 rounded-sm border px-1.5 py-[3px] font-mono text-[9px] tracking-[0.14em] uppercase backdrop-blur-sm ${
+                className={`hover:border-current focus-visible:border-current inline-flex items-center gap-1.5 rounded-sm border px-1.5 py-[3px] font-mono text-[9px] tracking-[0.14em] uppercase ${
                   anchor.label.mutated
                     ? 'border-violet/50 bg-violet/15 text-violet'
-                    : 'border-acid/30 bg-void/70 text-acid/90'
+                    : 'border-acid/30 bg-void text-acid/90'
                 }`}
                 style={{ pointerEvents: 'auto' }}
               >
@@ -356,7 +356,7 @@ function LocusLabels({ state }: Pick<Props, 'state'>) {
                 {anchor.label.short}
               </button>
 
-              <div className="border-line bg-void/95 pointer-events-none absolute top-full left-0 mt-1.5 hidden w-max max-w-[220px] rounded-sm border p-2 group-hover/locus:block group-focus-within/locus:block">
+              <div className="border-line bg-void pointer-events-none absolute top-full left-0 mt-1.5 hidden w-max max-w-[220px] rounded-sm border p-2 group-hover/locus:block group-focus-within/locus:block">
                 <p className="text-text text-[12px] font-semibold">{anchor.label.gene}</p>
                 <p className="text-faint mt-0.5 text-[11px]">{anchor.label.origin}</p>
                 <p className="text-muted mt-1 font-mono text-[10px]">{anchor.label.accession}</p>

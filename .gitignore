@@ -18,6 +18,7 @@ next-env.d.ts
 dist/
 
 # misc
+.claude/
 .DS_Store
 *.pem
 Thumbs.db

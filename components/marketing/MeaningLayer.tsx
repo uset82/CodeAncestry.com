@@ -86,14 +86,14 @@ const CONTRASTS = [
 
 export function MeaningLayer() {
   return (
-    <Section id="meaning">
+    <Section id="meaning" plate="Plate 02 — Position">
       <div className="grid gap-14 lg:grid-cols-[1.05fr_0.95fr] lg:gap-20">
         <div>
           <Eyebrow index="02">Position</Eyebrow>
           <h2 className="text-headline mt-4 text-balance">
             Git stores lines.
             <br />
-            <span className="text-outline">CodeAncestry stores meaning.</span>
+            <span className="text-emphasis">CodeAncestry stores meaning.</span>
           </h2>
           <p className="text-text-soft mt-6 max-w-[560px] leading-relaxed">
             This is a semantic layer, not a replacement. Git keeps every commit; CodeAncestry adds
@@ -103,8 +103,8 @@ export function MeaningLayer() {
 
           <dl className="mt-10 space-y-px">
             {CONTRASTS.map((row) => (
-              <div key={row.git} className="bg-line/40">
-                <div className="bg-void grid gap-2 py-4 sm:grid-cols-2 sm:gap-8">
+              <div key={row.git} className="bg-ink/20">
+                <div className="bg-paper grid gap-2 py-4 sm:grid-cols-2 sm:gap-8">
                   <dt className="text-faint text-[14px] leading-relaxed">
                     <span className="text-faint mr-2 font-mono text-nano uppercase">Git</span>
                     {row.git}
@@ -128,7 +128,7 @@ export function MeaningLayer() {
             {LAYERS.map((layer, i) => (
               <li key={layer.id} className="relative">
                 <div
-                  className={`bg-panel/50 rounded-md border ${layer.edge} px-4 py-3.5 backdrop-blur-[2px]`}
+                  className={`bg-paper-2 border ${layer.edge} border-l-[3px] px-4 py-3.5`}
                   style={{
                     /* Narrows toward Git so the diagram reads as a stack rather
                        than a list, without needing perspective transforms. */
@@ -136,10 +136,8 @@ export function MeaningLayer() {
                   }}
                 >
                   <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                    <span className={`text-[15px] font-semibold tracking-tight ${layer.tone}`}>
-                      {layer.label}
-                    </span>
-                    <span className="text-faint text-[13px]">{layer.detail}</span>
+                    <span className={`runhead text-[10.5px] ${layer.tone}`}>{layer.label}</span>
+                    <span className="text-ink-muted text-[13.5px]">{layer.detail}</span>
                   </div>
 
                   {layer.entities && (

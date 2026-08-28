@@ -1,114 +1,159 @@
 @import 'tailwindcss';
 
 /* ==========================================================================
-   CodeAncestry design tokens
+   CodeAncestry — "Plate & Instrument"
 
-   Palette carried forward from the original static prototype (reference/)
-   and extended with the two states the registry layer needs: quarantined
-   and rejected.
+   The site is a speculative field guide to machine descent.
 
-   Hard rule from the research: colour is never the only encoding for a
-   state. Every StateBadge pairs colour with an icon, a pattern fill and a
-   text label.
+   Two grounds, one system:
+     PAPER      the argument, the taxonomy, the prose. Warm bone stock,
+                letterpress rules, five printing inks, a Didone display voice.
+     INSTRUMENT the data. Genome browser, helix, CodeTree. A near-black plate
+                recessed into the paper, the way a screen is set into a bench.
+
+   The .instrument class re-declares the whole semantic token set, so every
+   component below renders correctly on either ground without knowing which
+   one it has been placed on.
+
+   Hard rule carried over from the research: colour is never the only encoding
+   for a state. Every StateBadge pairs colour with icon, pattern fill and label.
    ========================================================================== */
 
 @theme {
-  /* --- surfaces ------------------------------------------------------- */
-  --color-void: #07090d;
-  --color-panel: #0d1118;
-  --color-panel-2: #111722;
-  --color-panel-3: #161d29;
-  --color-line: #202937;
-  --color-line-soft: #1a2230;
-  --color-line-strong: #303b4c;
+  /* --- the stock ------------------------------------------------------ */
+  /* Warm bone, not white. White is a screen colour; paper never is. */
+  --color-paper: #e7e2d5;
+  --color-paper-2: #efeae0; /* raised: mounted card, inset figure */
+  --color-paper-3: #dcd5c3; /* recessed: tint block, table zebra */
 
-  /* --- text ----------------------------------------------------------- */
-  --color-text: #f4f6f8;
-  --color-text-soft: #aab3c0;
-  --color-muted: #8993a3;
-  --color-faint: #5c6675;
+  /* --- the ink -------------------------------------------------------- */
+  --color-ink: #17180f; /* warm black, never pure black */
+  --color-ink-soft: #3b3d31;
+  --color-ink-muted: #6c6e5f;
+  --color-ink-faint: #979889;
 
-  /* --- semantic accents ----------------------------------------------- */
-  /* acid   = verified / primary action / origin DNA */
-  --color-acid: #b7ff39;
-  --color-acid-dim: #8ecb22;
-  /* cyan   = inherited / data / lineage */
-  --color-cyan: #63e7ff;
-  --color-cyan-dim: #3aa9c4;
-  /* violet = agent / mutation / knowledge */
-  --color-violet: #a985ff;
-  --color-violet-dim: #7d5ec7;
-  /* amber  = quarantined / needs review */
-  --color-amber: #ffb340;
-  --color-amber-dim: #c4832a;
-  /* rose   = rejected / security finding */
-  --color-rose: #ff5c7a;
-  --color-rose-dim: #c4425c;
+  /* --- rules ---------------------------------------------------------- */
+  --color-rule: #c7c0aa;
+  --color-rule-soft: #d9d3c2;
+  --color-rule-strong: #a39a80;
 
-  /* --- radii ---------------------------------------------------------- */
-  --radius-xs: 6px;
-  --radius-sm: 10px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
-  --radius-xl: 24px;
-  --radius-2xl: 32px;
+  /* --- five printing inks ---------------------------------------------
+     Chosen as inks a 1930s scientific press would plausibly have stocked,
+     then checked for contrast against the bone ground.
+     ------------------------------------------------------------------- */
+  --color-press-green: #2c5a3b; /* verified · origin · primary action */
+  --color-press-blue: #1c4a86; /* inherited · lineage · cyanotype */
+  --color-press-violet: #58347f; /* agent · knowledge */
+  --color-press-ochre: #96620d; /* quarantined · needs review */
+  --color-press-vermilion: #ad2f19; /* rejected · mutation emphasis */
 
-  /* --- typography ----------------------------------------------------- */
-  --font-sans:
-    var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
-    sans-serif;
-  --font-mono:
-    var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  /* --- semantic layer -------------------------------------------------
+     The component tree speaks this vocabulary and nothing else. Swapping
+     these values re-skins the site; swapping them again inside .instrument
+     moves the same components onto the dark plate.
+     ------------------------------------------------------------------- */
+  --color-void: #e7e2d5; /* page ground */
+  --color-panel: #efeae0;
+  --color-panel-2: #dcd5c3;
+  --color-panel-3: #d3cbb6;
+  --color-line: #c7c0aa;
+  --color-line-soft: #d9d3c2;
+  --color-line-strong: #a39a80;
 
-  /* display: the tight negative-tracking headline voice */
-  --text-display: clamp(3.25rem, 9vw, 8rem);
-  --text-display--line-height: 0.83;
-  --text-display--letter-spacing: -0.075em;
-  --text-display--font-weight: 750;
+  --color-text: #17180f;
+  --color-text-soft: #3b3d31;
+  --color-muted: #6c6e5f;
+  --color-faint: #979889;
 
-  /* hero: display voice, sized to survive a two-line headline in one viewport */
-  --text-hero: clamp(2.75rem, 6.6vw, 5.75rem);
-  --text-hero--line-height: 0.86;
-  --text-hero--letter-spacing: -0.07em;
-  --text-hero--font-weight: 750;
+  --color-acid: #2c5a3b;
+  --color-acid-dim: #4a7a58;
+  --color-cyan: #1c4a86;
+  --color-cyan-dim: #4a72a5;
+  --color-violet: #58347f;
+  --color-violet-dim: #7d5ea0;
+  --color-amber: #96620d;
+  --color-amber-dim: #b3874a;
+  --color-rose: #ad2f19;
+  --color-rose-dim: #c96450;
 
-  --text-headline: clamp(2.375rem, 5vw, 4rem);
-  --text-headline--line-height: 0.95;
-  --text-headline--letter-spacing: -0.055em;
-  --text-headline--font-weight: 700;
+  /* --- radii ----------------------------------------------------------
+     Letterpress has no rounded corners. A plate is cut square; only the
+     smallest chrome gets a hairline of softening so it does not read as a
+     rendering error. The pill is gone.
+     ------------------------------------------------------------------- */
+  --radius-xs: 0px;
+  --radius-sm: 1px;
+  --radius-md: 2px;
+  --radius-lg: 2px;
+  --radius-xl: 3px;
+  --radius-2xl: 3px;
 
-  --text-title: clamp(1.5rem, 2.6vw, 2rem);
-  --text-title--line-height: 1.15;
-  --text-title--letter-spacing: -0.035em;
-  --text-title--font-weight: 700;
+  /* --- typography -----------------------------------------------------
+     Display : Bodoni Moda. A Didone — hairline serifs, vertical stress,
+               brutal thick/thin contrast. The voice of a plate caption in a
+               natural-history folio. Set large, set tight, set sparingly.
+     Prose   : Newsreader. Warm, optical, built for long reading.
+     Data    : IBM Plex Mono. The typeface of an actual research institution.
+               Carries every label, accession, measurement and control.
+     ------------------------------------------------------------------- */
+  --font-display: var(--font-bodoni), 'Bodoni MT', 'Didot', Georgia, serif;
+  --font-serif: var(--font-newsreader), Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  /* Body default is the reading serif; chrome opts into mono explicitly. */
+  --font-sans: var(--font-newsreader), Georgia, 'Times New Roman', serif;
 
-  --text-lead: 1.25rem;
-  --text-lead--line-height: 1.55;
+  /* Didones want far less negative tracking than a grotesque — close them up
+     and the hairlines collapse into the stems. */
+  --text-display: clamp(3.5rem, 10.5vw, 9rem);
+  --text-display--line-height: 0.87;
+  --text-display--letter-spacing: -0.025em;
+  --text-display--font-weight: 500;
 
-  /* micro-label: the uppercase tracked-out registry voice */
+  --text-hero: clamp(3rem, 7.6vw, 6.75rem);
+  --text-hero--line-height: 0.9;
+  --text-hero--letter-spacing: -0.022em;
+  --text-hero--font-weight: 500;
+
+  --text-headline: clamp(2.25rem, 5vw, 4.25rem);
+  --text-headline--line-height: 0.96;
+  --text-headline--letter-spacing: -0.018em;
+  --text-headline--font-weight: 500;
+
+  --text-title: clamp(1.5rem, 2.6vw, 2.125rem);
+  --text-title--line-height: 1.12;
+  --text-title--letter-spacing: -0.012em;
+  --text-title--font-weight: 500;
+
+  --text-lead: 1.3125rem;
+  --text-lead--line-height: 1.62;
+
+  /* the tracked-out mono running head: plate numbers, accessions, controls */
   --text-micro: 0.6875rem;
   --text-micro--line-height: 1.1;
-  --text-micro--letter-spacing: 0.18em;
-  --text-micro--font-weight: 800;
+  --text-micro--letter-spacing: 0.2em;
+  --text-micro--font-weight: 600;
 
   --text-nano: 0.5625rem;
   --text-nano--line-height: 1.1;
-  --text-nano--letter-spacing: 0.14em;
-  --text-nano--font-weight: 700;
+  --text-nano--letter-spacing: 0.17em;
+  --text-nano--font-weight: 600;
 
-  /* --- motion --------------------------------------------------------- */
-  /* semantic motion vocabulary: slow rotation = idle, pulse = transmission,
-     branch grow = child creation, glow = active propagation */
+  /* --- motion ---------------------------------------------------------
+     Semantic vocabulary, unchanged in meaning, redrawn in ink:
+     slow rotation = idle, pulse = transmission, draw = descent recorded.
+     Nothing glows. Ink does not glow.
+     ------------------------------------------------------------------- */
   --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
   --animate-idle-rotate: idle-rotate 24s linear infinite;
   --animate-transmit: transmit 2.4s var(--ease-in-out-quart) infinite;
-  --animate-breathe: breathe 4s ease-in-out infinite;
+  --animate-breathe: breathe 5s ease-in-out infinite;
   --animate-grow: grow 0.7s var(--ease-out-quint) forwards;
   --animate-rise: rise 0.6s var(--ease-out-quint) forwards;
   --animate-dash: dash 1.6s linear infinite;
+  --animate-plate-in: plate-in 0.8s var(--ease-out-quint) both;
 }
 
 @keyframes idle-rotate {
@@ -135,15 +180,14 @@
   }
 }
 
+/* ink soaking into stock, rather than a neon pulse */
 @keyframes breathe {
   0%,
   100% {
-    opacity: 0.45;
-    transform: scale(1);
+    opacity: 0.35;
   }
   50% {
     opacity: 1;
-    transform: scale(1.06);
   }
 }
 
@@ -161,6 +205,18 @@
   from {
     opacity: 0;
     transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* a plate being laid down onto the page */
+@keyframes plate-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.994);
   }
   to {
     opacity: 1;
@@ -193,21 +249,44 @@
 
   body {
     margin: 0;
-    background-color: var(--color-void);
+    background-color: var(--color-paper);
+    /* Plate registration grid: two hairline systems plus the light fall of a
+       sheet under a lamp. No gradient blobs. */
     background-image:
-      radial-gradient(circle at 72% 6%, rgb(99 231 255 / 0.07), transparent 30%),
-      radial-gradient(circle at 22% 30%, rgb(183 255 57 / 0.05), transparent 26%);
+      linear-gradient(to right, rgb(23 24 15 / 0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(23 24 15 / 0.03) 1px, transparent 1px),
+      radial-gradient(ellipse 90% 55% at 50% -12%, rgb(255 252 244 / 0.7), transparent 72%);
+    background-size:
+      112px 112px,
+      112px 112px,
+      100% 100%;
     background-attachment: fixed;
-    color: var(--color-text);
-    font-family: var(--font-sans);
-    font-feature-settings: 'cv11', 'ss01';
+    color: var(--color-ink);
+    font-family: var(--font-serif);
+    font-size: 17px;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
 
+  /* The display voice is reserved for headings. It is never body copy. */
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-optical-sizing: auto;
+  }
+
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-mono);
+    font-weight: 600;
+  }
+
   ::selection {
-    background: rgb(183 255 57 / 0.25);
-    color: var(--color-text);
+    background: rgb(173 47 25 / 0.18);
+    color: var(--color-ink);
   }
 
   a {
@@ -227,14 +306,14 @@
     cursor: pointer;
   }
 
-  /* one consistent focus treatment everywhere */
+  /* one consistent focus treatment everywhere: a struck rule, not a glow */
   :focus-visible {
-    outline: 2px solid var(--color-acid);
+    outline: 2px solid var(--color-press-vermilion);
     outline-offset: 2px;
-    border-radius: var(--radius-xs);
+    border-radius: 0;
   }
 
-  /* thin, dark scrollbars so dense registry panels stay quiet */
+  /* narrow, inked scrollbars so dense registry panels stay quiet */
   * {
     scrollbar-width: thin;
     scrollbar-color: var(--color-line-strong) transparent;
@@ -250,16 +329,54 @@
   }
 
   *::-webkit-scrollbar-thumb {
-    background: var(--color-line);
+    background: var(--color-line-strong);
     border: 3px solid transparent;
-    border-radius: 99px;
+    border-radius: 0;
     background-clip: content-box;
   }
 
   *::-webkit-scrollbar-thumb:hover {
-    background: var(--color-line-strong);
+    background: var(--color-ink-muted);
     background-clip: content-box;
   }
+}
+
+/* ==========================================================================
+   The instrument ground
+
+   Everything inside .instrument re-declares the semantic tokens, so the same
+   Panel, StateBadge and AccessionBadge components render as a lit screen
+   instead of a printed page. Accents are lifted and desaturated — filmic
+   phosphor, deliberately not neon.
+   ========================================================================== */
+
+.instrument {
+  --color-void: #101109;
+  --color-panel: #181a10;
+  --color-panel-2: #1f2117;
+  --color-panel-3: #262920;
+  --color-line: #33372a;
+  --color-line-soft: #2a2e22;
+  --color-line-strong: #4d5240;
+
+  --color-text: #ece9dc;
+  --color-text-soft: #bdbaa9;
+  --color-muted: #918e7d;
+  --color-faint: #6a6858;
+
+  --color-acid: #86ab68;
+  --color-acid-dim: #5f7d49;
+  --color-cyan: #6ea4d4;
+  --color-cyan-dim: #4a7099;
+  --color-violet: #a58ad2;
+  --color-violet-dim: #7562a0;
+  --color-amber: #d3a244;
+  --color-amber-dim: #99742e;
+  --color-rose: #dd6a4e;
+  --color-rose-dim: #a04a36;
+
+  color: var(--color-text);
+  background-color: var(--color-void);
 }
 
 /* ==========================================================================
@@ -267,23 +384,62 @@
    ========================================================================== */
 
 @utility shell {
-  width: min(1180px, calc(100% - 40px));
+  width: min(1120px, calc(100% - 48px));
   margin-inline: auto;
 }
 
 @utility shell-wide {
-  width: min(1480px, calc(100% - 40px));
+  width: min(1440px, calc(100% - 48px));
   margin-inline: auto;
 }
 
-/* the outlined display word used in the hero and section headings */
-@utility text-outline {
-  color: transparent;
-  -webkit-text-stroke: 1px rgb(255 255 255 / 0.5);
+/* The running head: mono, tracked out, the voice of the margin. */
+@utility runhead {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.2em;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* Plate-caption emphasis. Replaces the hollow stroke-text trick with a Didone
+   italic in vermilion — the way a species name is set on a specimen plate. */
+@utility text-emphasis {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  color: var(--color-press-vermilion);
+}
+
+.instrument .text-emphasis {
+  color: #dd6a4e;
+}
+
+/* A print mounted on card: hard rule, one crisp shadow, no blur, no glass. */
+@utility plate {
+  background-color: var(--color-panel);
+  border: 1px solid var(--color-line);
+  box-shadow:
+    0 1px 0 0 rgb(255 255 255 / 0.35) inset,
+    0 14px 28px -22px rgb(23 24 15 / 0.55);
+}
+
+/* An instrument recessed into the page: the plate, pressed inward. */
+@utility recessed {
+  box-shadow:
+    0 2px 0 0 rgb(255 253 246 / 0.5),
+    0 0 0 1px var(--color-rule-strong),
+    inset 0 2px 10px rgb(0 0 0 / 0.45);
 }
 
 @utility hairline {
   border: 1px solid var(--color-line);
+}
+
+/* Halftone tint for specimen figures — a real printing artefact, not a blur. */
+@utility halftone {
+  background-image: radial-gradient(currentColor 0.7px, transparent 0.8px);
+  background-size: 4px 4px;
 }
 
 /* screen-reader-only, used heavily for visualisation text equivalents */

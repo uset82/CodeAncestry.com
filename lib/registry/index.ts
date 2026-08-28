@@ -29,6 +29,35 @@ import {
 } from '@/lib/schema/vocabulary';
 
 /* ==========================================================================
+   Anchors
+   ========================================================================== */
+
+/**
+ * A browsable URL for a source anchor, or null when the provider has no web
+ * view. Anchors carry `github:owner/repo`; the provider prefix is dropped here.
+ *
+ * Returning null for a local or unknown provider is deliberate. A dead link
+ * costs the reader a click to learn nothing; the bare path at least tells them
+ * where to look.
+ */
+export function anchorUrl(repository: string, commit: string, path: string): string | null {
+  const [prefix, ...rest] = repository.split(':');
+  const slug = rest.length > 0 ? rest.join(':') : prefix;
+  if (slug === undefined) return null;
+
+  switch (prefix) {
+    case 'github':
+      return `https://github.com/${slug}/blob/${commit}/${path}`;
+    case 'gitlab':
+      return `https://gitlab.com/${slug}/-/blob/${commit}/${path}`;
+    case 'bitbucket':
+      return `https://bitbucket.org/${slug}/src/${commit}/${path}`;
+    default:
+      return null;
+  }
+}
+
+/* ==========================================================================
    Genomes and projects
    ========================================================================== */
 

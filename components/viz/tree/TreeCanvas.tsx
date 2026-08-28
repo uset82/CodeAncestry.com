@@ -155,7 +155,7 @@ export function TreeCanvas({
           setGrabbing(false);
         }}
         className={cn(
-          'bg-panel/30 border-line block w-full rounded-xl border',
+          'bg-panel border-line block w-full rounded-xl border',
           // A square layout in a wide, short frame would be scaled down until the
           // labels stopped being readable, so the radial view gets more height.
           mode === 'radial'
@@ -641,7 +641,7 @@ function ViewControls({
   return (
     <div className="absolute right-3 bottom-3 flex flex-col items-end gap-2">
       <div className="flex items-center gap-1.5">
-        <span className="text-faint bg-void/70 rounded-sm px-1.5 py-0.5 font-mono text-nano tabular-nums">
+        <span className="text-faint bg-void rounded-sm px-1.5 py-0.5 font-mono text-nano tabular-nums">
           {Math.round(scale * 100)}%
         </span>
         <button type="button" onClick={onZoomOut} aria-label="Zoom out" className={button}>

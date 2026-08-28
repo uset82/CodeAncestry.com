@@ -23,14 +23,14 @@ export function CodePaintingTeaser() {
   const local = share('local');
 
   return (
-    <Section id="painting">
+    <Section id="painting" plate="Plate 03 — Composition">
       <div className="grid gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-20">
         <div>
           <Eyebrow index="03">Code Painting</Eyebrow>
           <h2 className="text-headline mt-4 text-balance">
             How much of this
             <br />
-            <span className="text-outline">is actually new?</span>
+            <span className="text-emphasis">is actually new?</span>
           </h2>
           <p className="text-text-soft mt-6 leading-relaxed">
             {painting.genome.name} feels like an original project. Measured against its parent, most
@@ -54,7 +54,7 @@ export function CodePaintingTeaser() {
           </div>
         </div>
 
-        <figure className="border-line bg-panel/40 m-0 rounded-xl border p-6 backdrop-blur-[2px] md:p-8">
+        <figure className="plate m-0 p-6 md:p-8">
           <figcaption className="mb-6 flex flex-wrap items-baseline justify-between gap-3">
             <span className="text-[17px] font-semibold tracking-tight">
               {painting.genome.name}

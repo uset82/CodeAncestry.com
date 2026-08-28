@@ -64,14 +64,14 @@ export function TrustLadder() {
   const cleared = RUNGS.filter((rung) => met(rung.key)).length;
 
   return (
-    <Section id="trust">
+    <Section id="trust" plate="Plate 05 — Trust ladder">
       <div className="grid gap-14 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20">
         <div>
           <Eyebrow index="05">Trust ladder</Eyebrow>
           <h2 className="text-headline mt-4 text-balance">
             Confidence is earned
             <br />
-            <span className="text-outline">one rung at a time.</span>
+            <span className="text-emphasis">one rung at a time.</span>
           </h2>
           <p className="text-text-soft mt-6 leading-relaxed">
             Most tools present machine output and human review as equivalent. They are not. Every
@@ -95,7 +95,7 @@ export function TrustLadder() {
                 className={`flex items-start gap-4 rounded-md border px-4 py-4 transition-colors ${
                   cleared
                     ? 'border-acid/25 bg-acid/[0.045]'
-                    : 'border-line-strong bg-panel-2/60 border-dashed'
+                    : 'border-line-strong bg-paper-3/40 border-dashed'
                 }`}
                 /* Staircase indent, but never so deep that it squeezes the copy
                    on a narrow screen. */
@@ -113,7 +113,7 @@ export function TrustLadder() {
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
                     <h3
-                      className={`text-[15.5px] font-semibold tracking-tight ${
+                      className={`text-[19px] leading-[1.15] tracking-[-0.015em] ${
                         cleared ? 'text-text' : 'text-muted'
                       }`}
                     >

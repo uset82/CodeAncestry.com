@@ -89,7 +89,7 @@ export function SankeyView({ family }: { family: FamilyTree }) {
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
         role="img"
         aria-label={`Capability flow between ${graph.nodes.length} projects in the ${family.name} family.`}
-        className="border-line bg-panel/30 block h-[clamp(360px,52vh,560px)] w-full rounded-xl border"
+        className="border-line bg-panel block h-[clamp(360px,52vh,560px)] w-full rounded-xl border"
       >
         <g>
           {graph.links.map((link, i) => {

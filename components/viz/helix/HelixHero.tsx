@@ -15,27 +15,75 @@ const HelixScene = dynamic(() => import('./HelixScene').then((m) => m.HelixScene
   ssr: false,
 });
 
+/* ==========================================================================
+   Plate I
+
+   The hero is a folio spread: the argument set on paper in the left column,
+   the specimen mounted in a dark instrument plate on the right. The helix is
+   never full-bleed — it is a figure, framed, captioned and numbered, which is
+   the whole difference between a screensaver and a record.
+   ========================================================================== */
+
+/** Corner ticks on the instrument, the way a plate is trimmed to register. */
+function PlateCorners() {
+  const arm = 'border-paper/25 absolute size-3';
+  return (
+    <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+      <span className={`${arm} top-2 left-2 border-t border-l`} />
+      <span className={`${arm} top-2 right-2 border-t border-r`} />
+      <span className={`${arm} bottom-2 left-2 border-b border-l`} />
+      <span className={`${arm} right-2 bottom-2 border-r border-b`} />
+    </div>
+  );
+}
+
+/**
+ * The mounted specimen: dark instrument ground, hairline frame, figure caption
+ * ruled off underneath. Accepts whatever renders the specimen itself.
+ */
+function InstrumentPlate({
+  children,
+  caption,
+  className,
+}: {
+  children: React.ReactNode;
+  caption: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <figure className={cn('instrument recessed m-0 flex flex-col', className)}>
+      <div className="relative flex-1 overflow-hidden">
+        {children}
+        <PlateCorners />
+      </div>
+      <figcaption className="border-line text-faint runhead flex shrink-0 items-center justify-between gap-4 border-t px-4 py-2.5 text-[9px]">
+        {caption}
+      </figcaption>
+    </figure>
+  );
+}
+
 /** The eyebrow, headline and calls to action, shared by both hero variants. */
 function HeroCopy({ children }: { children?: React.ReactNode }) {
   return (
-    <div className="max-w-[720px]">
-      <p className="text-acid mb-5 flex items-center gap-3 font-mono text-micro uppercase">
-        <span
-          aria-hidden="true"
-          className="bg-acid size-[7px] animate-[breathe_4s_ease-in-out_infinite] rounded-full shadow-[0_0_16px_var(--color-acid)]"
-        />
-        A living genealogy for software
+    <div className="max-w-[660px]">
+      <p className="flex items-center gap-4">
+        <span className="text-press-vermilion runhead text-[10px]">Plate I</span>
+        <span aria-hidden="true" className="bg-ink/25 h-px w-12" />
+        <span className="text-ink-muted runhead text-[10px]">
+          A living genealogy for software
+        </span>
       </p>
 
-      <h1 id="hero-title" className="text-hero">
+      <h1 id="hero-title" className="text-hero mt-7">
         Every machine
         <br />
-        <span className="text-outline">has ancestors.</span>
+        <span className="text-emphasis">has ancestors.</span>
       </h1>
 
       {children}
 
-      <div className="mt-7 flex flex-wrap items-center gap-3">
+      <div className="mt-9 flex flex-wrap items-center gap-4">
         <ButtonLink href="/family/keylit" size="lg">
           Open the CodeTree
         </ButtonLink>
@@ -44,11 +92,14 @@ function HeroCopy({ children }: { children?: React.ReactNode }) {
         </ButtonLink>
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2">
+      <div className="border-ink/15 mt-8 flex flex-wrap items-center gap-x-5 gap-y-3 border-t pt-5">
         <WhatAmILookingAt />
-        <p className="text-faint text-[13px]">
+        <p className="text-ink-muted text-[14px] leading-snug">
           Seeded with a real eight-project family.{' '}
-          <Link href="/docs" className="text-muted hover:text-text underline decoration-dotted">
+          <Link
+            href="/docs"
+            className="decoration-press-vermilion/60 hover:text-ink underline underline-offset-[3px]"
+          >
             Read the protocol
           </Link>
           .
@@ -70,10 +121,10 @@ function WhatAmILookingAt() {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-controls={panelId}
-        className="border-line text-muted hover:border-line-strong hover:text-text inline-flex items-center gap-2 rounded-full border px-3 py-1.5 font-mono text-nano uppercase transition-colors"
+        className="border-ink/40 text-ink-muted hover:border-ink hover:text-ink runhead inline-flex items-center gap-2 border px-3 py-2 text-[9.5px] transition-colors"
       >
-        <span aria-hidden="true" className="text-acid">
-          ?
+        <span aria-hidden="true" className="text-press-vermilion">
+          {open ? '–' : '+'}
         </span>
         What am I looking at
       </button>
@@ -81,19 +132,19 @@ function WhatAmILookingAt() {
       {open && (
         <div
           id={panelId}
-          className="border-line bg-panel/80 order-last w-full max-w-[560px] rounded-md border p-4 backdrop-blur-sm"
+          className="border-ink/25 bg-paper-2 order-last w-full max-w-[600px] border-l-2 border-l-press-vermilion border p-5"
         >
-          <ol className="text-text-soft space-y-2 text-[14px] leading-relaxed">
-            <li>
-              <span className="text-acid mr-2 font-mono text-nano">01</span>
+          <ol className="text-ink-soft space-y-3 text-[15px] leading-[1.6]">
+            <li className="flex gap-3">
+              <span className="text-press-vermilion runhead shrink-0 pt-1 text-[9px]">01</span>
               Each strand is one software project. Each dot on it is one thing that project can do.
             </li>
-            <li>
-              <span className="text-acid mr-2 font-mono text-nano">02</span>
+            <li className="flex gap-3">
+              <span className="text-press-vermilion runhead shrink-0 pt-1 text-[9px]">02</span>
               Strands branching downward are projects that came from the one above them.
             </li>
-            <li>
-              <span className="text-acid mr-2 font-mono text-nano">03</span>
+            <li className="flex gap-3">
+              <span className="text-press-vermilion runhead shrink-0 pt-1 text-[9px]">03</span>
               The violet dot travelling upward is an improvement a descendant found, being offered
               back to its ancestors.
             </li>
@@ -107,19 +158,19 @@ function WhatAmILookingAt() {
 function BeatBody({ index, headline, outlined, body }: (typeof BEATS)[number]) {
   return (
     <>
-      <p className="text-muted font-mono text-micro uppercase">
+      <p className="text-ink-faint runhead text-[9.5px]">
         {index} / {String(BEATS.length).padStart(2, '0')}
       </p>
-      <p className="text-title mt-3">
+      <p className="text-title mt-3 font-display">
         {headline}
         {outlined && (
           <>
             {' '}
-            <span className="text-outline">{outlined}</span>
+            <span className="text-emphasis">{outlined}</span>
           </>
         )}
       </p>
-      <p className="text-text-soft mt-3 max-w-[560px] leading-relaxed">{body}</p>
+      <p className="text-ink-soft mt-2.5 max-w-[52ch] text-[15.5px] leading-[1.6]">{body}</p>
     </>
   );
 }
@@ -133,38 +184,43 @@ function BeatBody({ index, headline, outlined, body }: (typeof BEATS)[number]) {
  */
 function StaticHero() {
   return (
-    <section aria-labelledby="hero-title" className="border-line relative -mt-[74px] border-b">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute top-0 right-0 hidden h-full w-[46%] place-items-center opacity-90 lg:grid"
-      >
-        <HeroFallback />
-      </div>
+    <section aria-labelledby="hero-title" className="border-ink/15 relative border-b">
+      <div className="shell-wide grid gap-14 pt-20 pb-24 lg:grid-cols-[1fr_minmax(360px,44%)] lg:gap-16">
+        <div>
+          <HeroCopy />
 
-      <div className="shell-wide relative pt-[168px] pb-24">
-        <HeroCopy />
+          <ol className="mt-16 grid gap-x-14 gap-y-11 sm:grid-cols-2">
+            {BEATS.map((beat) => (
+              <li key={beat.id} className="border-ink/20 border-l pl-6">
+                <BeatBody {...beat} />
+              </li>
+            ))}
+          </ol>
 
-        <ol className="mt-14 grid max-w-[1080px] gap-x-12 gap-y-10 sm:grid-cols-2 xl:max-w-[640px] xl:grid-cols-1">
-          {BEATS.map((beat) => (
-            <li key={beat.id} className="border-line/70 border-l pl-5">
-              <BeatBody {...beat} />
-            </li>
-          ))}
-        </ol>
-
-        <div className="mt-12 lg:hidden">
-          <HeroFallback />
+          <p className="text-ink-faint runhead mt-12 text-[9.5px]">
+            Static view · reduced motion
+          </p>
         </div>
 
-        <p className="text-faint mt-10 font-mono text-nano uppercase">
-          Static view · reduced motion
-        </p>
+        <InstrumentPlate
+          className="min-h-[440px] lg:sticky lg:top-28 lg:max-h-[74vh]"
+          caption={
+            <>
+              <span>Fig. 1 — KEYLIT lineage</span>
+              <span>Static reconstruction</span>
+            </>
+          }
+        >
+          <div className="grid size-full place-items-center p-4">
+            <HeroFallback />
+          </div>
+        </InstrumentPlate>
       </div>
     </section>
   );
 }
 
-/** Scroll-driven hero: five pinned beats over a procedural helix. */
+/** Scroll-driven hero: five pinned beats beside a procedural helix. */
 function AnimatedHero({ tier }: { tier: 'low' | 'high' }) {
   const track = useRef<HTMLElement>(null);
   const state = useRef<BeatState>(beatStateAt(0));
@@ -207,45 +263,14 @@ function AnimatedHero({ tier }: { tier: 'low' | 'high' }) {
     <section
       ref={track}
       aria-labelledby="hero-title"
-      /* Five beats of scroll runway, plus one viewport for the closing frame.
-         Pulled under the 74px sticky header so the pinned frame is full-height
-         from the first paint. */
-      className="relative -mt-[74px] h-[560vh]"
+      /* Five beats of scroll runway, plus one viewport for the closing frame. */
+      className="relative h-[560vh]"
     >
-      <div className="sticky top-0 flex h-screen flex-col overflow-hidden">
-        {/* Offset right of the copy column on wide screens; dimmed and centred
-            on narrow ones, where the copy needs the whole width. */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 opacity-45 lg:translate-x-[14%] lg:opacity-100"
-        >
-          <div
-            className="absolute top-1/2 left-1/2 size-[min(900px,90vw)] -translate-1/2 rounded-full opacity-70 blur-3xl"
-            style={{
-              background:
-                'radial-gradient(circle, rgb(99 231 255 / 0.1), rgb(183 255 57 / 0.05) 45%, transparent 68%)',
-            }}
-          />
-          <Canvas
-            dpr={tier === 'low' ? [1, 1.4] : [1, 1.9]}
-            camera={{ position: [0, 2.2, 8.4], fov: 42, near: 0.1, far: 100 }}
-            gl={{ antialias: tier === 'high', alpha: true, powerPreference: 'high-performance' }}
-            style={{ position: 'absolute', inset: 0 }}
-          >
-            <HelixScene state={state} tier={tier} />
-          </Canvas>
-        </div>
-
-        {/* Keeps the copy legible over the brightest part of the helix. */}
-        <div
-          aria-hidden="true"
-          className="from-void via-void/70 lg:via-void/20 pointer-events-none absolute inset-0 bg-gradient-to-r to-transparent"
-        />
-
-        <div className="shell-wide relative flex flex-1 flex-col justify-center pt-20 pb-24">
+      <div className="sticky top-[94px] flex h-[calc(100vh-94px)] flex-col overflow-hidden">
+        <div className="shell-wide grid flex-1 items-center gap-12 py-10 lg:grid-cols-[1fr_minmax(340px,42%)] lg:gap-16">
           <HeroCopy>
             {/* All five beats stay in the DOM; the active one is emphasised. */}
-            <div className="relative mt-8 min-h-[188px]">
+            <div className="relative mt-9 min-h-[196px]">
               {BEATS.map((beat, i) => (
                 <div
                   key={beat.id}
@@ -262,17 +287,42 @@ function AnimatedHero({ tier }: { tier: 'low' | 'high' }) {
               ))}
             </div>
           </HeroCopy>
+
+          <InstrumentPlate
+            className="hidden h-full max-h-[78vh] min-h-[380px] lg:flex"
+            caption={
+              <>
+                <span>
+                  Fig. 1 — KEYLIT lineage · beat {String(active + 1).padStart(2, '0')} of{' '}
+                  {String(BEATS.length).padStart(2, '0')}
+                </span>
+                <span className="hidden xl:block">Procedural reconstruction</span>
+              </>
+            }
+          >
+            <Canvas
+              dpr={tier === 'low' ? [1, 1.4] : [1, 1.9]}
+              camera={{ position: [0, 2.2, 8.4], fov: 42, near: 0.1, far: 100 }}
+              gl={{ antialias: tier === 'high', alpha: true, powerPreference: 'high-performance' }}
+              style={{ position: 'absolute', inset: 0 }}
+            >
+              <HelixScene state={state} tier={tier} />
+            </Canvas>
+          </InstrumentPlate>
         </div>
 
-        <div className="shell-wide relative pb-8">
-          <div className="flex items-center justify-between gap-6">
-            <ol className="flex items-center gap-2" aria-label="Hero progress">
+        {/* Beat register: a ruled scale, read like a measuring instrument. */}
+        <div className="border-ink/15 shrink-0 border-t">
+          <div className="shell-wide flex items-center justify-between gap-6 py-3.5">
+            <ol className="flex items-stretch" aria-label="Hero progress">
               {BEATS.map((beat, i) => (
                 <li key={beat.id}>
                   <span
                     className={cn(
-                      'block h-[3px] rounded-full transition-all duration-500',
-                      i <= active ? 'bg-acid w-9' : 'bg-line w-5',
+                      'block h-[9px] w-10 border-r border-b-2 transition-colors duration-500',
+                      i <= active
+                        ? 'border-b-press-vermilion border-r-ink/25'
+                        : 'border-b-ink/15 border-r-ink/10',
                     )}
                   >
                     <span className="sr-only">
@@ -284,7 +334,7 @@ function AnimatedHero({ tier }: { tier: 'low' | 'high' }) {
               ))}
             </ol>
 
-            <p className="text-faint hidden font-mono text-nano uppercase sm:block">
+            <p className="text-ink-faint runhead hidden text-[9px] sm:block">
               Scroll to descend the lineage
             </p>
           </div>

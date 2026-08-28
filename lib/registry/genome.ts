@@ -1,4 +1,5 @@
 import {
+  anchorUrl,
   evidenceCodesFor,
   getAgent,
   getAncestors,
@@ -188,28 +189,6 @@ const temporalOnly = (at: number): Record<CoordinateMode, number | null> => ({
 
 function tierAndCodes(evidence: readonly string[]): { evidence: EvidenceCode[]; tier: EvidenceTier } {
   return { evidence: evidenceCodesFor(evidence), tier: tierFor(evidence) };
-}
-
-/**
- * A browsable URL for an anchor, or null when the provider has no web view.
- * Anchors carry `github:owner/repo`; the provider prefix is dropped here.
- */
-function anchorUrl(repository: string, commit: string, path: string): string | null {
-  const [prefix, ...rest] = repository.split(':');
-  const slug = rest.length > 0 ? rest.join(':') : prefix;
-  if (slug === undefined) return null;
-
-  switch (prefix) {
-    case 'github':
-      return `https://github.com/${slug}/blob/${commit}/${path}`;
-    case 'gitlab':
-      return `https://gitlab.com/${slug}/-/blob/${commit}/${path}`;
-    case 'bitbucket':
-      return `https://bitbucket.org/${slug}/src/${commit}/${path}`;
-    default:
-      // A local or unrecognised provider. Better to show the path than to guess.
-      return null;
-  }
 }
 
 /* ==========================================================================

@@ -19,13 +19,13 @@ import { EDGE_TYPE_META } from '@/lib/schema/vocabulary';
  */
 
 const EDGE_COLOR: Record<string, string> = {
-  DERIVED_FROM: '#63e7ff',
-  MUTATED_FROM: '#b7ff39',
-  RECOMBINED_FROM: '#a985ff',
-  TRANSFERRED_FROM: '#ffb340',
-  ADOPTED_FROM: '#b7ff39',
-  PROPOSED_TO: '#a985ff',
-  REJECTED_FROM: '#ff5c7a',
+  DERIVED_FROM: '#6ea4d4',
+  MUTATED_FROM: '#86ab68',
+  RECOMBINED_FROM: '#a58ad2',
+  TRANSFERRED_FROM: '#d3a244',
+  ADOPTED_FROM: '#86ab68',
+  PROPOSED_TO: '#a58ad2',
+  REJECTED_FROM: '#dd6a4e',
 };
 
 const EDGE_LINE_STYLE: Record<string, 'solid' | 'dashed' | 'dotted' | 'double'> = {
@@ -105,15 +105,15 @@ export function ForceGraph({
         {
           selector: 'node',
           style: {
-            'background-color': '#111722',
-            'border-color': '#303b4c',
+            'background-color': '#1f2117',
+            'border-color': '#4d5240',
             'border-width': 1.5,
             shape: 'round-rectangle',
             width: 'label',
             height: 'label',
             padding: '11px',
             label: 'data(label)',
-            color: '#f4f6f8',
+            color: '#ece9dc',
             'font-family': 'var(--font-sans), system-ui, sans-serif',
             'font-size': 12,
             'font-weight': 600,
@@ -125,15 +125,15 @@ export function ForceGraph({
         },
         {
           selector: 'node[generation = 0]',
-          style: { 'border-color': '#b7ff39', 'border-width': 2 },
+          style: { 'border-color': '#86ab68', 'border-width': 2 },
         },
         {
           selector: 'node[?hybrid]',
-          style: { 'border-color': '#a985ff', 'border-style': 'double', 'border-width': 3 },
+          style: { 'border-color': '#a58ad2', 'border-style': 'double', 'border-width': 3 },
         },
         {
           selector: 'node:selected',
-          style: { 'border-color': '#b7ff39', 'border-width': 2.5, 'background-color': '#161d29' },
+          style: { 'border-color': '#86ab68', 'border-width': 2.5, 'background-color': '#262920' },
         },
         {
           selector: 'edge',
@@ -238,7 +238,7 @@ export function ForceGraph({
       <div className="relative">
         <div
           ref={container}
-          className="border-line bg-panel/30 h-[clamp(420px,62vh,720px)] w-full rounded-xl border"
+          className="border-line bg-panel h-[clamp(420px,62vh,720px)] w-full rounded-xl border"
         />
 
         {!ready && (

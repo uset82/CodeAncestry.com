@@ -53,10 +53,10 @@ export function WaitlistForm() {
     return (
       <div
         role="status"
-        className="border-acid/30 bg-acid/[0.05] rounded-xl border p-6 md:p-8"
+        className="border-acid bg-paper-2 border-t-[3px] px-6 py-7 md:px-8 md:py-8"
       >
-        <p className="text-acid font-mono text-micro uppercase">Noted locally</p>
-        <p className="mt-3 text-[19px] leading-snug font-semibold tracking-[-0.02em]">
+        <p className="text-acid runhead text-[9.5px]">Noted locally</p>
+        <p className="font-display mt-4 text-[26px] leading-[1.1] tracking-[-0.015em]">
           Thanks — {email} is on the list.
         </p>
         <p className="text-muted mt-3 text-[14.5px] leading-relaxed">
@@ -81,7 +81,7 @@ export function WaitlistForm() {
     <form onSubmit={handleSubmit} noValidate className="max-w-[520px]">
       <div className="flex flex-col gap-4">
         <div>
-          <label htmlFor={emailId} className="text-muted block font-mono text-nano uppercase">
+          <label htmlFor={emailId} className="text-ink-muted runhead block text-[9.5px]">
             Email
           </label>
           <input
@@ -98,9 +98,9 @@ export function WaitlistForm() {
             aria-invalid={status === 'invalid'}
             aria-describedby={status === 'invalid' ? errorId : undefined}
             className={cn(
-              'bg-panel-2 mt-2 w-full rounded-md border px-3.5 py-3 text-[15px] transition-colors',
+              'bg-paper-2 mt-2.5 w-full border px-3.5 py-3 text-[15px] transition-colors',
               'placeholder:text-faint',
-              status === 'invalid' ? 'border-rose/60' : 'border-line focus:border-line-strong',
+              status === 'invalid' ? 'border-rose' : 'border-ink/35 focus:border-ink',
             )}
           />
           {status === 'invalid' && (
@@ -111,7 +111,7 @@ export function WaitlistForm() {
         </div>
 
         <div>
-          <label htmlFor={roleId} className="text-muted block font-mono text-nano uppercase">
+          <label htmlFor={roleId} className="text-ink-muted runhead block text-[9.5px]">
             What brings you here
           </label>
           <select
@@ -119,7 +119,7 @@ export function WaitlistForm() {
             name="role"
             value={role}
             onChange={(event) => setRole(event.target.value)}
-            className="border-line bg-panel-2 focus:border-line-strong mt-2 w-full rounded-md border px-3.5 py-3 text-[15px] transition-colors"
+            className="border-ink/35 bg-paper-2 focus:border-ink mt-2.5 w-full border px-3.5 py-3 text-[15px] transition-colors"
           >
             {ROLES.map((option) => (
               <option key={option.value} value={option.value}>

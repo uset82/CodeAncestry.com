@@ -43,7 +43,7 @@ export function NodeInspector({
   );
 
   return (
-    <div className={cn('border-line bg-panel/50 rounded-xl border p-5', className)}>
+    <div className={cn('border-line bg-panel rounded-xl border p-5', className)}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-faint font-mono text-nano uppercase">

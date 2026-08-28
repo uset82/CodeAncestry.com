@@ -95,7 +95,7 @@ export function ArcsView({ family }: { family: FamilyTree }) {
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
         role="img"
         aria-label={`${events.length} propagation events between ${ordered.length} projects, ordered by creation date. Arcs above the axis travelled to descendants, arcs below travelled to ancestors.`}
-        className="border-line bg-panel/30 block h-[clamp(300px,44vh,420px)] w-full rounded-xl border"
+        className="border-line bg-panel block h-[clamp(300px,44vh,420px)] w-full rounded-xl border"
       >
         <line
           x1={40}

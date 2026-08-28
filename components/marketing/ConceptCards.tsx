@@ -7,10 +7,16 @@ import { Eyebrow, Section } from './Section';
  *
  * Deliberately restrained: no swarms, no epigenetics, no lateral transfer. The
  * homepage teaches one idea at a time and lets the registry carry the rest.
+ *
+ * Each card is a specimen entry: roman numeral, the figure mounted on its own
+ * dark instrument chip, then the caption. The figures inherit their colours
+ * from the .instrument scope, so the same SVG that reads as ink on paper reads
+ * as phosphor on the chip without a second set of classes.
  */
 
 type Concept = {
   id: string;
+  numeral: string;
   kicker: string;
   question: string;
   answer: string;
@@ -24,6 +30,7 @@ type Concept = {
 const CONCEPTS: Concept[] = [
   {
     id: 'genomes',
+    numeral: 'i',
     kicker: 'Genomes',
     question: 'What is your project made of?',
     answer:
@@ -33,16 +40,17 @@ const CONCEPTS: Concept[] = [
     tone: 'text-acid',
     figure: (
       <svg viewBox="0 0 44 44" className="size-full" aria-hidden="true">
-        <rect x="4" y="6" width="36" height="4" rx="2" className="fill-acid/70" />
-        <rect x="4" y="14" width="24" height="4" rx="2" className="fill-acid/45" />
-        <rect x="4" y="22" width="31" height="4" rx="2" className="fill-acid/60" />
-        <rect x="4" y="30" width="14" height="4" rx="2" className="fill-acid/30" />
-        <rect x="22" y="30" width="18" height="4" rx="2" className="fill-acid/45" />
+        <rect x="4" y="6" width="36" height="4" rx="1" className="fill-acid/70" />
+        <rect x="4" y="14" width="24" height="4" rx="1" className="fill-acid/45" />
+        <rect x="4" y="22" width="31" height="4" rx="1" className="fill-acid/60" />
+        <rect x="4" y="30" width="14" height="4" rx="1" className="fill-acid/30" />
+        <rect x="22" y="30" width="18" height="4" rx="1" className="fill-acid/45" />
       </svg>
     ),
   },
   {
     id: 'lineage',
+    numeral: 'ii',
     kicker: 'Lineage',
     question: 'Where did it come from?',
     answer:
@@ -66,6 +74,7 @@ const CONCEPTS: Concept[] = [
   },
   {
     id: 'mutations',
+    numeral: 'iii',
     kicker: 'Mutations',
     question: 'How did it evolve?',
     answer:
@@ -96,6 +105,7 @@ const CONCEPTS: Concept[] = [
   },
   {
     id: 'agents',
+    numeral: 'iv',
     kicker: 'Agents',
     question: 'What did its agents learn?',
     answer:
@@ -110,7 +120,7 @@ const CONCEPTS: Concept[] = [
           y="12"
           width="20"
           height="20"
-          rx="5"
+          rx="2"
           className="fill-void stroke-amber/80"
           strokeWidth="1.7"
         />
@@ -129,40 +139,53 @@ const CONCEPTS: Concept[] = [
 
 export function ConceptCards() {
   return (
-    <Section id="concepts">
-      <div className="max-w-[760px]">
-        <Eyebrow index="01">Four questions the registry answers</Eyebrow>
-        <h2 className="text-headline mt-4 text-balance">
-          Software already behaves like a species.{' '}
-          <span className="text-outline">Nothing records it.</span>
-        </h2>
-        <p className="text-text-soft mt-5 max-w-[620px] leading-relaxed">
+    <Section id="concepts" plate="Plate 01 — Four questions">
+      <div className="grid gap-10 lg:grid-cols-[1fr_minmax(280px,26%)] lg:items-end lg:gap-20">
+        <div className="max-w-[820px]">
+          <Eyebrow index="01">Four questions the registry answers</Eyebrow>
+          <h2 className="text-headline mt-6 text-balance">
+            Software already behaves like a species.{' '}
+            <span className="text-emphasis">Nothing records it.</span>
+          </h2>
+        </div>
+
+        <p className="text-ink-soft border-ink/20 border-t pt-5 text-[15.5px] leading-[1.65]">
           Forks, rewrites, ports and agent refactors move capabilities between projects every day.
           Git captures the diff and loses the descent. CodeAncestry records the descent.
         </p>
       </div>
 
-      <ul className="mt-14 grid gap-px sm:grid-cols-2 xl:grid-cols-4">
+      {/* Hairline plate block: the gap is the rule, the cells are the stock. */}
+      <ul className="bg-ink/20 mt-16 grid gap-px sm:grid-cols-2 xl:grid-cols-4">
         {CONCEPTS.map((concept) => (
-          <li key={concept.id} className="group bg-line/40">
-            <div className="bg-void flex h-full flex-col p-6 transition-colors group-hover:bg-panel/60 md:p-7">
+          <li key={concept.id} className="group bg-paper">
+            <div className="hover:bg-paper-2 flex h-full flex-col p-7 transition-colors md:p-8">
               <div className="flex items-start justify-between gap-4">
-                <span className={`font-mono text-micro uppercase ${concept.tone}`}>
-                  {concept.kicker}
-                </span>
-                <div className="size-11 shrink-0 opacity-90">{concept.figure}</div>
+                <div>
+                  <span className="text-press-vermilion font-display text-[22px] leading-none italic">
+                    {concept.numeral}
+                  </span>
+                  <span className={`runhead mt-2.5 block text-[10px] ${concept.tone}`}>
+                    {concept.kicker}
+                  </span>
+                </div>
+
+                {/* the specimen chip: a lit instrument set into the page */}
+                <div className="instrument border-line-strong size-14 shrink-0 border p-2.5 shadow-[inset_0_1px_6px_rgb(0_0_0/0.5)]">
+                  {concept.figure}
+                </div>
               </div>
 
-              <h3 className="mt-6 text-[22px] leading-[1.15] font-bold tracking-[-0.035em] text-balance">
+              <h3 className="mt-8 text-[26px] leading-[1.08] tracking-[-0.015em] text-balance">
                 {concept.question}
               </h3>
-              <p className="text-muted mt-3 flex-1 text-[14.5px] leading-relaxed">
+              <p className="text-ink-soft mt-4 flex-1 text-[14.5px] leading-[1.62]">
                 {concept.answer}
               </p>
 
               <Link
                 href={concept.href}
-                className="text-text-soft hover:text-text mt-6 inline-flex items-center gap-2 font-mono text-nano uppercase transition-colors"
+                className="border-ink/20 group-hover:border-ink text-ink-muted group-hover:text-ink runhead mt-8 inline-flex items-center gap-2 border-t pt-4 text-[9.5px] transition-colors"
               >
                 {concept.cta}
                 <span aria-hidden="true" className="transition-transform group-hover:translate-x-1">

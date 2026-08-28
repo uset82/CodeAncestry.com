@@ -137,7 +137,7 @@ export function Markdown({ source }: { source: string }) {
           return (
             <pre
               key={index}
-              className="border-line bg-void/80 overflow-x-auto rounded-md border px-3 py-2.5"
+              className="border-line bg-void overflow-x-auto rounded-md border px-3 py-2.5"
             >
               <code className="text-text-soft font-mono text-[12.5px] leading-relaxed">
                 {block.content}

@@ -109,9 +109,9 @@ export function NestedList({
               onClick={() => onSelect(row.node.accession)}
               onFocus={() => onSelect(row.node.accession)}
               className={cn(
-                'bg-void hover:bg-panel/60 cursor-pointer border-l-2 px-4 py-3 transition-colors',
+                'bg-void hover:bg-panel cursor-pointer border-l-2 px-4 py-3 transition-colors',
                 selected === row.node.accession
-                  ? 'border-l-acid bg-panel/70'
+                  ? 'border-l-acid bg-panel'
                   : 'border-l-line hover:border-l-line-strong',
               )}
               style={{ marginInlineStart: `${row.depth * 20}px` }}
@@ -224,7 +224,7 @@ function LateralRelations({
               <button
                 type="button"
                 onClick={() => onSelect(edge.from)}
-                className="border-line bg-panel/40 hover:border-line-strong w-full rounded-md border px-3.5 py-3 text-left transition-colors"
+                className="border-line bg-panel hover:border-line-strong w-full rounded-md border px-3.5 py-3 text-left transition-colors"
               >
                 <span className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
                   <span className={cn('font-mono text-nano uppercase', edge.tone)}>
