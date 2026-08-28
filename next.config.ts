@@ -22,7 +22,10 @@ const nextConfig: NextConfig = {
   transpilePackages: ['three', '@react-three/fiber', '@react-three/drei'],
 
   experimental: {
-    optimizePackageImports: ['d3', 'motion'],
+    // Only packages actually imported by source belong here. The previous list
+    // named 'd3' and 'motion', neither of which appears in any import in this
+    // repo, which made the whole option a no-op.
+    optimizePackageImports: ['d3-hierarchy', 'd3-sankey', 'cytoscape'],
   },
 
   async headers() {

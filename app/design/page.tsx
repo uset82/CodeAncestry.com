@@ -25,8 +25,8 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-/* Paper ground. The same six slots render as the dark plate inside
-   .instrument — see the instrument row in globals.css. */
+/* Paper ground. The same six slots render as the dark elevated inside
+   . — see the  row in globals.css. */
 const SURFACES = [
   ['void', '#e7e2d5'],
   ['panel', '#efeae0'],
@@ -102,30 +102,30 @@ export default function DesignPage() {
 
         <Block title="Type scale">
           <div className="flex flex-col gap-5">
-            <p className="font-display text-display">Ancestors</p>
-            <p className="font-display text-headline">Follow the bloodline</p>
-            <p className="font-display text-title">Code becomes traits</p>
-            <p className="text-emphasis text-title">Plate-caption emphasis</p>
-            <p className="text-lead text-ink-soft">
+            <p className="font-sans text-display">Ancestors</p>
+            <p className="font-sans text-headline">Follow the bloodline</p>
+            <p className="font-sans text-title">Code becomes traits</p>
+            <p className="text-acid text-title">Plate-caption emphasis</p>
+            <p className="text-lead text-text-soft">
               Git stores lines. CodeAncestry stores meaning.
             </p>
             <p className="text-[15px]">Body copy in Newsreader, the registry default.</p>
-            <p className="text-acid runhead text-[10px]">01 / Micro label</p>
-            <p className="text-ink-muted runhead text-[9px]">Nano label</p>
+            <p className="text-acid label text-[10px]">01 / Micro label</p>
+            <p className="text-muted label text-[9px]">Nano label</p>
             <p className="font-mono text-[11px]">CAGENE:MIDI-SCHEDULING · sha256:8c20…</p>
           </div>
 
-          <dl className="border-ink/20 mt-6 grid gap-2 border-t pt-4 text-[12.5px]">
+          <dl className="border-line mt-6 grid gap-2 border-t pt-4 text-[12.5px]">
             <div className="flex gap-3">
-              <dt className="text-ink-faint runhead w-16 shrink-0 text-[9px]">Display</dt>
-              <dd className="font-display">Bodoni Moda — headings only</dd>
+              <dt className="text-faint label w-16 shrink-0 text-[9px]">Display</dt>
+              <dd className="font-sans">Bodoni Moda — headings only</dd>
             </div>
             <div className="flex gap-3">
-              <dt className="text-ink-faint runhead w-16 shrink-0 text-[9px]">Prose</dt>
+              <dt className="text-faint label w-16 shrink-0 text-[9px]">Prose</dt>
               <dd>Newsreader — body copy</dd>
             </div>
             <div className="flex gap-3">
-              <dt className="text-ink-faint runhead w-16 shrink-0 text-[9px]">Data</dt>
+              <dt className="text-faint label w-16 shrink-0 text-[9px]">Data</dt>
               <dd className="font-mono">IBM Plex Mono — labels, accessions, controls</dd>
             </div>
           </dl>

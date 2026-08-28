@@ -11,6 +11,7 @@ import {
   TubeGeometry,
   Vector3,
   type BufferGeometry,
+  type Group,
   type InstancedMesh,
   type Mesh,
 } from 'three';
@@ -24,14 +25,15 @@ import {
   sampleBackbone,
   strandBasis,
 } from './strands';
-import type { BeatState } from './beats';
+import { BASE_PAIR_TOKENS, TRACK_SEGMENTS, type BeatState } from './beats';
 
 /* --------------------------------------------------------------- constants */
 
-const ACID = new Color('#86ab68');
-const CYAN = new Color('#6ea4d4');
-const VIOLET = new Color('#a58ad2');
-const DIM = new Color('#2b2f22');
+const ACID = new Color('#7ee7d7');
+const CYAN = new Color('#70a5ff');
+const VIOLET = new Color('#a99cf0');
+const DIM = new Color('#20252d');
+const AMBER = new Color('#f4c76b');
 
 const RUNGS_PER_STRAND = 9;
 const UPSTREAM_PULSES = 3;
@@ -66,9 +68,17 @@ function Backbones({ state, tier }: Props) {
   const strands = useMemo<StrandGeometry[]>(
     () =>
       STRANDS.map((spec) => {
-        const build = (phase: number) => {
+        /* Built twice: fully helical and fully flattened. Identical segment
+           counts mean identical topology, so the flat form can ride along as a
+           morph target and the unfolding happens on the GPU.
+
+           This is the fix for the scene's central bug: `flatten` was hardcoded
+           to 0 here and the geometry memoised on [quality], so the backbones
+           never unfolded. The rungs and loci did, which left the loci drifting
+           off the strands they are supposed to sit on at the final beat. */
+        const build = (phase: number, flatten: number) => {
           const curve = new CatmullRomCurve3(
-            sampleBackbone(spec, phase, quality.tubular, 0),
+            sampleBackbone(spec, phase, quality.tubular, flatten),
             false,
             'catmullrom',
             0.5,
@@ -76,8 +86,16 @@ function Backbones({ state, tier }: Props) {
           return new TubeGeometry(curve, quality.tubular, 0.028, quality.radial, false);
         };
 
-        const a = build(0);
-        const b = build(Math.PI);
+        const withMorph = (phase: number) => {
+          const helical = build(phase, 0);
+          const flat = build(phase, 1);
+          const flatPositions = flat.getAttribute('position');
+          if (flatPositions) helical.morphAttributes.position = [flatPositions];
+          return helical;
+        };
+
+        const a = withMorph(0);
+        const b = withMorph(Math.PI);
 
         return {
           id: spec.id,
@@ -110,6 +128,9 @@ function Backbones({ state, tier }: Props) {
         if (!mesh) continue;
         mesh.visible = eased > 0.01;
         mesh.geometry.setDrawRange(0, Math.ceil(strand.indexCount * eased));
+        // The unfold. Same value the rungs and loci read, so the three stay
+        // locked together through the transformation.
+        if (mesh.morphTargetInfluences) mesh.morphTargetInfluences[0] = current.flatten;
       }
     });
   });
@@ -462,26 +483,333 @@ function Pulses({ state, tier }: Props) {
   );
 }
 
+/* ------------------------------------------------------- base-pair tokens
+
+   Beat 01. The camera moves in and the base pairs "reveal themselves as code
+   abstractions" — the tokens listed in the report. They exist only while the
+   camera is close, because at any other distance they are noise.
+   ------------------------------------------------------------------------ */
+
+function BasePairTokens({ state }: Pick<Props, 'state'>) {
+  const origin = STRANDS[0] as (typeof STRANDS)[number];
+
+  const anchors = useMemo(() => {
+    const basis = strandBasis(origin);
+    return BASE_PAIR_TOKENS.slice(0, 6).map((token, i) => {
+      const t = (i + 0.5) / 6;
+      return { token, t, direction: rungDirection(origin, basis, t) };
+    });
+  }, [origin]);
+
+  const nodes = useRef<(HTMLDivElement | null)[]>([]);
+
+  useFrame(() => {
+    const current = state.current;
+    if (!current) return;
+    // Ramp in with focus, then out again as the track takes over.
+    const shown = current.focus * (1 - current.stretch);
+    anchors.forEach((_, i) => {
+      const node = nodes.current[i];
+      if (!node) return;
+      node.style.opacity = String(Math.max(0, shown * 1.2 - 0.15));
+      node.style.visibility = shown < 0.04 ? 'hidden' : 'visible';
+    });
+  });
+
+  return (
+    <>
+      {anchors.map((anchor, i) => (
+        <group
+          key={anchor.token}
+          position={axisPointAt(origin, anchor.t, 0).addScaledVector(
+            anchor.direction,
+            origin.radius * 1.5,
+          )}
+        >
+          <Html center zIndexRange={[18, 0]} style={{ pointerEvents: 'none' }}>
+            <div
+              ref={(node) => {
+                nodes.current[i] = node;
+              }}
+              className="text-acid/80 border-acid/25 bg-void/70 rounded-sm border px-1.5 py-[2px] font-mono text-[10px] opacity-0"
+            >
+              {anchor.token}
+            </div>
+          </Html>
+        </group>
+      ))}
+    </>
+  );
+}
+
+/* ------------------------------------------------------- capability track
+
+   Beat 02. The report asks the helix to "stretch into a horizontal genomic
+   track". Rather than contorting the tube geometry, the strand recedes and a
+   real track takes its place — the same construction the registry's genome
+   browser draws, which is the point the beat is making.
+   ------------------------------------------------------------------------ */
+
+const TRACK_WIDTH = 6.4;
+
+function CapabilityTrack({ state }: Pick<Props, 'state'>) {
+  const group = useRef<Group>(null);
+  const nodes = useRef<(HTMLDivElement | null)[]>([]);
+  const bars = useRef<InstancedMesh>(null);
+
+  const scratch = useMemo(
+    () => ({
+      matrix: new Matrix4(),
+      position: new Vector3(),
+      quaternion: new Quaternion(),
+      scale: new Vector3(),
+    }),
+    [],
+  );
+
+  const segments = useMemo(
+    () =>
+      TRACK_SEGMENTS.map((segment, i) => {
+        const width = TRACK_WIDTH / TRACK_SEGMENTS.length;
+        const x = -TRACK_WIDTH / 2 + width * (i + 0.5);
+        return { ...segment, x, width: width * 0.86 };
+      }),
+    [],
+  );
+
+  useFrame(() => {
+    const current = state.current;
+    if (!current) return;
+    const shown = current.stretch;
+
+    if (group.current) {
+      group.current.visible = shown > 0.02;
+      group.current.position.set(0, 1.5, 0);
+    }
+
+    const node = bars.current;
+    if (node) {
+      const { matrix, position, quaternion, scale } = scratch;
+      segments.forEach((segment, i) => {
+        // Segments arrive left to right as the track assembles.
+        const stagger = Math.min(1, Math.max(0, shown * segments.length - i));
+        position.set(segment.x, 1.5, 0);
+        scale.set(segment.width * stagger, 0.11, 0.11);
+        matrix.compose(position, quaternion, scale);
+        node.setMatrixAt(i, matrix);
+      });
+      node.instanceMatrix.needsUpdate = true;
+    }
+
+    segments.forEach((_, i) => {
+      const label = nodes.current[i];
+      if (!label) return;
+      const stagger = Math.min(1, Math.max(0, shown * segments.length - i));
+      label.style.opacity = String(Math.max(0, stagger * 1.4 - 0.4));
+      label.style.visibility = stagger < 0.05 ? 'hidden' : 'visible';
+    });
+  });
+
+  return (
+    <group ref={group}>
+      <instancedMesh ref={bars} args={[undefined, undefined, segments.length]} frustumCulled={false}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshBasicMaterial color={ACID} transparent opacity={0.75} toneMapped={false} />
+      </instancedMesh>
+
+      {segments.map((segment, i) => (
+        <group key={segment.id} position={[segment.x, 1.24, 0]}>
+          <Html center zIndexRange={[18, 0]} style={{ pointerEvents: 'none' }}>
+            <div
+              ref={(node) => {
+                nodes.current[i] = node;
+              }}
+              className="text-acid/85 font-mono text-[9px] tracking-[0.14em] opacity-0"
+            >
+              {segment.label}
+            </div>
+          </Html>
+        </group>
+      ))}
+    </group>
+  );
+}
+
+/* ------------------------------------------------------ mutation markers
+
+   Beat 04. The children change: a marker appears against the capability each
+   descendant altered. Triangular, matching the mutation glyph used across the
+   registry, so the same shape means the same thing everywhere.
+   ------------------------------------------------------------------------ */
+
+function MutationMarkers({ state }: Pick<Props, 'state'>) {
+  const mesh = useRef<InstancedMesh>(null);
+
+  const slots = useMemo(
+    () =>
+      STRANDS.filter((spec) => spec.generation > 0).map((spec, i) => {
+        const basis = strandBasis(spec);
+        const t = 0.34 + ((i * 0.17) % 0.4);
+        return { spec, t, direction: rungDirection(spec, basis, t) };
+      }),
+    [],
+  );
+
+  const scratch = useMemo(
+    () => ({
+      matrix: new Matrix4(),
+      position: new Vector3(),
+      quaternion: new Quaternion(),
+      scale: new Vector3(),
+    }),
+    [],
+  );
+
+  useFrame(({ clock }) => {
+    const node = mesh.current;
+    const current = state.current;
+    if (!node || !current) return;
+
+    const time = clock.elapsedTime;
+    const { matrix, position, quaternion, scale } = scratch;
+
+    slots.forEach((slot, i) => {
+      const reveal = Math.min(1, Math.max(0, current.generations - slot.spec.generation));
+      const stagger = Math.min(1, Math.max(0, current.mutate * slots.length - i * 0.6));
+      position
+        .copy(axisPointAt(slot.spec, slot.t, current.flatten))
+        .addScaledVector(slot.direction, slot.spec.radius * 2.1 * (1 - current.flatten) + 0.12);
+
+      const pulse = 1 + Math.sin(time * 2.6 + i) * 0.14;
+      scale.setScalar(0.075 * stagger * reveal * pulse);
+      matrix.compose(position, quaternion, scale);
+      node.setMatrixAt(i, matrix);
+    });
+
+    node.instanceMatrix.needsUpdate = true;
+  });
+
+  return (
+    <instancedMesh ref={mesh} args={[undefined, undefined, slots.length]} frustumCulled={false}>
+      {/* A four-sided cone reads as a triangular marker from any angle. */}
+      <coneGeometry args={[1, 1.6, 4]} />
+      <meshBasicMaterial color={AMBER} toneMapped={false} />
+    </instancedMesh>
+  );
+}
+
+/* ----------------------------------------------------------- family field
+
+   Beat 06. Pull back far enough that KEYLIT is one family among millions. A
+   deterministic scatter of dim points — no randomness at runtime, so the field
+   is identical on every load and never shimmers.
+   ------------------------------------------------------------------------ */
+
+const FIELD_COUNT = 220;
+
+function FamilyField({ state, tier }: Props) {
+  const mesh = useRef<InstancedMesh>(null);
+  const quality = QUALITY[tier];
+  const count = tier === 'low' ? 90 : FIELD_COUNT;
+
+  const slots = useMemo(
+    () =>
+      Array.from({ length: count }, (_, i) => {
+        // Golden-angle spiral: even coverage without clumping.
+        const angle = i * 2.399963;
+        const radius = 6 + Math.sqrt(i / count) * 26;
+        return {
+          position: new Vector3(
+            Math.cos(angle) * radius,
+            -6 + ((i * 7.13) % 19) - 6,
+            Math.sin(angle) * radius - 6,
+          ),
+          seed: (i * 1.7) % (Math.PI * 2),
+        };
+      }),
+    [count],
+  );
+
+  const scratch = useMemo(
+    () => ({
+      matrix: new Matrix4(),
+      quaternion: new Quaternion(),
+      scale: new Vector3(),
+    }),
+    [],
+  );
+
+  useFrame(({ clock }) => {
+    const node = mesh.current;
+    const current = state.current;
+    if (!node || !current) return;
+
+    node.visible = current.zoomOut > 0.02;
+    if (!node.visible) return;
+
+    const time = clock.elapsedTime;
+    const { matrix, quaternion, scale } = scratch;
+
+    slots.forEach((slot, i) => {
+      const twinkle = 0.75 + Math.sin(time * 0.6 + slot.seed) * 0.25;
+      scale.setScalar(0.05 * current.zoomOut * twinkle);
+      matrix.compose(slot.position, quaternion, scale);
+      node.setMatrixAt(i, matrix);
+    });
+
+    node.instanceMatrix.needsUpdate = true;
+  });
+
+  return (
+    <instancedMesh ref={mesh} args={[undefined, undefined, count]} frustumCulled={false}>
+      <sphereGeometry args={[1, Math.max(5, quality.sphere - 6), Math.max(5, quality.sphere - 6)]} />
+      <meshBasicMaterial color={CYAN} transparent opacity={0.5} toneMapped={false} />
+    </instancedMesh>
+  );
+}
+
 /* --------------------------------------------------------------- camera */
 
-/** Descends through the generations as the reader scrolls. */
+/**
+ * One rig, three superimposed movements.
+ *
+ * A base descent through the generations, blended toward a close dolly on a
+ * single base pair while `focus` is up, then blended out to a wide field as
+ * `zoomOut` takes over. Blending rather than switching means no cut.
+ */
 function CameraRig({ state }: { state: React.RefObject<BeatState> }) {
   const { camera } = useThree();
   const target = useMemo(() => new Vector3(0, 1.4, 0), []);
   const desired = useMemo(() => new Vector3(), []);
   const lookAt = useMemo(() => new Vector3(), []);
+  const scratch = useMemo(() => ({ near: new Vector3(), far: new Vector3() }), []);
 
   useFrame((_, delta) => {
     const current = state.current;
     if (!current) return;
     const p = current.progress;
 
+    /* 1 — the base descent */
     desired.set(
       Math.sin(p * Math.PI * 0.6) * 1.2,
       2.2 - p * 6.4,
       8.4 + p * 5.6 + current.flatten * 2.2,
     );
     lookAt.set(-p * 0.9, 1.6 - p * 6.2, 0);
+
+    /* 2 — dolly in on one base pair */
+    if (current.focus > 0.001) {
+      scratch.near.set(1.5, 2.0, 2.5);
+      desired.lerp(scratch.near, current.focus);
+      lookAt.lerp(scratch.near.set(0, 2.0, 0), current.focus);
+    }
+
+    /* 3 — and pull all the way back out */
+    if (current.zoomOut > 0.001) {
+      scratch.far.set(0, -4, 30);
+      desired.lerp(scratch.far, current.zoomOut);
+      lookAt.lerp(scratch.far.set(0, -6, -4), current.zoomOut);
+    }
 
     const lerp = Math.min(1, delta * 3.2);
     camera.position.lerp(desired, lerp);
@@ -502,8 +830,16 @@ export function HelixScene({ state, tier }: Props) {
       <Rungs state={state} />
       <Loci state={state} tier={tier} />
       <Pulses state={state} tier={tier} />
-      {/* Labels are DOM overlays; skipping them on low tier keeps mobile cheap. */}
-      {tier === 'high' && <LocusLabels state={state} />}
+      <MutationMarkers state={state} />
+      <FamilyField state={state} tier={tier} />
+      {/* DOM overlays; skipped on low tier to keep small devices cheap. */}
+      {tier === 'high' && (
+        <>
+          <LocusLabels state={state} />
+          <BasePairTokens state={state} />
+          <CapabilityTrack state={state} />
+        </>
+      )}
     </>
   );
 }

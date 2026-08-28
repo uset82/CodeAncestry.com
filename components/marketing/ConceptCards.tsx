@@ -9,8 +9,8 @@ import { Eyebrow, Section } from './Section';
  * homepage teaches one idea at a time and lets the registry carry the rest.
  *
  * Each card is a specimen entry: roman numeral, the figure mounted on its own
- * dark instrument chip, then the caption. The figures inherit their colours
- * from the .instrument scope, so the same SVG that reads as ink on paper reads
+ * dark  chip, then the caption. The figures inherit their colours
+ * from the . scope, so the same SVG that reads as ink on paper reads
  * as phosphor on the chip without a second set of classes.
  */
 
@@ -139,39 +139,39 @@ const CONCEPTS: Concept[] = [
 
 export function ConceptCards() {
   return (
-    <Section id="concepts" plate="Plate 01 — Four questions">
+    <Section id="concepts">
       <div className="grid gap-10 lg:grid-cols-[1fr_minmax(280px,26%)] lg:items-end lg:gap-20">
         <div className="max-w-[820px]">
           <Eyebrow index="01">Four questions the registry answers</Eyebrow>
           <h2 className="text-headline mt-6 text-balance">
             Software already behaves like a species.{' '}
-            <span className="text-emphasis">Nothing records it.</span>
+            <span className="text-acid">Nothing records it.</span>
           </h2>
         </div>
 
-        <p className="text-ink-soft border-ink/20 border-t pt-5 text-[15.5px] leading-[1.65]">
+        <p className="text-text-soft border-line border-t pt-5 text-[15.5px] leading-[1.65]">
           Forks, rewrites, ports and agent refactors move capabilities between projects every day.
           Git captures the diff and loses the descent. CodeAncestry records the descent.
         </p>
       </div>
 
-      {/* Hairline plate block: the gap is the rule, the cells are the stock. */}
-      <ul className="bg-ink/20 mt-16 grid gap-px sm:grid-cols-2 xl:grid-cols-4">
+      {/* Hairline elevated block: the gap is the rule, the cells are the stock. */}
+      <ul className="bg-line mt-16 grid gap-px sm:grid-cols-2 xl:grid-cols-4">
         {CONCEPTS.map((concept) => (
-          <li key={concept.id} className="group bg-paper">
-            <div className="hover:bg-paper-2 flex h-full flex-col p-7 transition-colors md:p-8">
+          <li key={concept.id} className="group bg-void">
+            <div className="hover:bg-panel-2 flex h-full flex-col p-7 transition-colors md:p-8">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <span className="text-press-vermilion font-display text-[22px] leading-none italic">
+                  <span className="text-acid font-sans text-[22px] leading-none italic">
                     {concept.numeral}
                   </span>
-                  <span className={`runhead mt-2.5 block text-[10px] ${concept.tone}`}>
+                  <span className={`label mt-2.5 block text-[10px] ${concept.tone}`}>
                     {concept.kicker}
                   </span>
                 </div>
 
-                {/* the specimen chip: a lit instrument set into the page */}
-                <div className="instrument border-line-strong size-14 shrink-0 border p-2.5 shadow-[inset_0_1px_6px_rgb(0_0_0/0.5)]">
+                {/* the specimen chip: a lit  set into the page */}
+                <div className=" border-line-strong size-14 shrink-0 border p-2.5 shadow-[inset_0_1px_6px_rgb(0_0_0/0.5)]">
                   {concept.figure}
                 </div>
               </div>
@@ -179,13 +179,13 @@ export function ConceptCards() {
               <h3 className="mt-8 text-[26px] leading-[1.08] tracking-[-0.015em] text-balance">
                 {concept.question}
               </h3>
-              <p className="text-ink-soft mt-4 flex-1 text-[14.5px] leading-[1.62]">
+              <p className="text-text-soft mt-4 flex-1 text-[14.5px] leading-[1.62]">
                 {concept.answer}
               </p>
 
               <Link
                 href={concept.href}
-                className="border-ink/20 group-hover:border-ink text-ink-muted group-hover:text-ink runhead mt-8 inline-flex items-center gap-2 border-t pt-4 text-[9.5px] transition-colors"
+                className="border-line group-hover:border-line-strong text-muted group-hover:text-text label mt-8 inline-flex items-center gap-2 border-t pt-4 text-[9.5px] transition-colors"
               >
                 {concept.cta}
                 <span aria-hidden="true" className="transition-transform group-hover:translate-x-1">

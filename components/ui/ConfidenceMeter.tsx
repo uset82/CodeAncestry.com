@@ -54,9 +54,14 @@ export function ConfidenceMeter({
         aria-valuemax={1}
         aria-label={`${label}: ${clamped.toFixed(2)}, ${tier}`}
       >
+        {/* Scaled rather than resized: animating width triggers layout on every
+            frame, transform is composited. Same visual, no reflow. */}
         <div
-          className={cn('h-full rounded-full transition-[width] duration-500', tone.bar)}
-          style={{ width: `${clamped * 100}%` }}
+          className={cn(
+            'h-full w-full origin-left rounded-full transition-transform duration-500',
+            tone.bar,
+          )}
+          style={{ transform: `scaleX(${clamped})` }}
         />
         {/* tier gridlines give a non-colour read of where the value sits */}
         {EVIDENCE_TIERS.slice(1).map((t, i) => (

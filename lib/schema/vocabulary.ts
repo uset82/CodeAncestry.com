@@ -71,7 +71,7 @@ export const EVIDENCE_CODE_META: Record<EvidenceCode, EvidenceCodeMeta> = {
     label: 'Human verified',
     description: 'A person inspected this claim and confirmed it.',
     tier: 'verified',
-    glyph: '✓',
+    glyph: '◆',
     tone: 'text-acid',
   },
   TST: {
@@ -79,7 +79,7 @@ export const EVIDENCE_CODE_META: Record<EvidenceCode, EvidenceCodeMeta> = {
     label: 'Automated test',
     description: 'A test suite executed and asserted this behaviour.',
     tier: 'verified',
-    glyph: '⊹',
+    glyph: '▣',
     tone: 'text-acid',
   },
   RUN: {
@@ -95,7 +95,7 @@ export const EVIDENCE_CODE_META: Record<EvidenceCode, EvidenceCodeMeta> = {
     label: 'Upstream maintainer',
     description: 'Asserted by the maintainer of the upstream project.',
     tier: 'reviewed',
-    glyph: '⌂',
+    glyph: '◈',
     tone: 'text-cyan',
   },
   STA: {
@@ -103,7 +103,7 @@ export const EVIDENCE_CODE_META: Record<EvidenceCode, EvidenceCodeMeta> = {
     label: 'Static analysis',
     description: 'Derived from parsing source without executing it.',
     tier: 'reviewed',
-    glyph: '⌖',
+    glyph: '▤',
     tone: 'text-cyan',
   },
   DEP: {
@@ -111,7 +111,7 @@ export const EVIDENCE_CODE_META: Record<EvidenceCode, EvidenceCodeMeta> = {
     label: 'Dependency metadata',
     description: 'Read from a manifest, lockfile or SBOM.',
     tier: 'reviewed',
-    glyph: '⛬',
+    glyph: '▥',
     tone: 'text-cyan',
   },
   SEC: {
@@ -119,7 +119,7 @@ export const EVIDENCE_CODE_META: Record<EvidenceCode, EvidenceCodeMeta> = {
     label: 'Security scanner',
     description: 'Reported by an advisory database or scanner.',
     tier: 'reviewed',
-    glyph: '⚠',
+    glyph: '▲',
     tone: 'text-amber',
   },
   PHY: {
@@ -127,7 +127,7 @@ export const EVIDENCE_CODE_META: Record<EvidenceCode, EvidenceCodeMeta> = {
     label: 'Lineage inference',
     description: 'Inferred from ancestry or capability homology.',
     tier: 'inferred',
-    glyph: '⋔',
+    glyph: '◇',
     tone: 'text-violet',
   },
   AII: {
@@ -191,7 +191,7 @@ export const LINEAGE_STATE_META: Record<LineageState, LineageStateMeta> = {
     state: 'verified',
     label: 'Verified',
     description: 'Backed by tests, runtime measurement or human review.',
-    glyph: '✓',
+    glyph: '◆',
     tone: 'text-acid',
     border: 'border-acid/35',
     bg: 'bg-acid/10',

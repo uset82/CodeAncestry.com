@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { getPangenomeMatrix } from '@/lib/registry/pangenome';
 import { getFamilyTree, listFamilies } from '@/lib/registry/tree';
+import { PangenomeHeatmap } from '@/components/registry/PangenomeHeatmap';
 import { CodeTree } from '@/components/viz/tree/CodeTree';
 import { StatRail } from '@/components/ui/Panel';
 
@@ -34,6 +36,7 @@ export default async function FamilyPage({ params }: { params: Promise<{ slug: s
 
   const root = family.nodes.find((node) => node.accession === family.root)!;
   const upstream = family.edges.filter((edge) => edge.type === 'PROPOSED_TO').length;
+  const pangenome = getPangenomeMatrix();
 
   return (
     <div className="shell-wide py-10 md:py-14">
@@ -94,6 +97,50 @@ export default async function FamilyPage({ params }: { params: Promise<{ slug: s
       <div className="mt-12">
         <CodeTree family={family} pulseEdgeId={PULSE_EDGE_ID} />
       </div>
+
+      {/* ============================================================== pangenome */}
+      <section className="mt-16">
+        <h2 className="text-[22px] leading-tight font-semibold tracking-tight">
+          The family pangenome
+        </h2>
+        <p className="text-muted mt-2 max-w-[78ch] leading-relaxed">
+          The tree shows how the family is related. This shows what it is made of: every project
+          against every capability, with {pangenome.counts.core} genes carried by all{' '}
+          {pangenome.columns.length} and {pangenome.counts.cloud} carried by exactly one. Bacterial
+          pangenomics draws the same distinction, and for the same reason — the core is the family&rsquo;s
+          identity, and the cloud is where members are actually experimenting.
+        </p>
+
+        <StatRail
+          className="mt-6"
+          stats={[
+            {
+              label: 'Core genes',
+              value: pangenome.counts.core,
+              hint: `in all ${pangenome.columns.length}`,
+            },
+            { label: 'Shell genes', value: pangenome.counts.shell, hint: 'in several' },
+            { label: 'Cloud genes', value: pangenome.counts.cloud, hint: 'in one' },
+            {
+              label: 'Matrix filled',
+              value: `${Math.round(
+                (pangenome.totals.present / pangenome.totals.cells) * 100,
+              )}%`,
+              hint: `${pangenome.totals.present} of ${pangenome.totals.cells} cells`,
+            },
+            { label: 'Busiest cell', value: pangenome.peak, hint: 'mutation events' },
+            {
+              label: 'Awaiting a decision',
+              value: pangenome.totals.pending,
+              hint: 'offered, undecided',
+            },
+          ]}
+        />
+
+        <div className="mt-7">
+          <PangenomeHeatmap pangenome={pangenome} />
+        </div>
+      </section>
     </div>
   );
 }

@@ -1,38 +1,27 @@
 import type { Metadata, Viewport } from 'next';
-import { Bodoni_Moda, IBM_Plex_Mono, Newsreader } from 'next/font/google';
+import { Archivo, IBM_Plex_Mono } from 'next/font/google';
 import { site } from '@/lib/site';
 import { SiteHeader } from '@/components/marketing/SiteHeader';
 import { SiteFooter } from '@/components/marketing/SiteFooter';
 import { EvidenceThresholdProvider } from '@/components/providers/EvidenceThresholdProvider';
 import { ChatDock } from '@/components/chat/ChatDock';
-import { PressLayer } from '@/components/ui/PressLayer';
 import './globals.css';
 
-/* Display: the plate-caption voice. Variable optical size, so the hairlines
-   thicken as the headline shrinks instead of disappearing. */
-const bodoni = Bodoni_Moda({
+/* Interface and display. Variable, with a width axis available for display
+   sizes — wide technical type reads futurist without reaching for neon. */
+const archivo = Archivo({
   subsets: ['latin'],
-  variable: '--font-bodoni',
+  variable: '--font-archivo',
   display: 'swap',
-  style: ['normal', 'italic'],
-  axes: ['opsz'],
+  axes: ['wdth'],
 });
 
-/* Prose: warm, optical, built for paragraphs rather than product copy. */
-const newsreader = Newsreader({
-  subsets: ['latin'],
-  variable: '--font-newsreader',
-  display: 'swap',
-  style: ['normal', 'italic'],
-  axes: ['opsz'],
-});
-
-/* Data: every label, accession, measurement and control on the site. */
+/* Every accession, coordinate, measurement and control on the site. */
 const plexMono = IBM_Plex_Mono({
   subsets: ['latin'],
   variable: '--font-plex-mono',
   display: 'swap',
-  weight: ['400', '500', '600', '700'],
+  weight: ['400', '500', '600'],
 });
 
 export const metadata: Metadata = {
@@ -70,24 +59,20 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#e7e2d5',
-  colorScheme: 'light',
+  themeColor: '#090b0e',
+  colorScheme: 'dark',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="en"
-      className={`${bodoni.variable} ${newsreader.variable} ${plexMono.variable}`}
-    >
+    <html lang="en" className={`${archivo.variable} ${plexMono.variable}`}>
       <body>
         <a
           href="#main"
-          className="sr-only-focusable bg-press-vermilion runhead fixed top-3 left-3 z-100 px-4 py-2 text-paper"
+          className="sr-only-focusable bg-acid text-on-acid label fixed top-3 left-3 z-100 rounded-md px-4 py-3"
         >
           Skip to content
         </a>
-        <PressLayer />
         <EvidenceThresholdProvider>
           <SiteHeader />
           <main id="main">{children}</main>

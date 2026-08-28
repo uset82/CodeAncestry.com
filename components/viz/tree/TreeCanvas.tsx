@@ -351,8 +351,8 @@ function EdgeLabel({ placed, dimmed }: { placed: PlacedEdge; dimmed: boolean }) 
 
   const style = edgeStyle(placed.edge);
   // Monospace at 9px runs about 6.2 units per character, close enough to size a
-  // plate that hides the line behind the text.
-  const plate = label.length * 6.2 + 12;
+  // elevated that hides the line behind the text.
+  const elevated = label.length * 6.2 + 12;
 
   return (
     <g
@@ -361,9 +361,9 @@ function EdgeLabel({ placed, dimmed }: { placed: PlacedEdge; dimmed: boolean }) 
       className="transition-opacity duration-300"
     >
       <rect
-        x={-plate / 2}
+        x={-elevated / 2}
         y={-8}
-        width={plate}
+        width={elevated}
         height={16}
         rx={4}
         fill="var(--color-void)"

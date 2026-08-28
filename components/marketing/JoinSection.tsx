@@ -11,14 +11,14 @@ export function JoinSection() {
   const stats = getFamilyStats();
 
   return (
-    <Section id="join" plate="Plate 06 — Alpha">
+    <Section id="join">
       <div className="grid gap-14 lg:grid-cols-[1.05fr_0.95fr] lg:gap-20">
         <div>
           <Eyebrow index="06">Alpha</Eyebrow>
           <h2 className="text-headline mt-4 text-balance">
             Generate your project&rsquo;s
             <br />
-            <span className="text-emphasis">first genome.</span>
+            <span className="text-acid">first genome.</span>
           </h2>
           <p className="text-text-soft mt-6 max-w-[540px] leading-relaxed">
             The alpha reads a repository you already own, proposes its capability genes, and shows

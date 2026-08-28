@@ -486,7 +486,7 @@ export function getGenomeBrowserModel(idOrSlug: string): GenomeBrowserModel | nu
 
       return {
         id: finding.id,
-        label: `${finding.status === 'resolved' ? '⚠→✓' : '⚠'} ${finding.id}`,
+        label: `${finding.status === 'resolved' ? '▲→◆' : '▲'} ${finding.id}`,
         sublabel: finding.severity,
         detail: `${finding.id} (${finding.severity}, ${finding.status}): ${finding.summary}${
           finding.resolvedAt === undefined ? '' : ' Resolved later in the same history.'

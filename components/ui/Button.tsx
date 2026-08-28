@@ -2,36 +2,37 @@ import Link from 'next/link';
 import { cn } from '@/lib/cn';
 
 /**
- * Letterpress controls.
+ * Controls, per the Nightglass component contract.
  *
- * Square, ruled, set in tracked mono — a key struck into stock rather than a
- * glowing pill. The offset shadow is the emboss; pressing the control moves it
- * onto its own shadow, so the click has a physical read instead of a fade.
+ * The accent is a signal, not decoration: exactly one filled primary action
+ * per view or decision region. Secondary sits on surface-2 with a hairline;
+ * ghost is transparent until hovered. Destructive stays neutral until the
+ * destructive decision is the immediate one.
  *
- * Every variant is ground-agnostic: `bg-acid text-void` is a green block with
- * bone type on paper, and a phosphor block with dark type inside .instrument.
+ * Minimum height is --ng-control-height (44px) so every control clears the
+ * touch target floor. Focus is a ring, never only a border-colour change.
  */
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type Size = 'sm' | 'md' | 'lg';
 
 const VARIANTS: Record<Variant, string> = {
-  primary:
-    'bg-acid text-void border-acid shadow-[3px_3px_0_0_var(--color-line-strong)] hover:shadow-[1px_1px_0_0_var(--color-line-strong)] hover:translate-x-[2px] hover:translate-y-[2px]',
-  secondary:
-    'bg-transparent border-line-strong text-text hover:bg-panel-2 hover:border-text shadow-[3px_3px_0_0_transparent] hover:shadow-[1px_1px_0_0_var(--color-line)] hover:translate-x-[2px] hover:translate-y-[2px]',
-  ghost: 'bg-transparent border-transparent text-muted hover:text-text hover:border-line',
-  danger: 'bg-transparent border-rose/50 text-rose hover:bg-rose hover:text-void hover:border-rose',
+  primary: 'bg-acid text-on-acid border-transparent hover:bg-acid/90 active:bg-acid-dim',
+  secondary: 'bg-panel-2 border-line text-text hover:bg-hover hover:border-line-strong',
+  ghost: 'bg-transparent border-transparent text-muted hover:bg-hover hover:text-text',
+  danger: 'bg-transparent border-rose/40 text-rose hover:bg-rose hover:text-void hover:border-rose',
 };
 
+/* sm is the only size allowed below the 44px floor, and only for dense
+   in-panel controls that sit beside a full-height target. */
 const SIZES: Record<Size, string> = {
-  sm: 'px-3 py-[7px] text-[10px] tracking-[0.16em]',
-  md: 'px-5 py-2.5 text-[11px] tracking-[0.18em]',
-  lg: 'px-7 py-3.5 text-[12px] tracking-[0.2em]',
+  sm: 'h-9 px-3 text-[13px]',
+  md: 'h-11 px-4 text-sm',
+  lg: 'h-12 px-6 text-[15px]',
 };
 
 const BASE =
-  'inline-flex items-center justify-center gap-2.5 rounded-none border font-mono font-semibold uppercase transition-all duration-150 ease-out active:translate-x-[3px] active:translate-y-[3px] active:shadow-none disabled:pointer-events-none disabled:opacity-40';
+  'inline-flex items-center justify-center gap-2 rounded-md border font-medium transition-[background-color,border-color,color] duration-[160ms] ease-[cubic-bezier(0.2,0.8,0.2,1)] disabled:pointer-events-none disabled:opacity-40';
 
 type CommonProps = {
   variant?: Variant;

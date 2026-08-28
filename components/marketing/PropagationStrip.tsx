@@ -56,14 +56,14 @@ export function PropagationStrip() {
   const mutation = getHeroMutation();
 
   return (
-    <Section id="propagation" plate="Plate 04 — Propagation">
+    <Section id="propagation">
       <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end md:gap-12">
         <div className="max-w-[640px]">
           <Eyebrow index="04">Propagation protocol</Eyebrow>
           <h2 className="text-headline mt-4 text-balance">
             A descendant can teach
             <br />
-            <span className="text-emphasis">its ancestor something.</span>
+            <span className="text-acid">its ancestor something.</span>
           </h2>
         </div>
 
@@ -79,8 +79,8 @@ export function PropagationStrip() {
         {STEPS.map((step, i) => {
           const terminal = i === STEPS.length - 1;
           return (
-            <li key={step.id} className="bg-ink/20">
-              <div className="bg-paper relative h-full p-5 md:p-6">
+            <li key={step.id} className="bg-line">
+              <div className="bg-void relative h-full p-5 md:p-6">
                 <div className="flex items-center gap-2.5">
                   <span
                     className={`font-mono text-nano tabular-nums ${terminal ? 'text-amber' : 'text-acid'}`}
@@ -101,7 +101,7 @@ export function PropagationStrip() {
                 <h3 className="mt-4 text-[19px] leading-[1.15] tracking-[-0.015em]">
                   {step.label}
                 </h3>
-                <p className="text-ink-soft mt-2.5 text-[13.5px] leading-[1.6]">{step.detail}</p>
+                <p className="text-text-soft mt-2.5 text-[13.5px] leading-[1.6]">{step.detail}</p>
               </div>
             </li>
           );
@@ -111,21 +111,21 @@ export function PropagationStrip() {
       {/* ---------------------------------------------- the safety guarantee
           A struck notice, not a tinted card: heavy rule in the verified ink,
           the guarantee set in display type so it carries the weight it needs. */}
-      <div className="border-acid bg-paper-2 mt-12 border-t-[3px] px-6 py-8 md:px-10 md:py-10">
-        <p className="text-acid runhead text-[9.5px]">Guarantee</p>
+      <div className="border-acid bg-panel-2 mt-12 border-t-[3px] px-6 py-8 md:px-10 md:py-10">
+        <p className="text-acid label text-[9.5px]">Guarantee</p>
 
         <div className="mt-6 flex flex-col gap-8 md:flex-row md:gap-14">
-          <p className="font-display text-[clamp(1.4rem,2.6vw,2rem)] leading-[1.14] tracking-[-0.015em] text-balance md:max-w-[19ch]">
+          <p className="font-sans text-[clamp(1.4rem,2.6vw,2rem)] leading-[1.14] tracking-[-0.015em] text-balance md:max-w-[19ch]">
             Nothing is ever adopted automatically. Not by an agent, not by the registry, not by a
             related project.
           </p>
-          <p className="text-ink-soft flex-1 text-[15px] leading-[1.65]">
+          <p className="text-text-soft flex-1 text-[15px] leading-[1.65]">
             Propagation is always an offer. Every arrow in the CodeTree that carries a change ends at
             a decision made by the receiving project&rsquo;s maintainer, under rules that maintainer
             wrote.{' '}
             <Link
               href={demo.heroMutation}
-              className="decoration-press-vermilion/60 hover:text-ink underline underline-offset-[3px]"
+              className="decoration-acid/60 hover:text-text underline underline-offset-[3px]"
             >
               See the decision surface
             </Link>

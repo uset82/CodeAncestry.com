@@ -1,25 +1,32 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
+
+const QUERY = '(prefers-reduced-motion: reduce)';
+
+function subscribe(onChange: () => void) {
+  if (typeof window === 'undefined') return () => {};
+  const query = window.matchMedia(QUERY);
+  query.addEventListener('change', onChange);
+  return () => query.removeEventListener('change', onChange);
+}
+
+const getSnapshot = () => window.matchMedia(QUERY).matches;
+
+/* The server cannot know the preference. Assume reduced so the markup it emits
+   is the static composition — a user who asked for less motion never sees a
+   frame of animation. */
+const getServerSnapshot = () => true;
 
 /**
- * Tracks `prefers-reduced-motion`. Starts pessimistic (true) so the first paint
- * on the server and the first client frame are both the static composition —
- * a user who asked for less motion never sees a flash of animation.
+ * Tracks `prefers-reduced-motion`.
+ *
+ * Deliberately NOT rAF-gated. The previous implementation resolved inside
+ * `requestAnimationFrame`, which never fires in a tab that is not compositing
+ * (backgrounded, throttled, or rendered offscreen) — so the value stayed stuck
+ * at its pessimistic default and the animated hero never mounted at all.
+ * `useSyncExternalStore` reads the real value during render instead.
  */
 export function useReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(true);
-
-  useEffect(() => {
-    const query = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const sync = () => setReduced(query.matches);
-    const raf = requestAnimationFrame(sync);
-    query.addEventListener('change', sync);
-    return () => {
-      cancelAnimationFrame(raf);
-      query.removeEventListener('change', sync);
-    };
-  }, []);
-
-  return reduced;
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }

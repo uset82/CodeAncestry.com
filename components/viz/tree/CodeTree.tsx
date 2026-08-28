@@ -132,12 +132,12 @@ export function CodeTree({
         )}
       >
         <div className="min-w-0">
-          {/* The graph itself is an instrument: a lit plate recessed into the
+          {/* The graph itself is an : a lit elevated into the
               page. The nested list is prose, so it stays on paper. */}
           {layout === 'list' ? (
             <NestedList family={family} selected={selected} onSelect={setSelected} />
           ) : (
-            <div className="instrument recessed border-line border p-1">
+            <div className=" border-line border p-1">
               {(layout === 'tidy' || layout === 'radial') && (
                 // Keyed so switching layouts starts from a fitted viewport
                 // rather than leaving the reader panned into empty space.

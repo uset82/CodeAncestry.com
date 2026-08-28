@@ -125,10 +125,10 @@ export function ChatDock() {
         aria-controls={panelId}
         className={cn(
           /* A tab clipped to the corner of the sheet, not a floating bubble. */
-          'fixed right-4 bottom-4 z-90 flex items-center gap-2.5 border px-4 py-3 transition-all sm:right-6 sm:bottom-6',
+          'fixed right-4 bottom-4 z-90 flex items-center gap-2.5 border px-4 py-3 transition-[background-color,border-color,color] duration-[160ms] sm:right-6 sm:bottom-6',
           open
-            ? 'border-ink bg-paper-2 text-ink shadow-[2px_2px_0_0_var(--color-rule-strong)]'
-            : 'border-ink bg-ink text-paper shadow-[3px_3px_0_0_var(--color-rule-strong)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[1px_1px_0_0_var(--color-rule-strong)]',
+            ? 'border-line bg-panel-2 text-text shadow-[2px_2px_0_0_var(--color-line-strong)]'
+            : 'border-line bg-panel-2 text-text shadow-[3px_3px_0_0_var(--color-line-strong)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[1px_1px_0_0_var(--color-line-strong)]',
         )}
       >
         <span aria-hidden="true" className="font-mono text-[13px]">
@@ -143,7 +143,7 @@ export function ChatDock() {
           role="dialog"
           aria-label="CodeAncestry assistant"
           className={cn(
-            'border-line bg-paper fixed z-90 flex flex-col rounded-xl border shadow-2xl',
+            'border-line bg-void fixed z-90 flex flex-col rounded-xl border shadow-2xl',
             'inset-x-3 bottom-20 max-h-[min(640px,78vh)]',
             'sm:inset-x-auto sm:right-6 sm:bottom-24 sm:w-[420px]',
           )}

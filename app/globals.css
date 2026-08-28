@@ -1,160 +1,202 @@
 @import 'tailwindcss';
 
 /* ==========================================================================
-   CodeAncestry — "Plate & Instrument"
+   CodeAncestry — Nightglass
 
-   The site is a speculative field guide to machine descent.
+   Visual system derived from the bundled WebDesigner "Nightglass" contract
+   (~/.webdesigner/skills/webdesigner-design-system). Nightglass describes
+   itself as "a precision-built midnight interface: matte near-black surfaces,
+   crisp low-weight typography, hairline structure, and one electric-aqua
+   signal" — which is research report 11's brief almost verbatim:
 
-   Two grounds, one system:
-     PAPER      the argument, the taxonomy, the prose. Warm bone stock,
-                letterpress rules, five printing inks, a Didone display voice.
-     INSTRUMENT the data. Genome browser, helix, CodeTree. A near-black plate
-                recessed into the paper, the way a screen is set into a bench.
+     BLACK / NEAR-BLACK SPACE
+       -> restrained luminous genome strands
+       -> precise typography
+       -> scientific coordinate labels
+       -> evidence indicators
+       -> subtle depth / particle movement
 
-   The .instrument class re-declares the whole semantic token set, so every
-   component below renders correctly on either ground without knowing which
-   one it has been placed on.
+   Two grounds, one token set:
 
-   Hard rule carried over from the research: colour is never the only encoding
-   for a state. Every StateBadge pairs colour with icon, pattern fill and label.
+     :root         DARK. The homepage, the 3D surfaces, the narrative.
+     .ground-light LIGHT. The registry: genome browser, tables, records.
+                   Real genomics tooling (UCSC, Ensembl, IGV, Nextstrain) is
+                   light because dense data is read for hours at a time.
+
+   Components speak only the semantic vocabulary below (bg-panel, text-muted,
+   text-acid, border-line...). Neither ground is branched on in component code.
+
+   DEVIATIONS FROM STOCK NIGHTGLASS, and why:
+     - Typeface. Nightglass ships Inter; Inter is the single most recognisable
+       AI-generated-site tell and is what the rejected first build used.
+       Nightglass's own contract says an explicit brief and an established
+       product identity take precedence over its defaults. Sans is Archivo
+       (variable, width axis available for display); mono is IBM Plex Mono,
+       which is the correct register for accessions and coordinates.
+     - A fifth accent. Nightglass carries four semantic colours; typed lineage
+       needs five distinguishable channels, so --color-violet (agent /
+       knowledge) is a documented project extension, not a stock token.
+
+   Hard rule carried through from the research: colour is never the only
+   encoding for a state. Every StateBadge pairs colour with icon, pattern and
+   a text label.
    ========================================================================== */
 
 @theme {
-  /* --- the stock ------------------------------------------------------ */
-  /* Warm bone, not white. White is a screen colour; paper never is. */
-  --color-paper: #e7e2d5;
-  --color-paper-2: #efeae0; /* raised: mounted card, inset figure */
-  --color-paper-3: #dcd5c3; /* recessed: tint block, table zebra */
+  /* --- ground: dark (default) ----------------------------------------- */
+  --color-void: #090b0e; /* canvas */
+  --color-panel: #101318; /* navigation, panels, grouped content */
+  --color-panel-2: #171b21; /* elevated and nested surfaces */
+  --color-panel-3: #20252d; /* selected rows, stronger separation */
+  --color-hover: #242a33;
 
-  /* --- the ink -------------------------------------------------------- */
-  --color-ink: #17180f; /* warm black, never pure black */
-  --color-ink-soft: #3b3d31;
-  --color-ink-muted: #6c6e5f;
-  --color-ink-faint: #979889;
+  --color-line: #2a3039; /* default hairline structure */
+  --color-line-soft: #1e242b;
+  --color-line-strong: #3a424f; /* focus-adjacent, high emphasis */
 
-  /* --- rules ---------------------------------------------------------- */
-  --color-rule: #c7c0aa;
-  --color-rule-soft: #d9d3c2;
-  --color-rule-strong: #a39a80;
+  --color-text: #f4f7fb;
+  --color-text-soft: #c6cdd7;
+  --color-muted: #9aa3af;
+  --color-faint: #68717d;
 
-  /* --- five printing inks ---------------------------------------------
-     Chosen as inks a 1930s scientific press would plausibly have stocked,
-     then checked for contrast against the bone ground.
+  /* --- semantic lineage channels --------------------------------------
+     acid   = verified / origin / primary action   (Nightglass accent)
+     cyan   = inherited / lineage / data           (Nightglass info)
+     violet = agent / knowledge                    (project extension)
+     amber  = quarantined / needs review           (Nightglass warning)
+     rose   = rejected / security finding          (Nightglass danger)
      ------------------------------------------------------------------- */
-  --color-press-green: #2c5a3b; /* verified · origin · primary action */
-  --color-press-blue: #1c4a86; /* inherited · lineage · cyanotype */
-  --color-press-violet: #58347f; /* agent · knowledge */
-  --color-press-ochre: #96620d; /* quarantined · needs review */
-  --color-press-vermilion: #ad2f19; /* rejected · mutation emphasis */
+  --color-acid: #7ee7d7;
+  --color-acid-dim: #64cbbd;
+  --color-on-acid: #07100f;
+  --color-cyan: #70a5ff;
+  --color-cyan-dim: #4d80d8;
+  --color-violet: #a99cf0;
+  --color-violet-dim: #8377c9;
+  --color-amber: #f4c76b;
+  --color-amber-dim: #c9a047;
+  --color-rose: #f07178;
+  --color-rose-dim: #c4555c;
 
-  /* --- semantic layer -------------------------------------------------
-     The component tree speaks this vocabulary and nothing else. Swapping
-     these values re-skins the site; swapping them again inside .instrument
-     moves the same components onto the dark plate.
-     ------------------------------------------------------------------- */
-  --color-void: #e7e2d5; /* page ground */
-  --color-panel: #efeae0;
-  --color-panel-2: #dcd5c3;
-  --color-panel-3: #d3cbb6;
-  --color-line: #c7c0aa;
-  --color-line-soft: #d9d3c2;
-  --color-line-strong: #a39a80;
-
-  --color-text: #17180f;
-  --color-text-soft: #3b3d31;
-  --color-muted: #6c6e5f;
-  --color-faint: #979889;
-
-  --color-acid: #2c5a3b;
-  --color-acid-dim: #4a7a58;
-  --color-cyan: #1c4a86;
-  --color-cyan-dim: #4a72a5;
-  --color-violet: #58347f;
-  --color-violet-dim: #7d5ea0;
-  --color-amber: #96620d;
-  --color-amber-dim: #b3874a;
-  --color-rose: #ad2f19;
-  --color-rose-dim: #c96450;
+  --color-focus: #a6fff1;
 
   /* --- radii ----------------------------------------------------------
-     Letterpress has no rounded corners. A plate is cut square; only the
-     smallest chrome gets a hairline of softening so it does not read as a
-     rendering error. The pill is gone.
+     Nightglass: sm for tags, md for buttons/fields, lg for panels. Do not
+     put a large radius on every container.
      ------------------------------------------------------------------- */
-  --radius-xs: 0px;
-  --radius-sm: 1px;
-  --radius-md: 2px;
-  --radius-lg: 2px;
-  --radius-xl: 3px;
-  --radius-2xl: 3px;
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
 
-  /* --- typography -----------------------------------------------------
-     Display : Bodoni Moda. A Didone — hairline serifs, vertical stress,
-               brutal thick/thin contrast. The voice of a plate caption in a
-               natural-history folio. Set large, set tight, set sparingly.
-     Prose   : Newsreader. Warm, optical, built for long reading.
-     Data    : IBM Plex Mono. The typeface of an actual research institution.
-               Carries every label, accession, measurement and control.
+  /* --- typography ------------------------------------------------------
+     Headings are weight 500 with tight tracking and compact leading, not
+     heavy bold. Nightglass rule: no more than two typefaces.
      ------------------------------------------------------------------- */
-  --font-display: var(--font-bodoni), 'Bodoni MT', 'Didot', Georgia, serif;
-  --font-serif: var(--font-newsreader), Georgia, 'Iowan Old Style', 'Times New Roman', serif;
-  --font-mono: var(--font-plex-mono), ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-  /* Body default is the reading serif; chrome opts into mono explicitly. */
-  --font-sans: var(--font-newsreader), Georgia, 'Times New Roman', serif;
+  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, 'SFMono-Regular', Consolas, monospace;
 
-  /* Didones want far less negative tracking than a grotesque — close them up
-     and the hairlines collapse into the stems. */
-  --text-display: clamp(3.5rem, 10.5vw, 9rem);
-  --text-display--line-height: 0.87;
-  --text-display--letter-spacing: -0.025em;
+  --text-display: clamp(3rem, 7vw, 4.5rem);
+  --text-display--line-height: 1;
+  --text-display--letter-spacing: -0.028em;
   --text-display--font-weight: 500;
 
-  --text-hero: clamp(3rem, 7.6vw, 6.75rem);
-  --text-hero--line-height: 0.9;
-  --text-hero--letter-spacing: -0.022em;
+  --text-hero: clamp(2.75rem, 6.2vw, 4.25rem);
+  --text-hero--line-height: 1.02;
+  --text-hero--letter-spacing: -0.026em;
   --text-hero--font-weight: 500;
 
-  --text-headline: clamp(2.25rem, 5vw, 4.25rem);
-  --text-headline--line-height: 0.96;
-  --text-headline--letter-spacing: -0.018em;
+  --text-headline: clamp(2rem, 4vw, 3rem);
+  --text-headline--line-height: 1.08;
+  --text-headline--letter-spacing: -0.022em;
   --text-headline--font-weight: 500;
 
-  --text-title: clamp(1.5rem, 2.6vw, 2.125rem);
-  --text-title--line-height: 1.12;
-  --text-title--letter-spacing: -0.012em;
+  --text-title: clamp(1.25rem, 2vw, 1.5rem);
+  --text-title--line-height: 1.2;
+  --text-title--letter-spacing: -0.014em;
   --text-title--font-weight: 500;
 
-  --text-lead: 1.3125rem;
-  --text-lead--line-height: 1.62;
+  --text-lead: 1.125rem;
+  --text-lead--line-height: 1.6;
 
-  /* the tracked-out mono running head: plate numbers, accessions, controls */
+  /* the tracked-out mono label: accessions, coordinates, controls */
   --text-micro: 0.6875rem;
   --text-micro--line-height: 1.1;
-  --text-micro--letter-spacing: 0.2em;
-  --text-micro--font-weight: 600;
+  --text-micro--letter-spacing: 0.08em;
+  --text-micro--font-weight: 500;
 
-  --text-nano: 0.5625rem;
+  --text-nano: 0.625rem;
   --text-nano--line-height: 1.1;
-  --text-nano--letter-spacing: 0.17em;
-  --text-nano--font-weight: 600;
+  --text-nano--letter-spacing: 0.08em;
+  --text-nano--font-weight: 500;
 
-  /* --- motion ---------------------------------------------------------
-     Semantic vocabulary, unchanged in meaning, redrawn in ink:
-     slow rotation = idle, pulse = transmission, draw = descent recorded.
-     Nothing glows. Ink does not glow.
+  /* --- motion ----------------------------------------------------------
+     Nightglass durations, plus the semantic vocabulary from report 10:
+     slow rotation = idle, pulse along edge = transmission, branch grow =
+     child creation, dashed = proposed, frozen = quarantined.
      ------------------------------------------------------------------- */
-  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quint: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
   --animate-idle-rotate: idle-rotate 24s linear infinite;
   --animate-transmit: transmit 2.4s var(--ease-in-out-quart) infinite;
-  --animate-breathe: breathe 5s ease-in-out infinite;
-  --animate-grow: grow 0.7s var(--ease-out-quint) forwards;
-  --animate-rise: rise 0.6s var(--ease-out-quint) forwards;
+  --animate-breathe: breathe 4s ease-in-out infinite;
+  --animate-grow: grow 0.7s var(--ease-emphasized) forwards;
+  --animate-reveal: reveal 0.52s var(--ease-emphasized) both;
   --animate-dash: dash 1.6s linear infinite;
-  --animate-plate-in: plate-in 0.8s var(--ease-out-quint) both;
 }
+
+/* ==========================================================================
+   Light ground — the registry
+
+   Re-declares every semantic token. Accents are darkened to hold WCAG AA
+   against near-white; the aqua signal in particular is unreadable as text on
+   white at its dark-ground value.
+   ========================================================================== */
+
+.ground-light {
+  color-scheme: light;
+
+  --color-void: #fbfbfc;
+  --color-panel: #ffffff;
+  --color-panel-2: #f3f4f6;
+  --color-panel-3: #e8eaee;
+  --color-hover: #eef0f3;
+
+  --color-line: #dcdfe4;
+  --color-line-soft: #e8eaee;
+  --color-line-strong: #b9bfc8;
+
+  --color-text: #0d1014;
+  --color-text-soft: #3f4753;
+  --color-muted: #5b6470;
+  --color-faint: #828b97;
+
+  --color-acid: #0f7a6b;
+  --color-acid-dim: #14957f;
+  --color-on-acid: #ffffff;
+  --color-cyan: #1d5fd0;
+  --color-cyan-dim: #4b81dd;
+  --color-violet: #5b46b8;
+  --color-violet-dim: #7d6cc9;
+  --color-amber: #8a5d00;
+  --color-amber-dim: #a8792a;
+  --color-rose: #c0392f;
+  --color-rose-dim: #d0655d;
+
+  --color-focus: #0f7a6b;
+
+  color: var(--color-text);
+  background-color: var(--color-void);
+}
+
+/* ==========================================================================
+   Keyframes
+   ========================================================================== */
 
 @keyframes idle-rotate {
   to {
@@ -180,11 +222,10 @@
   }
 }
 
-/* ink soaking into stock, rather than a neon pulse */
 @keyframes breathe {
   0%,
   100% {
-    opacity: 0.35;
+    opacity: 0.4;
   }
   50% {
     opacity: 1;
@@ -201,22 +242,11 @@
   }
 }
 
-@keyframes rise {
+/* the single entrance sequence Nightglass allows per view */
+@keyframes reveal {
   from {
     opacity: 0;
-    transform: translateY(14px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-/* a plate being laid down onto the page */
-@keyframes plate-in {
-  from {
-    opacity: 0;
-    transform: translateY(20px) scale(0.994);
+    transform: translateY(var(--reveal-distance, 1rem));
   }
   to {
     opacity: 1;
@@ -245,48 +275,43 @@
   html {
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
+    color-scheme: dark;
   }
 
   body {
     margin: 0;
-    background-color: var(--color-paper);
-    /* Plate registration grid: two hairline systems plus the light fall of a
-       sheet under a lamp. No gradient blobs. */
-    background-image:
-      linear-gradient(to right, rgb(23 24 15 / 0.03) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(23 24 15 / 0.03) 1px, transparent 1px),
-      radial-gradient(ellipse 90% 55% at 50% -12%, rgb(255 252 244 / 0.7), transparent 72%);
-    background-size:
-      112px 112px,
-      112px 112px,
-      100% 100%;
-    background-attachment: fixed;
-    color: var(--color-ink);
-    font-family: var(--font-serif);
-    font-size: 17px;
+    background-color: var(--color-void);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.5;
+    font-synthesis-weight: none;
     -webkit-font-smoothing: antialiased;
-    text-rendering: optimizeLegibility;
   }
 
-  /* The display voice is reserved for headings. It is never body copy. */
+  /* Headings orient; they do not shout. Weight 500, tight, compact. */
   h1,
   h2,
-  h3 {
-    font-family: var(--font-display);
-    font-weight: 500;
-    font-optical-sizing: auto;
-  }
-
+  h3,
   h4,
   h5,
   h6 {
-    font-family: var(--font-mono);
-    font-weight: 600;
+    font-weight: 500;
+    letter-spacing: -0.022em;
+    line-height: 1.2;
+    text-wrap: balance;
+  }
+
+  /* Numbers in a registry must align. */
+  table,
+  time,
+  [data-numeric] {
+    font-variant-numeric: tabular-nums;
   }
 
   ::selection {
-    background: rgb(173 47 25 / 0.18);
-    color: var(--color-ink);
+    background: color-mix(in oklab, var(--color-acid) 30%, transparent);
+    color: var(--color-text);
   }
 
   a {
@@ -306,14 +331,13 @@
     cursor: pointer;
   }
 
-  /* one consistent focus treatment everywhere: a struck rule, not a glow */
+  /* Focus is a ring, and never only a border-colour change. */
   :focus-visible {
-    outline: 2px solid var(--color-press-vermilion);
+    outline: 2px solid var(--color-focus);
     outline-offset: 2px;
-    border-radius: 0;
+    border-radius: var(--radius-xs);
   }
 
-  /* narrow, inked scrollbars so dense registry panels stay quiet */
   * {
     scrollbar-width: thin;
     scrollbar-color: var(--color-line-strong) transparent;
@@ -331,52 +355,14 @@
   *::-webkit-scrollbar-thumb {
     background: var(--color-line-strong);
     border: 3px solid transparent;
-    border-radius: 0;
+    border-radius: 99px;
     background-clip: content-box;
   }
 
   *::-webkit-scrollbar-thumb:hover {
-    background: var(--color-ink-muted);
+    background: var(--color-muted);
     background-clip: content-box;
   }
-}
-
-/* ==========================================================================
-   The instrument ground
-
-   Everything inside .instrument re-declares the semantic tokens, so the same
-   Panel, StateBadge and AccessionBadge components render as a lit screen
-   instead of a printed page. Accents are lifted and desaturated — filmic
-   phosphor, deliberately not neon.
-   ========================================================================== */
-
-.instrument {
-  --color-void: #101109;
-  --color-panel: #181a10;
-  --color-panel-2: #1f2117;
-  --color-panel-3: #262920;
-  --color-line: #33372a;
-  --color-line-soft: #2a2e22;
-  --color-line-strong: #4d5240;
-
-  --color-text: #ece9dc;
-  --color-text-soft: #bdbaa9;
-  --color-muted: #918e7d;
-  --color-faint: #6a6858;
-
-  --color-acid: #86ab68;
-  --color-acid-dim: #5f7d49;
-  --color-cyan: #6ea4d4;
-  --color-cyan-dim: #4a7099;
-  --color-violet: #a58ad2;
-  --color-violet-dim: #7562a0;
-  --color-amber: #d3a244;
-  --color-amber-dim: #99742e;
-  --color-rose: #dd6a4e;
-  --color-rose-dim: #a04a36;
-
-  color: var(--color-text);
-  background-color: var(--color-void);
 }
 
 /* ==========================================================================
@@ -384,62 +370,53 @@
    ========================================================================== */
 
 @utility shell {
-  width: min(1120px, calc(100% - 48px));
+  width: min(75rem, calc(100% - 2.5rem));
   margin-inline: auto;
 }
 
 @utility shell-wide {
-  width: min(1440px, calc(100% - 48px));
+  width: min(90rem, calc(100% - 2.5rem));
   margin-inline: auto;
 }
 
-/* The running head: mono, tracked out, the voice of the margin. */
-@utility runhead {
+/* Tracked mono label: coordinates, accessions, section kickers. */
+@utility label {
   font-family: var(--font-mono);
   font-size: 0.6875rem;
-  letter-spacing: 0.2em;
-  font-weight: 600;
+  letter-spacing: 0.08em;
+  font-weight: 500;
   text-transform: uppercase;
 }
 
-/* Plate-caption emphasis. Replaces the hollow stroke-text trick with a Didone
-   italic in vermilion — the way a species name is set on a specimen plate. */
-@utility text-emphasis {
-  font-family: var(--font-display);
-  font-style: italic;
-  font-weight: 500;
-  color: var(--color-press-vermilion);
-}
-
-.instrument .text-emphasis {
-  color: #dd6a4e;
-}
-
-/* A print mounted on card: hard rule, one crisp shadow, no blur, no glass. */
-@utility plate {
-  background-color: var(--color-panel);
-  border: 1px solid var(--color-line);
-  box-shadow:
-    0 1px 0 0 rgb(255 255 255 / 0.35) inset,
-    0 14px 28px -22px rgb(23 24 15 / 0.55);
-}
-
-/* An instrument recessed into the page: the plate, pressed inward. */
-@utility recessed {
-  box-shadow:
-    0 2px 0 0 rgb(255 253 246 / 0.5),
-    0 0 0 1px var(--color-rule-strong),
-    inset 0 2px 10px rgb(0 0 0 / 0.45);
-}
-
+/* Hairline structure before shadows — the Nightglass default. */
 @utility hairline {
   border: 1px solid var(--color-line);
 }
 
-/* Halftone tint for specimen figures — a real printing artefact, not a blur. */
-@utility halftone {
-  background-image: radial-gradient(currentColor 0.7px, transparent 0.8px);
-  background-size: 4px 4px;
+/* Multi-layer stacked elevation, never a single blur. Hairline ring first. */
+@utility elevated {
+  background-color: var(--color-panel);
+  box-shadow:
+    inset 0 0 0 1px var(--color-line),
+    0 17.5px 23.4px 0 rgb(0 0 0 / 0.18),
+    0 9.4px 12.5px 0 rgb(0 0 0 / 0.13),
+    0 5.3px 7px 0 rgb(0 0 0 / 0.09),
+    0 2.8px 3.7px -2px rgb(0 0 0 / 0.05);
+}
+
+@utility floating {
+  background-color: var(--color-panel-2);
+  box-shadow:
+    inset 0 0 0 1px var(--color-line),
+    0 36px 45px 0 rgb(0 0 0 / 0.34),
+    0 24px 30px 0 rgb(0 0 0 / 0.26),
+    0 15px 19px 0 rgb(0 0 0 / 0.2),
+    0 9px 11px 0 rgb(0 0 0 / 0.14);
+}
+
+/* Staggered entrance. One sequence per view, per the motion contract. */
+@utility reveal {
+  animation: var(--animate-reveal);
 }
 
 /* screen-reader-only, used heavily for visualisation text equivalents */
@@ -459,9 +436,9 @@
 /* ==========================================================================
    Reduced motion
 
-   Report 10 mandates that every animation be disable-able. This kills all
-   decorative animation; components additionally read the media query in JS
-   to swap 3D/animated views for static compositions.
+   Report 10 mandates every animation be disable-able. This kills decorative
+   animation wholesale; components additionally read the media query in JS to
+   swap 3D and scroll-linked views for static compositions.
    ========================================================================== */
 
 @media (prefers-reduced-motion: reduce) {
