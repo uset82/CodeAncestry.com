@@ -60,8 +60,8 @@ export function WaitlistForm() {
           Thanks — {email} is on the list.
         </p>
         <p className="text-muted mt-3 text-[14.5px] leading-relaxed">
-          Full disclosure: this prototype has no server, so nothing was transmitted anywhere. When
-          the alpha is real, this form will send one message and never a newsletter.
+          Soon you will be able to join the official list. Full disclosure: this prototype has no
+          server yet, so nothing was transmitted. When the alpha opens, this form will send one message and never a newsletter.
         </p>
         <button
           type="button"
@@ -133,7 +133,9 @@ export function WaitlistForm() {
           <Button type="submit" size="lg" disabled={status === 'submitting'}>
             {status === 'submitting' ? 'Adding…' : 'Join the alpha list'}
           </Button>
-          <p className="text-faint text-[13px]">No newsletter. One message when it opens.</p>
+          <p className="text-faint text-[13px]">
+            Soon you will be able to join the list. No newsletter. One message when it opens.
+          </p>
         </div>
       </div>
     </form>
