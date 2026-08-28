@@ -1,0 +1,318 @@
+@import 'tailwindcss';
+
+/* ==========================================================================
+   CodeAncestry design tokens
+
+   Palette carried forward from the original static prototype (reference/)
+   and extended with the two states the registry layer needs: quarantined
+   and rejected.
+
+   Hard rule from the research: colour is never the only encoding for a
+   state. Every StateBadge pairs colour with an icon, a pattern fill and a
+   text label.
+   ========================================================================== */
+
+@theme {
+  /* --- surfaces ------------------------------------------------------- */
+  --color-void: #07090d;
+  --color-panel: #0d1118;
+  --color-panel-2: #111722;
+  --color-panel-3: #161d29;
+  --color-line: #202937;
+  --color-line-soft: #1a2230;
+  --color-line-strong: #303b4c;
+
+  /* --- text ----------------------------------------------------------- */
+  --color-text: #f4f6f8;
+  --color-text-soft: #aab3c0;
+  --color-muted: #8993a3;
+  --color-faint: #5c6675;
+
+  /* --- semantic accents ----------------------------------------------- */
+  /* acid   = verified / primary action / origin DNA */
+  --color-acid: #b7ff39;
+  --color-acid-dim: #8ecb22;
+  /* cyan   = inherited / data / lineage */
+  --color-cyan: #63e7ff;
+  --color-cyan-dim: #3aa9c4;
+  /* violet = agent / mutation / knowledge */
+  --color-violet: #a985ff;
+  --color-violet-dim: #7d5ec7;
+  /* amber  = quarantined / needs review */
+  --color-amber: #ffb340;
+  --color-amber-dim: #c4832a;
+  /* rose   = rejected / security finding */
+  --color-rose: #ff5c7a;
+  --color-rose-dim: #c4425c;
+
+  /* --- radii ---------------------------------------------------------- */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+  --radius-2xl: 32px;
+
+  /* --- typography ----------------------------------------------------- */
+  --font-sans:
+    var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    sans-serif;
+  --font-mono:
+    var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* display: the tight negative-tracking headline voice */
+  --text-display: clamp(3.25rem, 9vw, 8rem);
+  --text-display--line-height: 0.83;
+  --text-display--letter-spacing: -0.075em;
+  --text-display--font-weight: 750;
+
+  --text-headline: clamp(2.375rem, 5vw, 4rem);
+  --text-headline--line-height: 0.95;
+  --text-headline--letter-spacing: -0.055em;
+  --text-headline--font-weight: 700;
+
+  --text-title: clamp(1.5rem, 2.6vw, 2rem);
+  --text-title--line-height: 1.15;
+  --text-title--letter-spacing: -0.035em;
+  --text-title--font-weight: 700;
+
+  --text-lead: 1.25rem;
+  --text-lead--line-height: 1.55;
+
+  /* micro-label: the uppercase tracked-out registry voice */
+  --text-micro: 0.6875rem;
+  --text-micro--line-height: 1.1;
+  --text-micro--letter-spacing: 0.18em;
+  --text-micro--font-weight: 800;
+
+  --text-nano: 0.5625rem;
+  --text-nano--line-height: 1.1;
+  --text-nano--letter-spacing: 0.14em;
+  --text-nano--font-weight: 700;
+
+  /* --- motion --------------------------------------------------------- */
+  /* semantic motion vocabulary: slow rotation = idle, pulse = transmission,
+     branch grow = child creation, glow = active propagation */
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --animate-idle-rotate: idle-rotate 24s linear infinite;
+  --animate-transmit: transmit 2.4s var(--ease-in-out-quart) infinite;
+  --animate-breathe: breathe 4s ease-in-out infinite;
+  --animate-grow: grow 0.7s var(--ease-out-quint) forwards;
+  --animate-rise: rise 0.6s var(--ease-out-quint) forwards;
+  --animate-dash: dash 1.6s linear infinite;
+}
+
+@keyframes idle-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* pulse along edge = information transmitted */
+@keyframes transmit {
+  0% {
+    offset-distance: 0%;
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    offset-distance: 100%;
+    opacity: 0;
+  }
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+/* branch growing = child creation */
+@keyframes grow {
+  from {
+    stroke-dashoffset: var(--dash-length, 400);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* dashed edge = proposed relation */
+@keyframes dash {
+  to {
+    stroke-dashoffset: -16;
+  }
+}
+
+/* ==========================================================================
+   Base layer
+   ========================================================================== */
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--color-void);
+    background-image:
+      radial-gradient(circle at 72% 6%, rgb(99 231 255 / 0.07), transparent 30%),
+      radial-gradient(circle at 22% 30%, rgb(183 255 57 / 0.05), transparent 26%);
+    background-attachment: fixed;
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    font-feature-settings: 'cv11', 'ss01';
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: rgb(183 255 57 / 0.25);
+    color: var(--color-text);
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  /* one consistent focus treatment everywhere */
+  :focus-visible {
+    outline: 2px solid var(--color-acid);
+    outline-offset: 2px;
+    border-radius: var(--radius-xs);
+  }
+
+  /* thin, dark scrollbars so dense registry panels stay quiet */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line-strong) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: var(--color-line);
+    border: 3px solid transparent;
+    border-radius: 99px;
+    background-clip: content-box;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: var(--color-line-strong);
+    background-clip: content-box;
+  }
+}
+
+/* ==========================================================================
+   Utilities
+   ========================================================================== */
+
+@utility shell {
+  width: min(1180px, calc(100% - 40px));
+  margin-inline: auto;
+}
+
+@utility shell-wide {
+  width: min(1480px, calc(100% - 40px));
+  margin-inline: auto;
+}
+
+/* the outlined display word used in the hero and section headings */
+@utility text-outline {
+  color: transparent;
+  -webkit-text-stroke: 1px rgb(255 255 255 / 0.5);
+}
+
+@utility hairline {
+  border: 1px solid var(--color-line);
+}
+
+/* screen-reader-only, used heavily for visualisation text equivalents */
+@utility sr-only-focusable {
+  &:not(:focus):not(:focus-within) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/* ==========================================================================
+   Reduced motion
+
+   Report 10 mandates that every animation be disable-able. This kills all
+   decorative animation; components additionally read the media query in JS
+   to swap 3D/animated views for static compositions.
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
