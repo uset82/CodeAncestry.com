@@ -193,13 +193,15 @@ export function HelixHero() {
     const node = track.current;
     if (!node) return;
 
-    /* Measured straight out of the scroll event rather than deferred into
+    /* Measured straight out of the scroll event, never deferred into
        requestAnimationFrame.
 
-       Browsers already coalesce scroll events to at most one per frame, so the
-       rAF hop bought nothing — and it cost correctness: rAF does not fire in a
-       tab that is not compositing, which left the sequence frozen on beat 00
-       forever. Same failure mode that kept the canvas from mounting.
+       DO NOT reintroduce an rAF hop here "for throttling". Browsers already
+       coalesce scroll events to at most one per frame, so it buys nothing — and
+       it costs correctness: rAF does not fire in a tab that is not compositing,
+       which leaves the whole sequence frozen on beat 00 forever. This codebase
+       has hit that same trap three times now (feature detection in useWebGL and
+       useReducedMotion, then this driver).
 
        `state.current` is a ref the 3D scene samples in useFrame; only the beat
        index goes through setState, and only when it actually changes. */

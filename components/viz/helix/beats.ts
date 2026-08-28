@@ -149,8 +149,9 @@ export const BEATS: Beat[] = [
     headline: 'And this is',
     outlined: 'one family.',
     body: 'Across every forge there are millions more, already related and already exchanging capabilities — with none of it written down.',
-    /* Lands before the end of the runway so the closing frame holds long
-       enough to read, rather than existing only at progress exactly 1. */
+    /* Lands before the end of the runway so the closing frame holds long enough
+       to read. At exactly 1 it exists only at a single scroll position, which
+       means the call to action never actually appears. */
     at: 0.92,
     generations: 4,
     focus: 0,
