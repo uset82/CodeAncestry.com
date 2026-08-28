@@ -22,8 +22,10 @@ import { parseAccession } from '@/lib/schema/accession';
 import {
   EVIDENCE_CODE_META,
   EVIDENCE_TIER_RANK,
+  INHERITANCE_MODES,
   type EvidenceCode,
   type EvidenceTier,
+  type InheritanceMode,
 } from '@/lib/schema/vocabulary';
 
 /* ==========================================================================
@@ -152,6 +154,103 @@ export function getGenomeGenes(genomeId: string) {
 }
 
 export type ResolvedGenomeGene = ReturnType<typeof getGenomeGenes>[number];
+
+/* ==========================================================================
+   Code Painting
+
+   The 23andMe chromosome-painting analogue: what share of this project came
+   from where. Weights are declared per gene in the genome, so the composition
+   is a property of the data rather than something the UI invents.
+   ========================================================================== */
+
+export type PaintSegment = {
+  mode: InheritanceMode;
+  /** Normalised share of the genome, 0–1. */
+  share: number;
+  genes: ResolvedGenomeGene[];
+  /** Nearest ancestor each gene arrived from, deduplicated. */
+  sources: string[];
+};
+
+export type CodePainting = {
+  genome: Genome;
+  segments: PaintSegment[];
+  /** Weighted mean gene confidence — how strongly the composition is evidenced. */
+  confidence: number;
+};
+
+export function getCodePainting(genomeId: string): CodePainting | null {
+  const genome = getGenome(genomeId);
+  if (!genome) return null;
+
+  const resolved = getGenomeGenes(genome.id);
+  const total = resolved.reduce((sum, g) => sum + g.ref.weight, 0) || 1;
+
+  const segments = INHERITANCE_MODES.flatMap<PaintSegment>((mode) => {
+    const genes = resolved.filter((g) => g.ref.inheritance === mode);
+    if (genes.length === 0) return [];
+
+    const share = genes.reduce((sum, g) => sum + g.ref.weight, 0) / total;
+    const sources = [
+      ...new Set(genes.flatMap((g) => (g.ref.origin ? [g.ref.origin] : []))),
+    ];
+
+    return [{ mode, share, genes, sources }];
+  });
+
+  const confidence =
+    resolved.reduce((sum, g) => sum + g.ref.confidence * g.ref.weight, 0) / total;
+
+  return { genome, segments, confidence };
+}
+
+/** Compact, serialisable Code Painting for client components. */
+export type PaintSegmentView = {
+  mode: InheritanceMode;
+  share: number;
+  genes: { accession: string; name: string; share: number; origin: string | null }[];
+  sources: { accession: string; name: string }[];
+};
+
+export type CodePaintingView = {
+  genome: { accession: string; name: string; generation: number; slug: string };
+  segments: PaintSegmentView[];
+  confidence: number;
+};
+
+export function getCodePaintingView(genomeId: string): CodePaintingView | null {
+  const painting = getCodePainting(genomeId);
+  if (!painting) return null;
+
+  const total =
+    painting.segments.reduce((sum, s) => sum + s.share, 0) || 1;
+
+  return {
+    genome: {
+      accession: painting.genome.id,
+      name: painting.genome.name,
+      generation: painting.genome.generation,
+      slug: painting.genome.slug,
+    },
+    segments: painting.segments.map((segment) => ({
+      mode: segment.mode,
+      share: segment.share / total,
+      genes: segment.genes
+        .map((g) => ({
+          accession: g.gene.id,
+          name: g.gene.name,
+          share: g.ref.weight,
+          origin: g.ref.origin ? (GENOMES_BY_PROJECT.get(g.ref.origin)?.name ?? null) : null,
+        }))
+        .sort((a, b) => b.share - a.share),
+      sources: segment.sources.flatMap((project) => {
+        const source = GENOMES_BY_PROJECT.get(project);
+        return source ? [{ accession: source.id, name: source.name }] : [];
+      }),
+    })),
+    confidence: painting.confidence,
+  };
+}
 
 /* ==========================================================================
    Mutations

@@ -1,8 +1,14 @@
 import { ACCESSION_KINDS, parseAccession, type AccessionPrefix } from '@/lib/schema/accession';
-import { ontologyPath } from '@/lib/schema/gene';
+import {
+  CAPABILITY_ONTOLOGY,
+  ONTOLOGY_LABELS,
+  ontologyPath,
+  type OntologyNode,
+} from '@/lib/schema/gene';
 import type { EvidenceTier } from '@/lib/schema/vocabulary';
 import {
   evidenceCodesFor,
+  getHeroMutation,
   listAgents,
   listGenes,
   listGenomes,
@@ -45,9 +51,16 @@ export type SearchHit = {
     license?: string;
     family?: string;
     host?: string;
+    /** Root segment of the capability ontology term, used as a facet. */
     ontology?: string;
+    /** Full dotted ontology term, used for subtree filtering. */
+    ontologyTerm?: string;
     state?: string;
     provider?: string;
+    /** Calendar year the record first appeared. */
+    year?: number;
+    /** Whether measured fitness evidence exists for this record. */
+    fitness?: boolean;
   };
   /** Relevance, 0–1. Only meaningful within one result set. */
   score: number;
@@ -61,6 +74,9 @@ export type SearchFacets = {
   ontologyRoot?: string[];
   state?: string[];
   provider?: string[];
+  year?: number[];
+  /** Restrict to records carrying measured fitness evidence. */
+  fitnessOnly?: boolean;
   minTier?: EvidenceTier;
 };
 
@@ -114,6 +130,8 @@ function projectHits(query: string): SearchHit[] {
           license: genome.licenses.spdxExpression,
           host: genome.source.provider,
           family: 'KEYLIT',
+          year: Number(genome.createdAt.slice(0, 4)),
+          fitness: genome.tests.length > 0,
         },
         score,
       },
@@ -140,7 +158,11 @@ function geneHits(query: string): SearchHit[] {
         type: 'gene' as const,
         accession: gene.id,
         title: gene.name,
-        subtitle: `${gene.stats.alleleCount} alleles · carried by ${gene.stats.carrierCount} genomes`,
+        subtitle: `${gene.stats.alleleCount} ${
+          gene.stats.alleleCount === 1 ? 'allele' : 'alleles'
+        } · carried by ${gene.stats.carrierCount} ${
+          gene.stats.carrierCount === 1 ? 'genome' : 'genomes'
+        }`,
         detail: gene.description,
         href: `/gene/${gene.id}`,
         evidence: evidenceCodesFor(evidenceIds),
@@ -150,7 +172,10 @@ function geneHits(query: string): SearchHit[] {
           language: gene.alleles[0]?.language,
           license: gene.license.spdx,
           ontology: gene.ontology.term.split('.')[0],
+          ontologyTerm: gene.ontology.term,
           family: 'KEYLIT',
+          year: Number(gene.origin.firstObservedAt.slice(0, 4)),
+          fitness: gene.stats.mutationCount > 0,
         },
         score,
       },
@@ -186,7 +211,12 @@ function mutationHits(query: string): SearchHit[] {
             ? tierFor(mutation.evidence.map((e) => e.id))
             : 'inferred',
         confidence: mutation.confidence,
-        facets: { state: mutation.state, family: 'KEYLIT' },
+        facets: {
+          state: mutation.state,
+          family: 'KEYLIT',
+          year: Number(mutation.proposedAt.slice(0, 4)),
+          fitness: mutation.fitness.deltas.length > 0,
+        },
         score,
       },
     ];
@@ -209,13 +239,20 @@ function agentHits(query: string): SearchHit[] {
         type: 'agent' as const,
         accession: agent.id,
         title: agent.displayName,
-        subtitle: `Generation ${agent.generation} · ${agent.identity.provider} · ${agent.knowledgeProduced.length} mutations authored`,
+        subtitle: `Generation ${agent.generation} · ${agent.identity.provider} · ${
+          agent.knowledgeProduced.length
+        } ${agent.knowledgeProduced.length === 1 ? 'mutation' : 'mutations'} authored`,
         detail: `${agent.capabilities.length} capabilities, ${agent.authorizedMemory.artifacts.length} published artifacts, telemetry ${agent.telemetry.mode}.`,
         href: `/agent/${agent.id}`,
         evidence: agent.trust.outputsSigned ? ['HVR'] : ['AII'],
         tier: agent.trust.identityVerified ? 'verified' : 'inferred',
         confidence: agent.trust.reliability,
-        facets: { generation: agent.generation, provider: agent.identity.provider },
+        facets: {
+          generation: agent.generation,
+          provider: agent.identity.provider,
+          family: 'KEYLIT',
+          fitness: agent.knowledgeProduced.length > 0,
+        },
         score,
       },
     ];
@@ -273,6 +310,12 @@ export function searchRegistry(
         (h) => !h.facets.provider || facets.provider!.includes(h.facets.provider),
       );
     }
+    if (facets.year?.length) {
+      hits = hits.filter((h) => h.facets.year === undefined || facets.year!.includes(h.facets.year));
+    }
+    if (facets.fitnessOnly) {
+      hits = hits.filter((h) => h.facets.fitness === true);
+    }
     if (facets.minTier) {
       const rank = { inferred: 0, reviewed: 1, verified: 2 };
       hits = hits.filter((h) => rank[h.tier] >= rank[facets.minTier!]);
@@ -282,6 +325,204 @@ export function searchRegistry(
   }
 
   return out;
+}
+
+/* ==========================================================================
+   Facet options
+
+   Derived from the seeded data rather than hard-coded, so a filter never
+   offers a value that returns nothing.
+   ========================================================================== */
+
+export type FacetKey = 'generation' | 'language' | 'license' | 'host' | 'ontologyRoot' | 'state' | 'provider' | 'year';
+
+export type FacetGroup = {
+  key: FacetKey;
+  label: string;
+  /** Entity types this facet is meaningful for. */
+  appliesTo: EntityType[];
+  options: { value: string; label: string; count: number }[];
+};
+
+const ORDERED_TYPES: EntityType[] = ['project', 'gene', 'mutation', 'agent'];
+
+export function getFacetGroups(): FacetGroup[] {
+  const universe = searchRegistry('');
+  const all = ORDERED_TYPES.flatMap((type) => universe[type]);
+
+  const tally = (
+    pick: (hit: SearchHit) => string | number | undefined,
+    only?: EntityType[],
+  ) => {
+    const counts = new Map<string, number>();
+    for (const hit of all) {
+      if (only && !only.includes(hit.type)) continue;
+      const value = pick(hit);
+      if (value === undefined) continue;
+      const key = String(value);
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    return counts;
+  };
+
+  const toOptions = (
+    counts: Map<string, number>,
+    label: (value: string) => string = (v) => v,
+  ) =>
+    [...counts.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true }))
+      .map(([value, count]) => ({ value, label: label(value), count }));
+
+  return [
+    {
+      key: 'generation',
+      label: 'Generation',
+      appliesTo: ['project', 'agent'],
+      options: toOptions(tally((h) => h.facets.generation, ['project', 'agent']), (v) => `GEN ${v}`),
+    },
+    {
+      key: 'ontologyRoot',
+      label: 'Capability domain',
+      appliesTo: ['gene'],
+      options: toOptions(tally((h) => h.facets.ontology, ['gene']), (v) => ONTOLOGY_LABELS.get(v) ?? v),
+    },
+    {
+      key: 'state',
+      label: 'Mutation state',
+      appliesTo: ['mutation'],
+      options: toOptions(tally((h) => h.facets.state, ['mutation']), (v) =>
+        v.replace(/-/g, ' ').replace(/^./, (c) => c.toUpperCase()),
+      ),
+    },
+    {
+      key: 'language',
+      label: 'Language',
+      appliesTo: ['gene'],
+      options: toOptions(tally((h) => h.facets.language, ['gene']), (v) =>
+        v.replace(/^./, (c) => c.toUpperCase()),
+      ),
+    },
+    {
+      key: 'license',
+      label: 'Licence',
+      appliesTo: ['project', 'gene'],
+      options: toOptions(tally((h) => h.facets.license, ['project', 'gene'])),
+    },
+    {
+      key: 'host',
+      label: 'Source host',
+      appliesTo: ['project'],
+      options: toOptions(tally((h) => h.facets.host, ['project'])),
+    },
+    {
+      key: 'provider',
+      label: 'Agent provider',
+      appliesTo: ['agent'],
+      options: toOptions(tally((h) => h.facets.provider, ['agent'])),
+    },
+    {
+      key: 'year',
+      label: 'First observed',
+      appliesTo: ['project', 'gene', 'mutation'],
+      options: toOptions(tally((h) => h.facets.year, ['project', 'gene', 'mutation'])),
+    },
+  ].filter((group) => group.options.length > 1) as FacetGroup[];
+}
+
+/* ==========================================================================
+   Serialisable payload for the client Explore shell
+
+   The whole registry is 48 records. Rather than round-tripping to the server
+   on every keystroke, the universe is computed once and filtered in the
+   browser. When a live API exists this becomes the first page of results and
+   the filtering moves back behind the network boundary.
+   ========================================================================== */
+
+export type ExplorePayload = {
+  hits: SearchHit[];
+  facetGroups: FacetGroup[];
+  /** Commit SHA -> genome href, for `commit:<sha>` lookups. */
+  commits: { sha: string; href: string; label: string }[];
+  counts: Record<EntityType, number>;
+  /** Example queries, derived from the data so they can never go stale. */
+  suggestions: string[];
+};
+
+export function getExplorePayload(): ExplorePayload {
+  const universe = searchRegistry('');
+  const hits = ORDERED_TYPES.flatMap((type) => universe[type]);
+
+  const commits = listGenomes().map((genome) => ({
+    sha: genome.source.commit,
+    href: `/project/${genome.id}`,
+    label: genome.name,
+  }));
+
+  const heroMutation = getHeroMutation();
+  const rootCommit = commits[0]?.sha.slice(0, 7);
+
+  return {
+    hits,
+    facetGroups: getFacetGroups(),
+    commits,
+    counts: {
+      project: universe.project.length,
+      gene: universe.gene.length,
+      mutation: universe.mutation.length,
+      agent: universe.agent.length,
+    },
+    suggestions: [
+      'MIDI scheduling',
+      'accessibility',
+      'Spanish',
+      heroMutation.id,
+      ...(rootCommit ? [`commit:${rootCommit}`] : []),
+      'tutoring',
+    ],
+  };
+}
+
+/* ==========================================================================
+   Ontology explorer
+   ========================================================================== */
+
+export type OntologyTreeNode = {
+  term: string;
+  label: string;
+  description?: string;
+  /** Genes annotated at this term or anywhere beneath it. */
+  count: number;
+  genes: { accession: string; name: string; href: string; carriers: number }[];
+  children: OntologyTreeNode[];
+};
+
+export function getOntologyTree(): OntologyTreeNode {
+  const genes = listGenes();
+
+  const build = (node: OntologyNode): OntologyTreeNode => {
+    const children = (node.children ?? []).map(build);
+
+    // Genes annotated exactly here; descendants are counted through children.
+    const own = genes
+      .filter((gene) => gene.ontology.term === node.term)
+      .map((gene) => ({
+        accession: gene.id,
+        name: gene.name,
+        href: `/gene/${gene.id}`,
+        carriers: gene.stats.carrierCount,
+      }));
+
+    return {
+      term: node.term,
+      label: node.label,
+      description: node.description,
+      count: own.length + children.reduce((sum, child) => sum + child.count, 0),
+      genes: own,
+      children,
+    };
+  };
+
+  return build(CAPABILITY_ONTOLOGY);
 }
 
 /** Exact accession resolution, so typing an ID jumps straight to the record. */

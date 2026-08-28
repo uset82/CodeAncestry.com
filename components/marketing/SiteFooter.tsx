@@ -12,7 +12,7 @@ const RESOURCES = [
 
 export function SiteFooter() {
   return (
-    <footer className="border-line mt-32 border-t">
+    <footer className="border-line border-t">
       <div className="shell-wide grid gap-12 py-14 md:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
         <div>
           <div className="flex items-center gap-2.5 font-bold tracking-[-0.03em]">

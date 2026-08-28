@@ -66,6 +66,12 @@
   --text-display--letter-spacing: -0.075em;
   --text-display--font-weight: 750;
 
+  /* hero: display voice, sized to survive a two-line headline in one viewport */
+  --text-hero: clamp(2.75rem, 6.6vw, 5.75rem);
+  --text-hero--line-height: 0.86;
+  --text-hero--letter-spacing: -0.07em;
+  --text-hero--font-weight: 750;
+
   --text-headline: clamp(2.375rem, 5vw, 4rem);
   --text-headline--line-height: 0.95;
   --text-headline--letter-spacing: -0.055em;

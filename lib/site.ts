@@ -1,3 +1,5 @@
+import { AGENT, GENOME } from '@/data/keylit/ids';
+
 export const site = {
   name: 'CodeAncestry',
   domain: 'codeancestry.com',
@@ -17,10 +19,25 @@ export const site = {
   ],
 } as const;
 
+/**
+ * Canonical entry points into the seeded demo. Every marketing link goes
+ * through here so a fixture rename never leaves a dead link behind.
+ */
+export const demo = {
+  family: '/family/keylit',
+  rootGenome: `/project/${GENOME.keylit}`,
+  kidsGenome: `/project/${GENOME.kids}`,
+  kidsEsGenome: `/project/${GENOME.kidsEs}`,
+  heroGene: '/gene/CAGENE:MIDI-SCHEDULING',
+  heroMutation: '/mutation/CAMUT:882',
+  heroAgent: `/agent/${AGENT.kidsEs}`,
+  compare: `/compare?a=${GENOME.keylit}&b=${GENOME.kidsEs}`,
+} as const;
+
 export const nav = [
   { href: '/explore', label: 'Explore' },
-  { href: '/family/keylit', label: 'CodeTree' },
-  { href: '/project/CAGENOME:01JKEYLIT7H2', label: 'Genome' },
+  { href: demo.family, label: 'CodeTree' },
+  { href: demo.rootGenome, label: 'Genome' },
   { href: '/blast', label: 'CodeBLAST' },
   { href: '/docs', label: 'Docs' },
   { href: '/research', label: 'Research' },

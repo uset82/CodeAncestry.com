@@ -3,6 +3,8 @@ import { Inter, JetBrains_Mono } from 'next/font/google';
 import { site } from '@/lib/site';
 import { SiteHeader } from '@/components/marketing/SiteHeader';
 import { SiteFooter } from '@/components/marketing/SiteFooter';
+import { EvidenceThresholdProvider } from '@/components/providers/EvidenceThresholdProvider';
+import { ChatDock } from '@/components/chat/ChatDock';
 import { NoiseOverlay } from '@/components/ui/NoiseOverlay';
 import './globals.css';
 
@@ -68,9 +70,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to content
         </a>
         <NoiseOverlay />
-        <SiteHeader />
-        <main id="main">{children}</main>
-        <SiteFooter />
+        <EvidenceThresholdProvider>
+          <SiteHeader />
+          <main id="main">{children}</main>
+          <SiteFooter />
+          <ChatDock />
+        </EvidenceThresholdProvider>
       </body>
     </html>
   );
