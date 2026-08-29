@@ -47,22 +47,35 @@ export function createHelixMaterials() {
     metalness: 0.12,
     clearcoat: 0.22,
     clearcoatRoughness: 0.5,
+    /* Sheen is the "living tissue" term — a soft retroreflective rim that
+       picks up grazing light the way skin, velvet and leaf surfaces do. The
+       reference leans on it heavily, and it is what stops a lit tube from
+       reading as polished plastic once the environment is doing real work. */
+    sheen: 0.45,
+    sheenRoughness: 0.55,
+    sheenColor: HELIX.acid,
     dithering: true,
   });
-  const backboneMutated = new MeshStandardMaterial({
+  const backboneMutated = new MeshPhysicalMaterial({
     color: HELIX.violet,
     emissive: HELIX.violet,
     emissiveIntensity: 0.62,
     roughness: 0.36,
     metalness: 0.1,
+    sheen: 0.4,
+    sheenRoughness: 0.55,
+    sheenColor: HELIX.violet,
     dithering: true,
   });
-  const backboneDescendant = new MeshStandardMaterial({
+  const backboneDescendant = new MeshPhysicalMaterial({
     color: HELIX.cyanDim,
     emissive: HELIX.cyan,
     emissiveIntensity: 0.42,
     roughness: 0.4,
     metalness: 0.08,
+    sheen: 0.4,
+    sheenRoughness: 0.55,
+    sheenColor: HELIX.cyan,
     dithering: true,
   });
 
