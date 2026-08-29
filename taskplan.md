@@ -150,6 +150,43 @@ are architectural, not visual.
 - [x] Capture all twelve anchors (`.captures/phase2-canvas/beat-00` … `beat-11`)
       and opened every PNG before ticking.
 
+### Claude design review of `7d2e370` — **REVISION REQUIRED**
+
+The architecture is approved: twelve beats, all nine scalars, `data-beat`
+anchoring, no rAF on the scroll path, `demand` frameloop with the footer
+suspending. That was the hard part and it is right.
+
+One defect, and it is systemic. My D1 said "sections scroll over it" and never
+said where the specimen may not go. That omission is mine.
+
+- [ ] **R1 - Priority 1 - blocks Phase 3 - the specimen crosses body copy.**
+      Component: page-level canvas + `Section`.
+      Problem: at beat 07 the lineage runs through the 2045 headline and its lead
+      paragraph; at beat 11 it runs through *What the alpha will not do*, which is
+      the most credibility-critical copy on the site. Text over a moving 3D
+      object at unknown contrast is unreadable.
+      Correction: every section declares a side, `data-beat-side="left|right|full"`.
+      The driver publishes it, `CameraRig` lerps `FAMILY_LOOK_X` toward the
+      opposite side, and the reading-side scrim becomes a page-level element that
+      follows it. This existed inside `HelixHero` and did not survive the move to
+      a page backdrop. `full` means no body copy over the canvas at all - copy
+      sits above or below it.
+      Rule: design-system, colour and contrast are never decorative.
+      Verify: sample the rendered capture under each text block; 4.5:1 or better
+      against the frame, not against the token.
+
+- [ ] **R2 - Priority 2 - beat 07 does not read as convergence.**
+      `converge 1` is specified as the lineage re-posed into AX-2041's capability
+      column. The capture shows a sprawl, not a column. This may be an unfinished
+      pose or simply a mid-interpolation frame.
+      Correction: capture beat 07 with `converge` forced to 1 so the pose is
+      judged rather than the interpolation, and send that frame.
+
+- [ ] **R3 - Priority 3 - Phase 3, recorded here so it is not lost.**
+      The helix still shows AUDIO / UI / LESSON / STORE / MIDI. Expected at this
+      phase, but at beat 07 those labels sit on a machine genome, which is
+      actively wrong. Phase 3 must land before beat 07 is shown outside the team.
+
 ---
 
 ## PHASE 3 — HERO + PROBLEM + PLATFORM
