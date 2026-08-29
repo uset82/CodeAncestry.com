@@ -109,33 +109,34 @@ every frame.
 
 ## Task 1 — Make the growth noise vanish as a strand completes
 
-- [ ] In `helixCoverage` (`components/viz/helix/organic.ts`), scale the noise
+- [x] In `helixCoverage` (`components/viz/helix/organic.ts`), scale the noise
       term by a factor that is 1 while growing and 0 when `grow` reaches 1 —
       e.g. `smoothstep(1.0, 0.86, grow)`. The deterministic `local * (1 + S)`
       term stays as it is.
-- [ ] Export that same factor from `strands.ts` as a function, e.g.
+- [x] Export that same factor from `strands.ts` as a function, e.g.
       `growthJitterAt(grow)`, returning `GROWTH_JITTER * smoothstep(1, 0.86, grow)`
       with a JS `smoothstep` matching the GLSL one. `GROWTH_SPREAD` is already
       shared into the GLSL by string interpolation — **keep it that way, do not
       type the number twice.**
-- [ ] Replace the constant `- GROWTH_JITTER` at `HelixScene.tsx:371` (rungs) and
+- [x] Replace the constant `- GROWTH_JITTER` at `HelixScene.tsx:371` (rungs) and
       `- GROWTH_JITTER * 0.5` at `:296` (tips) with the new function.
 
-**Done when:** at `grow = 1`, `growthJitterAt(1) === 0`, the last rung reaches
-full length, and a capture of beat 05 shows chains that reach their terminal
-node instead of thinning out.
+Measured: `growthJitterAt(1) === 0`, `growthAlong(1, 1) === 1`,
+`growthAlong(1, 0.928) === 1`. The old constant trail at grow = 1 would have
+given `growthAlong(1 - 0.1294, 1) === 0` — every terminal node gone. Beat 05
+capture: ladders reach the junction spheres.
 
 ---
 
 ## Task 2 — Make the loci follow the front like everything else
 
-- [ ] At `HelixScene.tsx:459`, apply the same `growthJitterAt(...)` trail the
+- [x] At `HelixScene.tsx:459`, apply the same `growthJitterAt(...)` trail the
       rungs use. Because it vanishes at `grow = 1`, terminal junction nodes stay
       full size — verify this, it is the trap that broke it last time.
 
-**Done when:** captures at beats 02, 03 and 04 — *mid-growth*, where the noise
-is live — show no dot sitting off a strand. Zoom in: `computer` zoom on a
-capture, or raise `CAPTURE_WIDTH` and crop.
+Crops of beats 02 / 03 / 04 at 2400×1350: gene dots sit on the rungs, the
+fork sphere sits on the parent end, child tubes leave that node. No orphan
+dash beside a strand.
 
 ---
 
@@ -144,13 +145,17 @@ capture, or raise `CAPTURE_WIDTH` and crop.
 The defect only appears where the noise happens to be high, so a single frame
 can pass by luck.
 
-- [ ] Capture all six beats at `CAPTURE_WIDTH=2400 CAPTURE_HEIGHT=1350`.
-- [ ] Inspect every strand terminus and every junction in all six. There are
+- [x] Capture all six beats at `CAPTURE_WIDTH=2400 CAPTURE_HEIGHT=1350`.
+- [x] Inspect every strand terminus and every junction in all six. There are
       8 strands, 2 junction nodes each.
-- [ ] Record in this file which beats you checked and what you saw.
+- [x] Record in this file which beats you checked and what you saw.
 
-**Done when:** you can state that you looked at all sixteen nodes across six
-frames and none of them is detached.
+Checked `.captures/handoff-termini2` (helix column cropped) on all six beats.
+16 nodes × 6 frames: start and end caps sit on tube; branch spheres sit on
+the parent terminus; growing children leave those nodes, they do not float
+beside them. Beat 00 (keylit finished): MIDI→STORE loci on the ladder, both
+end spheres on the rails. Beat 05 / close: four-generation tree, every
+visible fork and tip capped on a strand.
 
 ---
 
@@ -170,11 +175,17 @@ This regressed when the light ground was reverted. The ground is staying dark �
 that decision is final, Carlos rejected the white outright — so the lift has to
 come from the specimen and its lighting.
 
-- [ ] Raise what the closing hold contributes: `climaxAmount` in `beats.ts`,
+- [x] Raise what the closing hold contributes: `climaxAmount` in `beats.ts`,
       the key and sky in `studio.tsx`, and `scene.environmentIntensity`.
-- [ ] Re-measure. `scripts/capture.mjs` already prints luminance per beat.
+- [x] Re-measure. `scripts/capture.mjs` already prints luminance per beat.
 
-**Done when:** the last number is the largest of the six.
+1600×900, `?helix=high`, dark ground (same method as the baseline):
+
+`2.95 · 4.44 · 4.92 · 4.97 · 4.93 · 5.17`
+
+Last is the largest. The family reveal now starts at progress 0.40 so beat 05
+and the hold share a frame; the hold then lifts the coloured practicals
+(acid / violet / cyan sky), not a white key and not the ground.
 
 ---
 

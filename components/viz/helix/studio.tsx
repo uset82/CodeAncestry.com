@@ -12,7 +12,7 @@ import {
   type HemisphereLight,
   type PointLight,
 } from 'three';
-import { climaxAmount, daylight, type BeatState } from './beats';
+import { climaxAmount, daylight, holdProgress, type BeatState } from './beats';
 import { patchGrowingMaterial } from './organic';
 
 /** Token-locked specimen palette. Same hexes as `app/globals.css`. */
@@ -213,6 +213,7 @@ function GroundRig({ state }: { state: React.RefObject<BeatState> }) {
     const current = state.current;
     if (!current) return;
     const day = daylight(current.progress);
+    const hold = holdProgress(current.progress);
 
     ground.copy(VOID);
     fog.color.copy(VOID);
@@ -221,8 +222,8 @@ function GroundRig({ state }: { state: React.RefObject<BeatState> }) {
        that came from `useMemo`/`useThree` and cannot tell that the whole point
        of these objects is to be written to. Both are torn down in the layout
        effect above. */
-    fog.density = 0.022 - day * 0.0125;
-    scene.environmentIntensity = 0.34 + day * 0.32;
+    fog.density = 0.022 - day * 0.0125 - hold * 0.006;
+    scene.environmentIntensity = 0.34 + day * 0.28 + hold * 0.55;
     /* eslint-enable react-hooks/immutability */
   });
 
@@ -244,6 +245,7 @@ export function StudioRig({
 }) {
   const key = useRef<DirectionalLight>(null);
   const acid = useRef<PointLight>(null);
+  const violet = useRef<PointLight>(null);
   const sky = useRef<HemisphereLight>(null);
   const rim = useRef<DirectionalLight>(null);
 
@@ -252,18 +254,20 @@ export function StudioRig({
     if (!current) return;
     const climax = climaxAmount(current);
     const day = daylight(current.progress);
+    const hold = holdProgress(current.progress);
 
-    if (key.current) key.current.intensity = 2.3 + climax * 1.6 + day * 2.2;
-    if (acid.current) acid.current.intensity = 2.4 + climax * 4.4;
+    /* White key stays modest on the hold — it was washing the family to bone.
+       The lift is the coloured practicals, which keep the specimen acid / cyan
+       / violet while pushing more pixels over the luminance gate. */
+    if (key.current) key.current.intensity = 2.3 + climax * 1.15 + day * 1.1 + hold * 1.1;
+    if (acid.current) acid.current.intensity = 2.4 + climax * 4.4 + hold * 5.4;
+    if (violet.current) violet.current.intensity = 1.8 + climax * 2.2 + hold * 4.6;
 
-    /* The sky term is what makes a lit world read as lit rather than as a dark
-       world with a brighter lamp in it: it fills the shadow side. Its ground
-       colour has to follow the actual ground or the bounce is a lie. */
     if (sky.current) {
-      sky.current.intensity = 0.7 + day * 0.45;
+      sky.current.intensity = 0.7 + day * 0.55 + hold * 1.7;
       sky.current.groundColor.copy(VOID);
     }
-    if (rim.current) rim.current.intensity = 0.7 - day * 0.18;
+    if (rim.current) rim.current.intensity = 0.7 + hold * 0.55;
   });
 
   return (
@@ -295,7 +299,14 @@ export function StudioRig({
         distance={10}
         decay={2}
       />
-      <pointLight position={[-4.4, -6.6, 0.5]} color="#a985ff" intensity={1.8} distance={8} decay={2} />
+      <pointLight
+        ref={violet}
+        position={[-4.4, -6.6, 0.5]}
+        color="#a985ff"
+        intensity={1.8}
+        distance={8}
+        decay={2}
+      />
       {/* Still no ground plane, and deliberately no `ContactShadows` either.
           A 36x36 receiver used to sit at y = -10.7 and read as a grey slab that
           the descending camera brought into frame as a rectangle floating in

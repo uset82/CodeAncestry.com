@@ -142,7 +142,7 @@ export function holdProgress(progress: number): number {
  */
 export function climaxAmount(state: { progress: number; upstream: number }): number {
   const rise = Math.max(0, (state.progress - 0.62) / 0.38);
-  return Math.max(state.upstream, rise) + holdProgress(state.progress) * 0.32;
+  return Math.max(state.upstream, rise) + holdProgress(state.progress) * 1.15;
 }
 
 function smoothstep(edge0: number, edge1: number, x: number): number {

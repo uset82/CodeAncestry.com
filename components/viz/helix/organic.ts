@@ -8,7 +8,7 @@
  * Each backbone clones its role material so uGrow is per-strand.
  */
 
-import { GROWTH_SPREAD } from './strands';
+import { GROWTH_NOISE_DONE, GROWTH_NOISE_LIVE, GROWTH_SPREAD } from './strands';
 import {
   MeshDepthMaterial,
   RGBADepthPacking,
@@ -81,7 +81,9 @@ float helixCoverage(vec3 lp, float grow, float seed, float path) {
   float n = helixFbm(q);
   n += (helixNoise(q * 5.0) - 0.5) * 0.26;
   float local = grow - path;
-  return local * (1.0 + ${GROWTH_SPREAD.toFixed(4)}) - (n - 0.5) * ${GROWTH_SPREAD.toFixed(4)};
+  /* Noise belongs to the act of growing. A finished strand has a hard end. */
+  float live = smoothstep(${GROWTH_NOISE_DONE.toFixed(4)}, ${GROWTH_NOISE_LIVE.toFixed(4)}, grow);
+  return local * (1.0 + ${GROWTH_SPREAD.toFixed(4)}) - (n - 0.5) * ${GROWTH_SPREAD.toFixed(4)} * live;
 }
 `;
 
@@ -305,7 +307,9 @@ export function climaxEmissive(
 ): number {
   const base =
     generation === 0 ? 0.55 + climax * 1.35 : origin ? 0.62 + climax * 1.45 : 0.42 + climax * 1.05;
-  return base * (1 - day * 0.12);
+  /* Ground stays void, so emissive can rise into the close instead of
+     falling away as if it were sitting on bone. */
+  return base * (1 + day * 0.18);
 }
 
 export function tickClimax(
@@ -321,7 +325,7 @@ export function tickClimax(
   materials.backboneOrigin.emissiveIntensity = climaxEmissive(0, false, climax, day);
   materials.backboneMutated.emissiveIntensity = climaxEmissive(1, true, climax, day);
   materials.backboneDescendant.emissiveIntensity = climaxEmissive(1, false, climax, day);
-  materials.rung.emissiveIntensity = (0.5 + climax * 0.95) * (1 - day * 0.12);
+  materials.rung.emissiveIntensity = (0.5 + climax * 0.95) * (1 + day * 0.18);
 }
 
 export function tickOrganic(

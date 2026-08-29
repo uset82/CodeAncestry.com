@@ -274,6 +274,9 @@ export const TUBE_END_TAPER = 0.035;
  */
 export const GROWTH_SPREAD = 0.28;
 export const GROWTH_JITTER = (0.5 * GROWTH_SPREAD) / (1 + GROWTH_SPREAD) + 0.02;
+/** Noise is fully live at this grow, gone at `GROWTH_NOISE_DONE`. */
+export const GROWTH_NOISE_LIVE = 0.86;
+export const GROWTH_NOISE_DONE = 1;
 /** Children stay on their own axis for this first fraction, then bloom. */
 export const TUBE_CHILD_START = 0.06;
 export const TUBE_GROW_TAPER = 0.045;
@@ -301,6 +304,15 @@ export function smoothstep(edge0: number, edge1: number, x: number): number {
   if (edge0 === edge1) return x < edge0 ? 0 : 1;
   const t = Math.min(1, Math.max(0, (x - edge0) / (edge1 - edge0)));
   return t * t * (3 - 2 * t);
+}
+
+/**
+ * How far JS elements trail the noisy front. Full width while the strand is
+ * still extending; zero once `grow` reaches 1, so a finished tube has a
+ * geometric end and nothing anchored to it floats or stubs.
+ */
+export function growthJitterAt(grow: number): number {
+  return GROWTH_JITTER * smoothstep(GROWTH_NOISE_DONE, GROWTH_NOISE_LIVE, grow);
 }
 
 /**

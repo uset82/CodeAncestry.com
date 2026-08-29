@@ -23,8 +23,8 @@ import {
   UPSTREAM_PATH,
   axisPointAtInto,
   backbonePointAtInto,
-  GROWTH_JITTER,
   growthAlong,
+  growthJitterAt,
   pathTaper,
   rungDirection,
   rungInset,
@@ -289,11 +289,11 @@ function GrowingTips({
     const { matrix, position, axis, quaternion, scale } = scratch;
 
     strands.forEach((strand, i) => {
-      /* Half the jitter, not the full width: the tip marker belongs at the
-         frontier, but the frontier is a noise field, so sitting exactly on its
-         mean leaves it floating wherever the noise has pulled the tube back. */
-      const eased =
-        strandEased(current.generations, strand.spec.generation) - GROWTH_JITTER * 0.5;
+      /* Half the live jitter: sit on the frontier, not ahead of a receding
+         noise field. The trail vanishes at grow = 1 so a finished tip rests
+         on a real end, not a stub. */
+      const grow = strandEased(current.generations, strand.spec.generation);
+      const eased = grow - growthJitterAt(grow) * 0.5;
       const t = Math.min(0.999, Math.max(0, eased));
       strand.curve.getPoint(t, position);
       axisPointAtInto(strand.spec, t, current.flatten, axis);
@@ -363,12 +363,8 @@ function Rungs({ state, materials }: Pick<Props, 'state' | 'materials'>) {
     const time = clock.elapsedTime;
 
     slots.forEach((slot, i) => {
-      /* Trail the frontier by its full jitter. The tube's growth front is a
-         noise field now, so on any given rung the backbone may have pulled back
-         by up to half of GROWTH_JITTER; a rung using the mean would sit on a
-         stretch of strand that is not there yet. That is the floating dash,
-         reintroduced by the back door. */
-      const eased = strandEased(current.generations, slot.spec.generation) - GROWTH_JITTER;
+      const grow = strandEased(current.generations, slot.spec.generation);
+      const eased = grow - growthJitterAt(grow);
       const front = growthAlong(eased, slot.t);
       const { matrix, position, quaternion, scale, up } = scratch;
 
@@ -456,7 +452,8 @@ function Loci({ state, tier, materials }: Props) {
     const time = clock.elapsedTime;
 
     slots.forEach((slot, i) => {
-      const eased = strandEased(current.generations, slot.spec.generation);
+      const grow = strandEased(current.generations, slot.spec.generation);
+      const eased = grow - growthJitterAt(grow);
       const front = growthAlong(eased, slot.t);
       const { matrix, position, quaternion, scale, color } = scratch;
 
@@ -552,7 +549,8 @@ function LocusLabels({ state }: Pick<Props, 'state'>) {
       }
       if (!node) return;
 
-      const eased = strandEased(current.generations, anchor.spec.generation);
+      const grow = strandEased(current.generations, anchor.spec.generation);
+      const eased = grow - growthJitterAt(grow);
       const front = growthAlong(eased, anchor.t);
       /* Fade out through the pull-back. At the reveal distance a label is
          wider than the strand it names, and all eight collapse into an
@@ -661,7 +659,8 @@ function Pulses({ state, tier, materials }: Props) {
         const t = (time * 0.34 + i * 0.21) % 1;
         backbonePointAtInto(slot.spec, slot.basis, 0, t, current.flatten, position);
         const edge = Math.min(1, Math.min(t, 1 - t) * 7);
-        const grown = growthAlong(strandEased(current.generations, slot.spec.generation), t);
+        const grow = strandEased(current.generations, slot.spec.generation);
+        const grown = growthAlong(grow - growthJitterAt(grow), t);
         scale.setScalar(0.036 * edge * current.inheritance * grown);
         matrix.compose(position, quaternion, scale);
         downNode.setMatrixAt(i, matrix);
@@ -739,7 +738,13 @@ function CameraRig({
     const current = state.current;
     if (!current) return;
     const story = cameraProgress(current.progress);
-    const hold = holdProgress(current.progress);
+    /* Pull back through the last two beats, not only on the written hold.
+       A tight crop at 0.86 was winning the luminance gate against the
+       closing frame — the family was smaller on screen once it was all in
+       shot. Starting the reveal earlier makes 05 and the hold the same
+       picture, so lighting can make the last beat the brightest. */
+    const reveal = Math.min(1, Math.max(0, (current.progress - 0.40) / 0.46));
+    const frame = reveal * reveal * (3 - 2 * reveal);
     const orbit = 1 - current.flatten;
 
     /* The descent, and then the reveal.
@@ -757,18 +762,18 @@ function CameraRig({
        `HelixHero`, so the reveal still frames the family if that value or the
        viewport changes. */
     const fov = 'fov' in camera ? (camera.fov as number) : 42;
-    const FAMILY_Z = FAMILY_HALF_HEIGHT / Math.tan((fov * Math.PI) / 360);
+    const FAMILY_Z = (FAMILY_HALF_HEIGHT / Math.tan((fov * Math.PI) / 360)) * 0.82;
 
     desired.set(
-      Math.sin(story * Math.PI * 0.6) * 1.2 * (1 - hold) +
-        FAMILY_LOOK_X * hold +
+      Math.sin(story * Math.PI * 0.6) * 1.2 * (1 - frame) +
+        FAMILY_LOOK_X * frame +
         pointer.current.x * 0.48 * orbit,
-      storyY + (FAMILY_Y + FAMILY_LOOK_LIFT - storyY) * hold + pointer.current.y * 0.24 * orbit,
-      storyZ + (FAMILY_Z - storyZ) * hold,
+      storyY + (FAMILY_Y + FAMILY_LOOK_LIFT - storyY) * frame + pointer.current.y * 0.24 * orbit,
+      storyZ + (FAMILY_Z - storyZ) * frame,
     );
     lookAt.set(
-      -story * 0.9 * (1 - hold) + FAMILY_LOOK_X * hold,
-      storyLookY + (FAMILY_Y + FAMILY_LOOK_LIFT - storyLookY) * hold,
+      -story * 0.9 * (1 - frame) + FAMILY_LOOK_X * frame,
+      storyLookY + (FAMILY_Y + FAMILY_LOOK_LIFT - storyLookY) * frame,
       0,
     );
 
