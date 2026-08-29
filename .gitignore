@@ -34,7 +34,8 @@ yarn-error.log*
 .env*.local
 .env.production
 
-# WebDesigner runtime (junction to ~/.webdesigner/.antigravity)
+# WebDesigner runtime (local MCP + generated manifests)
+.cursor/mcp.json
 .antigravity/
 artifact_manifest.json
 task_intent.json
