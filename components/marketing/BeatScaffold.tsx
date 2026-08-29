@@ -18,7 +18,7 @@ export function BeatScaffold({
   arrives: string;
 }) {
   return (
-    <Section beat={beat} id={id} className="min-h-screen">
+    <Section beat={beat} beatSide="left" id={id} className="min-h-screen">
       <Eyebrow index={index}>{arrives}</Eyebrow>
       <h2 className="text-title mt-4 max-w-[560px] text-balance">{title}</h2>
       <p className="text-faint mt-4 max-w-[480px] text-[14px] leading-relaxed">

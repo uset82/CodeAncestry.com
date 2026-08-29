@@ -29,16 +29,16 @@ export type HomepageSectionId = (typeof HOMEPAGE_SECTIONS)[number]['id'];
  * The number on the DOM node is the mapping — swap two and the pose follows.
  */
 export const HOMEPAGE_BEAT_STANDINS = [
-  { beat: 0, id: 'hero', standIn: 'HelixHero upper' },
-  { beat: 1, id: 'hero', standIn: 'HelixHero lower' },
-  { beat: 2, id: 'problem', standIn: 'ConceptCards' },
-  { beat: 3, id: 'platform', standIn: 'MeaningLayer' },
-  { beat: 4, id: 'codetree', standIn: 'CodePaintingTeaser' },
-  { beat: 5, id: 'agents', standIn: 'PropagationStrip' },
-  { beat: 6, id: 'trust', standIn: 'TrustLadder' },
-  { beat: 7, id: 'machine', standIn: 'Endgame' },
-  { beat: 8, id: 'trace', standIn: 'BeatScaffold entry' },
-  { beat: 9, id: 'trace', standIn: 'BeatScaffold rewind' },
-  { beat: 10, id: 'health', standIn: 'BeatScaffold' },
-  { beat: 11, id: 'close', standIn: 'JoinSection' },
+  { beat: 0, id: 'hero', side: 'left', standIn: 'HelixHero upper' },
+  { beat: 1, id: 'hero', side: 'left', standIn: 'HelixHero lower' },
+  { beat: 2, id: 'problem', side: 'left', standIn: 'ConceptCards' },
+  { beat: 3, id: 'platform', side: 'left', standIn: 'MeaningLayer' },
+  { beat: 4, id: 'codetree', side: 'left', standIn: 'CodePaintingTeaser' },
+  { beat: 5, id: 'agents', side: 'left', standIn: 'PropagationStrip' },
+  { beat: 6, id: 'trust', side: 'left', standIn: 'TrustLadder' },
+  { beat: 7, id: 'machine', side: 'left', standIn: 'Endgame' },
+  { beat: 8, id: 'trace', side: 'left', standIn: 'BeatScaffold entry' },
+  { beat: 9, id: 'trace', side: 'left', standIn: 'BeatScaffold rewind' },
+  { beat: 10, id: 'health', side: 'left', standIn: 'BeatScaffold' },
+  { beat: 11, id: 'close', side: 'left', standIn: 'JoinSection' },
 ] as const;

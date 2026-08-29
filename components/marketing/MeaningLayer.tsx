@@ -86,7 +86,7 @@ const CONTRASTS = [
 
 export function MeaningLayer() {
   return (
-    <Section id="meaning" beat={3}>
+    <Section id="meaning" beat={3} beatSide="left">
       <div className="grid gap-14 lg:grid-cols-[1.05fr_0.95fr] lg:gap-20">
         <div>
           <Eyebrow index="02">Position</Eyebrow>
@@ -117,6 +117,11 @@ export function MeaningLayer() {
               </div>
             ))}
           </dl>
+
+          <p className="text-muted mt-8 max-w-[560px] text-[13px] leading-relaxed">
+            Each layer only makes claims it can support with the layer below it. Nothing in the
+            registry is asserted without something underneath it to check.
+          </p>
         </div>
 
         <figure className="m-0">
@@ -167,11 +172,6 @@ export function MeaningLayer() {
               </li>
             ))}
           </ol>
-
-          <p className="text-faint mt-5 text-[13px] leading-relaxed">
-            Each layer only makes claims it can support with the layer below it. Nothing in the
-            registry is asserted without something underneath it to check.
-          </p>
         </figure>
       </div>
     </Section>

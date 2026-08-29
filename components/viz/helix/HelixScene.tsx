@@ -73,14 +73,8 @@ const FAMILY_Y = (FAMILY_TOP + FAMILY_BOTTOM) / 2;
 const FAMILY_HALF_HEIGHT = ((FAMILY_TOP - FAMILY_BOTTOM) * 1.06) / 2;
 /** Aim above centre so the extra margin lands at the top, under the header. */
 const FAMILY_LOOK_LIFT = 0.8;
-/**
- * Aim left of the lineage so the lineage sits right of frame.
- *
- * The canvas is full-bleed now — the specimen runs under the copy the way the
- * vine reference runs under its own headline — so the composition has to be
- * done in the camera rather than by boxing the canvas into a column.
- */
-const FAMILY_LOOK_X = -4.6;
+/* FAMILY_LOOK_X is no longer a constant. CameraRig reads `state.lookX`,
+   which lerps with data-beat-side: copy left → lineage right (negative). */
 
 /** Centre of the strands the current generation count has revealed. */
 function liveFamilyY(generations: number): number {
@@ -799,18 +793,19 @@ function CameraRig({
     if (!current) return;
     const orbit = 1 - current.flatten;
     /* Distance is a multiple of the fit already computed here. No 0.82 fudge.
-       Look stays FAMILY_LOOK_LIFT / FAMILY_LOOK_X so copy and header stay clear. */
+       lookX follows the reading side so the lineage never sits on the copy. */
     const fov = 'fov' in camera ? (camera.fov as number) : 42;
     const fit = FAMILY_HALF_HEIGHT / Math.tan((fov * Math.PI) / 360);
     const z = fit * current.cameraMultiple;
     const lookY = liveFamilyY(current.generations) + FAMILY_LOOK_LIFT;
+    const lookX = current.lookX;
 
     desired.set(
-      FAMILY_LOOK_X + pointer.current.x * 0.48 * orbit,
+      lookX + pointer.current.x * 0.48 * orbit,
       lookY + pointer.current.y * 0.24 * orbit,
       z,
     );
-    lookAt.set(FAMILY_LOOK_X, lookY, 0);
+    lookAt.set(lookX, lookY, 0);
 
     const lerp = Math.min(1, delta * 3.2);
     camera.position.lerp(desired, lerp);

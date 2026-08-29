@@ -56,18 +56,15 @@ export function PropagationStrip() {
   const mutation = getHeroMutation();
 
   return (
-    <Section id="propagation" beat={5}>
-      <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end md:gap-12">
-        <div className="max-w-[640px]">
-          <Eyebrow index="04">Propagation protocol</Eyebrow>
-          <h2 className="text-headline mt-4 text-balance">
-            A descendant can teach
-            <br />
-            <span className="text-emphasis">its ancestor something.</span>
-          </h2>
-        </div>
-
-        <p className="text-text-soft max-w-[420px] leading-relaxed">
+    <Section id="propagation" beat={5} beatSide="left">
+      <div className="max-w-[640px]">
+        <Eyebrow index="04">Propagation protocol</Eyebrow>
+        <h2 className="text-headline mt-4 text-balance">
+          A descendant can teach
+          <br />
+          <span className="text-emphasis">its ancestor something.</span>
+        </h2>
+        <p className="text-text-soft mt-6 max-w-[540px] leading-relaxed">
           When {mutation.shortId} improved {mutation.title.toLowerCase()} four generations down, its
           ancestors were <em>offered</em> the change. Eight steps stand between noticing something
           and anything moving.
@@ -109,25 +106,23 @@ export function PropagationStrip() {
       </ol>
 
       {/* ------------------------------------------------ the safety guarantee */}
-      <div className="border-acid/20 bg-acid/[0.04] mt-10 rounded-xl border p-6 md:p-8">
-        <div className="flex flex-col gap-6 md:flex-row md:items-center md:gap-10">
-          <p className="text-[19px] leading-[1.45] font-semibold tracking-[-0.02em] text-balance md:max-w-[560px]">
-            Nothing is ever adopted automatically. Not by an agent, not by the registry, not by a
-            related project.
-          </p>
-          <p className="text-muted flex-1 text-[14.5px] leading-relaxed">
-            Propagation is always an offer. Every arrow in the CodeTree that carries a change ends at
-            a decision made by the receiving project&rsquo;s maintainer, under rules that maintainer
-            wrote.{' '}
-            <Link
-              href={demo.heroMutation}
-              className="text-text-soft hover:text-text underline decoration-dotted"
-            >
-              See the decision surface
-            </Link>
-            .
-          </p>
-        </div>
+      <div className="border-acid/20 bg-void mt-10 max-w-[560px] rounded-xl border p-6 md:p-8">
+        <p className="text-[19px] leading-[1.45] font-semibold tracking-[-0.02em] text-balance">
+          Nothing is ever adopted automatically. Not by an agent, not by the registry, not by a
+          related project.
+        </p>
+        <p className="text-muted mt-5 text-[14.5px] leading-relaxed">
+          Propagation is always an offer. Every arrow in the CodeTree that carries a change ends at
+          a decision made by the receiving project&rsquo;s maintainer, under rules that maintainer
+          wrote.{' '}
+          <Link
+            href={demo.heroMutation}
+            className="text-text-soft hover:text-text underline decoration-dotted"
+          >
+            See the decision surface
+          </Link>
+          .
+        </p>
       </div>
     </Section>
   );

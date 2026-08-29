@@ -1,15 +1,10 @@
 import { cn } from '@/lib/cn';
-
-/**
- * The homepage's structural rhythm. One section per idea, each announced by a
- * numbered eyebrow so a reader can tell how far through the argument they are.
- */
-const BEAT_VEIL =
-  'linear-gradient(100deg, #07090d 0%, color-mix(in oklab, #07090d 82%, transparent) 38%, transparent 68%)';
+import type { BeatSide } from '@/components/viz/helix/beats';
 
 export function Section({
   id,
   beat,
+  beatSide,
   children,
   className,
   tight = false,
@@ -18,15 +13,26 @@ export function Section({
   id?: string;
   /** Homepage helix pose. Reordering this attribute retargets the scene. */
   beat?: number;
+  /**
+   * Where body copy sits. Required with `beat`. No default — a missing side
+   * is a bug, not a guess. The specimen takes the opposite side.
+   */
+  beatSide?: BeatSide;
   children: React.ReactNode;
   className?: string;
   tight?: boolean;
   bordered?: boolean;
 }) {
+  if (beat !== undefined && beatSide === undefined) {
+    throw new Error(
+      `Section${id ? `#${id}` : ''} beat=${beat} has body copy on a 3D beat and must declare beatSide`,
+    );
+  }
+
   return (
     <section
       id={id}
-      {...(beat !== undefined ? { 'data-beat': beat } : {})}
+      {...(beat !== undefined ? { 'data-beat': beat, 'data-beat-side': beatSide } : {})}
       className={cn(
         'relative',
         bordered && 'border-line/60 border-t',
@@ -34,13 +40,6 @@ export function Section({
         className,
       )}
     >
-      {beat !== undefined && (
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0"
-          style={{ background: BEAT_VEIL }}
-        />
-      )}
       <div className="shell-wide relative">{children}</div>
     </section>
   );

@@ -6,7 +6,14 @@ import dynamic from 'next/dynamic';
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { useReducedMotion } from '@/lib/hooks/useReducedMotion';
 import { useWebGL } from '@/lib/hooks/useWebGL';
-import { beatStateAt, daylight, measureViewportBeat, type BeatState } from './beats';
+import {
+  beatStateAt,
+  daylight,
+  LOOK_X_EXTENT,
+  measureViewportBeat,
+  type BeatSide,
+  type BeatState,
+} from './beats';
 
 const HelixScene = dynamic(() => import('./HelixScene').then((m) => m.HelixScene), {
   ssr: false,
@@ -31,7 +38,22 @@ declare global {
     __HELIX_FRAMES?: number;
     __HELIX_LOOP?: 'always' | 'demand';
     __HELIX_BEAT?: number;
+    __HELIX_SIDE?: BeatSide;
+    __HELIX_LOOK_X?: number;
   }
+}
+
+function paintScrim(node: HTMLDivElement, lookX: number) {
+  const left = Math.max(0, -lookX / LOOK_X_EXTENT);
+  const right = Math.max(0, lookX / LOOK_X_EXTENT);
+  if (left < 0.02 && right < 0.02) {
+    node.style.background = 'transparent';
+    node.style.opacity = '0';
+    return;
+  }
+  const toward = left >= right ? '90deg' : '270deg';
+  node.style.background = `linear-gradient(${toward}, #07090d 0%, color-mix(in oklab, #07090d 88%, transparent) 34%, transparent 62%)`;
+  node.style.opacity = String(Math.max(left, right));
 }
 
 function FrameProbe() {
@@ -53,6 +75,7 @@ export function HelixStage({ children }: { children: React.ReactNode }) {
 
   const state = useRef<BeatState>(beatStateAt(0, 0));
   const invalidate = useRef<(() => void) | null>(null);
+  const scrim = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [loop, setLoop] = useState<'always' | 'demand'>('always');
 
@@ -61,17 +84,26 @@ export function HelixStage({ children }: { children: React.ReactNode }) {
 
     const measure = () => {
       const next = measureViewportBeat();
-      state.current = next.state;
+      const forced = Number(new URLSearchParams(window.location.search).get('converge'));
+      const nextState =
+        Number.isFinite(forced) && window.location.search.includes('converge=')
+          ? { ...next.state, converge: Math.min(1, Math.max(0, forced)) }
+          : next.state;
+      state.current = nextState;
       const nextLoop = next.owns3d ? 'always' : 'demand';
-      window.__HELIX_BEAT = next.state.activeIndex;
+      window.__HELIX_BEAT = nextState.activeIndex;
+      window.__HELIX_SIDE = nextState.side;
+      window.__HELIX_LOOK_X = nextState.lookX;
       window.__HELIX_LOOP = nextLoop;
       document.documentElement.dataset.helixLoop = nextLoop;
+      document.documentElement.dataset.helixSide = nextState.side;
       document.documentElement.style.setProperty(
         '--daylight',
-        daylight(next.state.progress).toFixed(4),
+        daylight(nextState.progress).toFixed(4),
       );
+      if (scrim.current) paintScrim(scrim.current, nextState.lookX);
       setLoop((prev) => (prev === nextLoop ? prev : nextLoop));
-      setActiveIndex((prev) => (prev === next.state.activeIndex ? prev : next.state.activeIndex));
+      setActiveIndex((prev) => (prev === nextState.activeIndex ? prev : nextState.activeIndex));
       invalidate.current?.();
     };
 
@@ -111,6 +143,13 @@ export function HelixStage({ children }: { children: React.ReactNode }) {
             <FrameProbe />
           </Canvas>
         </div>
+      )}
+      {animated && (
+        <div
+          ref={scrim}
+          aria-hidden="true"
+          className="pointer-events-none fixed inset-0 z-[1]"
+        />
       )}
       <div className="relative z-10">{children}</div>
     </HelixDriverContext.Provider>

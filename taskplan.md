@@ -63,7 +63,9 @@ Three decisions now unblock Phase 2:
 If a task appears to need a new asset, it has been mis-specified — return it to
 Claude rather than inventing one.
 
-**First unchecked work: Phase 2 — Foundation refactor.**
+**First unchecked work: wait for Claude’s R1 approval, then Phase 3.**
+R1 and R2 are implemented and captured. Do not start Phase 3 until R1 is
+approved — Phase 3 rewrites hero copy and R1 restructured where copy may sit.
 
 ---
 
@@ -159,7 +161,7 @@ suspending. That was the hard part and it is right.
 One defect, and it is systemic. My D1 said "sections scroll over it" and never
 said where the specimen may not go. That omission is mine.
 
-- [ ] **R1 - Priority 1 - blocks Phase 3 - the specimen crosses body copy.**
+- [x] **R1 - Priority 1 - blocks Phase 3 - the specimen crosses body copy.**
       Component: page-level canvas + `Section`.
       Problem: at beat 07 the lineage runs through the 2045 headline and its lead
       paragraph; at beat 11 it runs through *What the alpha will not do*, which is
@@ -174,13 +176,23 @@ said where the specimen may not go. That omission is mine.
       Rule: design-system, colour and contrast are never decorative.
       Verify: sample the rendered capture under each text block; 4.5:1 or better
       against the frame, not against the token.
+      Evidence (2026-08-30): `Section` requires `beatSide` with `beat` (throws if
+      missing). Driver publishes `side` + `lookX` in the scroll handler, no rAF.
+      CameraRig reads `state.lookX` (`left` → −4.6, `right` → +4.6, `full` → 0).
+      Page scrim in `HelixStage` follows `lookX`. All current beat sections are
+      `left`. Capture `.captures/phase2-r1/`: 12 beats, 158 blocks, **0 helix
+      fails**, `missingSide: []`. Beat 07 headline **8.86:1**, beat 11 honesty
+      **5.91–6.09:1**. `diag.frames` 9, `helixFrames` 30, footer
+      `helixFramesDelta: 0`. PNGs opened. Awaiting Claude’s composition ruling.
 
-- [ ] **R2 - Priority 2 - beat 07 does not read as convergence.**
+- [x] **R2 - Priority 2 - beat 07 does not read as convergence.**
       `converge 1` is specified as the lineage re-posed into AX-2041's capability
       column. The capture shows a sprawl, not a column. This may be an unfinished
       pose or simply a mid-interpolation frame.
       Correction: capture beat 07 with `converge` forced to 1 so the pose is
       judged rather than the interpolation, and send that frame.
+      Evidence: `.captures/phase2-r2/beat-07-converge-1.png` (`?converge=1`,
+      pose not redesigned). Headline **8.71:1**. Claude rules on the pose.
 
 - [ ] **R3 - Priority 3 - Phase 3, recorded here so it is not lost.**
       The helix still shows AUDIO / UI / LESSON / STORE / MIDI. Expected at this
@@ -385,42 +397,43 @@ Claude reviews. Cursor/Grok fix sequentially.
 
 ### COMPLETED PHASE
 
-Phase 2 — Foundation refactor, including the five architectural tasks from
-Claude’s twelve-position decision. Phase 3 has not started.
+Phase 2 architecture (approved in `b825f70`). R1 composition contract and R2
+converge-forced frame are implemented. Phase 3 has not started.
 
 ### COMPLETED TASKS
 
-Phase 0, Phase 1, Phase 2 (chrome + demo fixtures + page-level canvas + 12
-beats + `data-beat` driver + suspend + twelve-anchor capture).
+Phase 0, Phase 1, Phase 2 architecture, R1 (side contract + camera + scrim +
+contrast probe), R2 (beat 07 with `converge` forced to 1).
 
 ### VERIFICATION PERFORMED
 
-`npx tsx scripts/check-beats.ts` 12/0. `npm run verify` (tsc, eslint, 211
-fixtures). `npx next build` pass. Capture `.captures/phase2-canvas/`:
-`diag.frames = 8`, `helixFrames = 31`, `hero: animated`, twelve PNGs opened,
-`suspend.loop = demand`, `helixFramesDelta = 0`.
+`npx tsc --noEmit` pass. `npx eslint .` pass. `npm run test:fixtures` 211/0.
+`npx tsx scripts/check-beats.ts` 12/0. `npx next build` pass. Capture
+`.captures/phase2-r1/`: `diag.frames = 9`, `helixFrames = 30`, `hero: animated`,
+twelve PNGs opened, contrast **158 blocks / 0 helix fails**,
+`suspend.loop = demand`, `helixFramesDelta = 0`. R2:
+`.captures/phase2-r2/beat-07-converge-1.png`.
 
 ### FILES CHANGED
 
-`HelixStage.tsx`, `HelixHero.tsx`, `HelixScene.tsx`, `beats.ts`, `strands.ts`,
-`studio.tsx`, `app/page.tsx`, marketing `Section` / scaffolds / beats,
-`scripts/capture.mjs`, `scripts/check-beats.ts`, `taskplan.md`,
-`docs/interaction-spec.md`, `docs/content-architecture.md`, plus the earlier
-Phase 2 chrome, `data/demo/`, and `research/{masternewUIdesign,newUI}.md`.
+`Section.tsx`, `beats.ts`, `HelixScene.tsx`, `HelixStage.tsx`, `HelixHero.tsx`,
+marketing sections (Endgame, Join, Propagation, Meaning, ConceptCards,
+CodePainting, Trust, BeatScaffold), `lib/homepage.ts`, `scripts/capture.mjs`,
+`scripts/check-beats.ts`, `taskplan.md`. Not touched: `organic.ts`, `strands.ts`.
 
 ### CLAUDE DESIGN REVIEW
 
-Needed on the twelve captured anchors (`.captures/phase2-canvas/beat-00` …
-`beat-11`). Camera look-Y follows the live generation bounds so 0.45× still
-frames generation 0; distance multiples are as specified. Return if that
-look-Y is wrong.
+Needed on R1 composition (`.captures/phase2-r1/beat-00` … `beat-11` +
+`contrast.json`) and on the R2 pose
+(`.captures/phase2-r2/beat-07-converge-1.png`). Do not start Phase 3 until R1
+is approved.
 
 ### OPEN BLOCKERS
 
-None for Phase 2 architecture. Phase 3 is next; do not start it until Claude
-issues APROBADO or REVISIÓN REQUERIDA on the twelve anchors.
+R1 approval blocks Phase 3. R3 (KEYLIT labels on beat 07) is recorded for
+Phase 3.
 
 ### FIRST UNCHECKED TASK
 
-Phase 3 — Align Connect Repository with the join headline, then rebuild hero
-messaging. **Wait for Claude’s capture review first.**
+R3 / Phase 3 — after Claude approves R1. Align Connect Repository with the
+join headline, then rebuild hero messaging. Replace KEYLIT gene labels.

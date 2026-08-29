@@ -4,11 +4,14 @@ import { Section } from './Section';
  * The one section that is allowed to be a claim about the future rather than a
  * description of the product. Kept short, and immediately grounded by naming
  * what actually has to exist first.
+ *
+ * Copy stays in the reading column. A centred quote over the canvas put the
+ * lineage through the 2045 line — the specimen yields to text.
  */
 export function Endgame() {
   return (
-    <Section id="endgame" beat={7} className="overflow-hidden">
-      <figure className="relative m-0 mx-auto max-w-[900px] text-center">
+    <Section id="endgame" beat={7} beatSide="left" className="overflow-hidden">
+      <figure className="relative m-0 max-w-[720px]">
         <p className="text-acid font-mono text-micro uppercase">The long horizon</p>
 
         <blockquote className="mt-7">
@@ -19,7 +22,7 @@ export function Endgame() {
           </p>
         </blockquote>
 
-        <figcaption className="text-muted mx-auto mt-9 max-w-[620px] text-[15px] leading-relaxed">
+        <figcaption className="text-muted mt-9 max-w-[620px] text-[15px] leading-relaxed">
           That is a long way off, and it starts somewhere unglamorous: being able to say which
           project a single capability came from, and proving it. Everything on this site is that
           first step, built on eight seeded projects so the shape is arguable before it is real.

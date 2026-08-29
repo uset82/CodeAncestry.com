@@ -30,6 +30,22 @@ export type Beat = {
   cameraMultiple: number;
 };
 
+export type BeatSide = 'left' | 'right' | 'full';
+
+/** Camera aim offset. Copy on the left → lineage sits right (negative). */
+export const LOOK_X_EXTENT = 4.6;
+
+export function lookXForSide(side: BeatSide): number {
+  if (side === 'left') return -LOOK_X_EXTENT;
+  if (side === 'right') return LOOK_X_EXTENT;
+  return 0;
+}
+
+export function parseBeatSide(value: string | undefined): BeatSide | null {
+  if (value === 'left' || value === 'right' || value === 'full') return value;
+  return null;
+}
+
 const ZERO_POSE = {
   inheritance: 0,
   upstream: 0,
@@ -244,11 +260,31 @@ export function beatStateAt(index: number, t = 0) {
   return {
     progress: last === 0 ? 0 : (i + mixT) / last,
     activeIndex: i,
+    lookX: -LOOK_X_EXTENT,
+    side: 'left' as BeatSide,
     ...scalars,
   };
 }
 
 export type BeatState = ReturnType<typeof beatStateAt>;
+
+function sideOf(el: HTMLElement, beat: number): BeatSide {
+  const side = parseBeatSide(el.dataset.beatSide);
+  if (side) return side;
+  /* Missing side is a contract bug. Do not invent left. Centre the specimen
+     so the overlap stays visible, and mark the document. */
+  if (typeof document !== 'undefined') {
+    document.documentElement.dataset.helixSideMissing = String(beat);
+  }
+  console.error(`[helix] [data-beat="${beat}"] is missing data-beat-side`);
+  return 'full';
+}
+
+function withSide(index: number, t: number, from: BeatSide, to: BeatSide): BeatState {
+  const mixT = Math.min(1, Math.max(0, t));
+  const lookX = lookXForSide(from) + (lookXForSide(to) - lookXForSide(from)) * mixT;
+  return { ...beatStateAt(index, t), lookX, side: mixT < 0.5 ? from : to };
+}
 
 export function measureViewportBeat(): { state: BeatState; owns3d: boolean } {
   if (typeof window === 'undefined') return { state: beatStateAt(0, 0), owns3d: false };
@@ -256,7 +292,11 @@ export function measureViewportBeat(): { state: BeatState; owns3d: boolean } {
   const mid = window.innerHeight / 2;
   const viewH = window.innerHeight;
   const nodes = [...document.querySelectorAll<HTMLElement>('[data-beat]')]
-    .map((el) => ({ el, beat: Number(el.dataset.beat), rect: el.getBoundingClientRect() }))
+    .map((el) => ({
+      el,
+      beat: Number(el.dataset.beat),
+      rect: el.getBoundingClientRect(),
+    }))
     .filter((node) => Number.isFinite(node.beat))
     .sort((a, b) => a.beat - b.beat);
 
@@ -264,11 +304,22 @@ export function measureViewportBeat(): { state: BeatState; owns3d: boolean } {
 
   const intersecting = nodes.some((node) => node.rect.bottom > 0 && node.rect.top < viewH);
 
-  for (const node of nodes) {
+  const neighbour = (i: number) => {
+    const node = nodes[i];
+    const next = nodes[i + 1];
+    if (!node) return { from: 'left' as BeatSide, to: 'left' as BeatSide };
+    const from = sideOf(node.el, node.beat);
+    return { from, to: next ? sideOf(next.el, next.beat) : from };
+  };
+
+  for (let i = 0; i < nodes.length; i += 1) {
+    const node = nodes[i];
+    if (!node) continue;
     if (node.rect.top <= mid && node.rect.bottom > mid) {
       const span = node.rect.height;
       const t = span > 0 ? (mid - node.rect.top) / span : 0;
-      return { state: beatStateAt(node.beat, t), owns3d: true };
+      const { from, to } = neighbour(i);
+      return { state: withSide(node.beat, t, from, to), owns3d: true };
     }
   }
 
@@ -277,16 +328,21 @@ export function measureViewportBeat(): { state: BeatState; owns3d: boolean } {
     const upper = nodes[i + 1];
     if (!lower || !upper) continue;
     if (lower.rect.bottom <= mid && upper.rect.top > mid) {
-      return { state: beatStateAt(lower.beat, 1), owns3d: true };
+      const { from, to } = neighbour(i);
+      return { state: withSide(lower.beat, 1, from, to), owns3d: true };
     }
   }
 
   const first = nodes[0];
   const lastNode = nodes[nodes.length - 1];
   if (first && first.rect.top > mid) {
-    return { state: beatStateAt(first.beat, 0), owns3d: intersecting };
+    const side = sideOf(first.el, first.beat);
+    return { state: withSide(first.beat, 0, side, side), owns3d: intersecting };
   }
-  if (lastNode) return { state: beatStateAt(lastNode.beat, 0), owns3d: intersecting };
+  if (lastNode) {
+    const side = sideOf(lastNode.el, lastNode.beat);
+    return { state: withSide(lastNode.beat, 0, side, side), owns3d: intersecting };
+  }
   return { state: beatStateAt(0, 0), owns3d: false };
 }
 

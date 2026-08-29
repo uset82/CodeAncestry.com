@@ -64,7 +64,7 @@ export function TrustLadder() {
   const cleared = RUNGS.filter((rung) => met(rung.key)).length;
 
   return (
-    <Section id="trust" beat={6}>
+    <Section id="trust" beat={6} beatSide="left">
       <div className="grid gap-14 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20">
         <div>
           <Eyebrow index="05">Trust ladder</Eyebrow>
@@ -94,8 +94,8 @@ export function TrustLadder() {
                 key={rung.id}
                 className={`flex items-start gap-4 rounded-md border px-4 py-4 transition-colors ${
                   cleared
-                    ? 'border-acid/25 bg-acid/[0.045]'
-                    : 'border-line-strong bg-panel-2/60 border-dashed'
+                    ? 'border-acid/25 bg-panel'
+                    : 'border-line-strong bg-panel-2 border-dashed'
                 }`}
                 /* Staircase indent, but never so deep that it squeezes the copy
                    on a narrow screen. */

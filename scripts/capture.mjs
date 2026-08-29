@@ -48,6 +48,7 @@ const WIDTH = Number(process.env.CAPTURE_WIDTH ?? 1600);
 const HEIGHT = Number(process.env.CAPTURE_HEIGHT ?? 900);
 const REDUCED = process.env.CAPTURE_REDUCED_MOTION === '1';
 const NO_WEBGL = process.env.CAPTURE_NO_WEBGL === '1';
+const ONLY_BEAT = process.env.CAPTURE_BEAT === undefined ? null : Number(process.env.CAPTURE_BEAT);
 
 if (PATHNAME === '/' && !targetUrl.searchParams.has('helix') && !REDUCED && !NO_WEBGL) {
   targetUrl.searchParams.set('helix', 'high');
@@ -171,6 +172,98 @@ const shoot = async (name) => {
   writeFileSync(join(OUT, `${name}.png`), Buffer.from(r.result.data, 'base64'));
   const lum = await luminanceOf(r.result.data);
   console.log('wrote', join(OUT, `${name}.png`), 'luminance', JSON.stringify(lum));
+  return r.result.data;
+};
+
+/**
+ * Contrast of body copy against the composited frame — not the design token.
+ * Glyphs are excluded from the mean so the sample is the pixels behind the ink.
+ * A block fails this bug if it clears 4.5:1 on the void but not on the frame.
+ */
+const probeContrast = async (beat, png) => {
+  if (!png) return { beat, blocks: [], error: 'no png' };
+  return evaluate(`(async () => {
+    const VOID = [7, 9, 13];
+    const lin = (c) => {
+      const s = c / 255;
+      return s <= 0.04045 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+    };
+    const lum = (rgb) => 0.2126 * lin(rgb[0]) + 0.7152 * lin(rgb[1]) + 0.0722 * lin(rgb[2]);
+    const ratio = (a, b) => {
+      const hi = Math.max(a, b);
+      const lo = Math.min(a, b);
+      return (hi + 0.05) / (lo + 0.05);
+    };
+    const parseRgb = (css) => {
+      const m = css.match(/rgba?\\((\\d+)[, ]+(\\d+)[, ]+(\\d+)/);
+      return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : [244, 246, 248];
+    };
+
+    const img = new Image();
+    img.src = 'data:image/png;base64,${png}';
+    await img.decode();
+    const c = document.createElement('canvas');
+    c.width = img.width;
+    c.height = img.height;
+    const ctx = c.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(img, 0, 0);
+
+    const section = document.querySelector('[data-beat="${beat}"]');
+    if (!section) return { beat: ${beat}, side: null, blocks: [], error: 'no section' };
+
+    const nodes = [...section.querySelectorAll('h1,h2,h3,h4,p,li,blockquote,figcaption,label,dt,dd,button,a')];
+    const seen = new Set();
+    const blocks = [];
+
+    for (const el of nodes) {
+      if (el.closest('.sr-only') || el.closest('[aria-hidden="true"]')) continue;
+      const box = el.getBoundingClientRect();
+      if (box.width < 12 || box.height < 8) continue;
+      if (box.bottom < 0 || box.top > innerHeight || box.right < 0 || box.left > innerWidth) continue;
+      const style = getComputedStyle(el);
+      if (style.visibility === 'hidden' || Number(style.opacity) < 0.05) continue;
+      const clone = el.cloneNode(true);
+      clone.querySelectorAll('.sr-only,[aria-hidden="true"]').forEach((n) => n.remove());
+      const text = (clone.innerText || '').replace(/\\s+/g, ' ').trim();
+      if (text.length < 2) continue;
+      const key = [Math.round(box.left), Math.round(box.top), text.slice(0, 40)].join('|');
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      const x = Math.max(0, Math.floor(box.left));
+      const y = Math.max(0, Math.floor(box.top));
+      const w = Math.max(1, Math.min(c.width - x, Math.ceil(box.width)));
+      const h = Math.max(1, Math.min(c.height - y, Math.ceil(box.height)));
+      const pix = ctx.getImageData(x, y, w, h).data;
+      const rgb = parseRgb(style.color);
+      const textL = lum(rgb);
+      const values = [];
+      for (let i = 0; i < pix.length; i += 4) {
+        const yLin = lum([pix[i], pix[i + 1], pix[i + 2]]);
+        if (Math.abs(yLin - textL) > 0.16) values.push(yLin);
+      }
+      const frameL = values.length > pix.length / 16
+        ? values.reduce((a, b) => a + b, 0) / values.length
+        : textL;
+      const frameRatio = ratio(textL, frameL);
+      const voidRatio = ratio(textL, lum(VOID));
+      blocks.push({
+        tag: el.tagName.toLowerCase(),
+        text: text.slice(0, 80),
+        color: style.color,
+        frame: Number(frameRatio.toFixed(2)),
+        void: Number(voidRatio.toFixed(2)),
+        fail: frameRatio < 4.5 && voidRatio >= 4.5,
+      });
+    }
+
+    return {
+      beat: ${beat},
+      side: section.dataset.beatSide ?? null,
+      missingSide: !section.dataset.beatSide,
+      blocks,
+    };
+  })()`);
 };
 
 await send('Page.enable');
@@ -239,10 +332,13 @@ const waitScroll = async () => {
   })()`);
 };
 
+const contrastReport = [];
+
 if (PATHNAME === '/' && beatCount > 0) {
-  const beats = await evaluate(`[...new Set([...document.querySelectorAll('[data-beat]')]
+  let beats = await evaluate(`[...new Set([...document.querySelectorAll('[data-beat]')]
     .map((el) => Number(el.dataset.beat))
     .filter((n) => Number.isFinite(n)))].sort((a, b) => a - b)`);
+  if (Number.isFinite(ONLY_BEAT)) beats = beats.filter((n) => n === ONLY_BEAT);
   for (const beat of beats) {
     await evaluate(`(async () => {
       const el = document.querySelector('[data-beat="${beat}"]');
@@ -252,19 +348,45 @@ if (PATHNAME === '/' && beatCount > 0) {
       window.scrollTo(0, Math.max(0, y));
     })()`);
     await waitScroll();
-    await shoot(`beat-${String(beat).padStart(2, '0')}`);
+    const suffix = targetUrl.searchParams.has('converge')
+      ? `-converge-${targetUrl.searchParams.get('converge')}`
+      : '';
+    const png = await shoot(`beat-${String(beat).padStart(2, '0')}${suffix}`);
+    const contrast = await probeContrast(beat, png);
+    contrastReport.push(contrast);
+    console.log('contrast', JSON.stringify(contrast));
   }
 
-  await evaluate(`window.scrollTo(0, document.documentElement.scrollHeight)`);
-  await waitScroll();
-  const before = await evaluate(`window.__HELIX_FRAMES ?? 0`);
-  await sleep(800);
-  const after = await evaluate(`window.__HELIX_FRAMES ?? 0`);
-  const loop = await evaluate(`window.__HELIX_LOOP ?? document.documentElement.dataset.helixLoop ?? null`);
-  console.log('suspend', JSON.stringify({ loop, helixFramesDelta: after - before, before, after }));
-  await shoot('footer-suspend');
+  if (!Number.isFinite(ONLY_BEAT)) {
+    await evaluate(`window.scrollTo(0, document.documentElement.scrollHeight)`);
+    await waitScroll();
+    const before = await evaluate(`window.__HELIX_FRAMES ?? 0`);
+    await sleep(800);
+    const after = await evaluate(`window.__HELIX_FRAMES ?? 0`);
+    const loop = await evaluate(`window.__HELIX_LOOP ?? document.documentElement.dataset.helixLoop ?? null`);
+    console.log('suspend', JSON.stringify({ loop, helixFramesDelta: after - before, before, after }));
+    await shoot('footer-suspend');
+  }
 } else {
   await shoot(PATHNAME.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'index');
+}
+
+if (contrastReport.length > 0) {
+  writeFileSync(join(OUT, 'contrast.json'), JSON.stringify(contrastReport, null, 2));
+  const failed = contrastReport.flatMap((row) =>
+    (row.blocks ?? []).filter((block) => block.fail).map((block) => ({ beat: row.beat, ...block })),
+  );
+  const missing = contrastReport.filter((row) => row.missingSide);
+  console.log('contrast-summary', JSON.stringify({
+    beats: contrastReport.length,
+    blocks: contrastReport.reduce((n, row) => n + (row.blocks?.length ?? 0), 0),
+    failed: failed.length,
+    missingSide: missing.map((row) => row.beat),
+  }));
+  if (failed.length > 0 || missing.length > 0) {
+    console.log('CONTRAST FAILURES', JSON.stringify(failed, null, 2));
+    process.exitCode = 1;
+  }
 }
 
 ws.close();

@@ -12,9 +12,6 @@ import { HeroFallback } from './HeroFallback';
 
 gsap.registerPlugin(useGSAP);
 
-const HERO_VEIL =
-  'linear-gradient(100deg, #07090d 0%, color-mix(in oklab, #07090d 88%, transparent) 34%, transparent 62%)';
-
 /** The eyebrow, headline and calls to action, shared by both hero variants. */
 function HeroCopy({ children }: { children?: React.ReactNode }) {
   const copy = useRef<HTMLDivElement>(null);
@@ -142,16 +139,6 @@ function BeatBody({ index, headline, outlined, body }: (typeof BEATS)[number]) {
   );
 }
 
-function Veil() {
-  return (
-    <div
-      aria-hidden="true"
-      className="pointer-events-none absolute inset-0"
-      style={{ background: HERO_VEIL }}
-    />
-  );
-}
-
 /**
  * Reduced-motion and no-WebGL hero.
  *
@@ -166,6 +153,7 @@ function StaticHero() {
       aria-labelledby="hero-title"
       data-hero="static"
       data-beat="0"
+      data-beat-side="left"
       className="border-line relative border-b"
     >
       <div
@@ -206,8 +194,12 @@ function AnimatedHero() {
 
   return (
     <div data-hero="animated">
-      <section data-beat="0" aria-labelledby="hero-title" className="relative min-h-screen">
-        <Veil />
+      <section
+        data-beat="0"
+        data-beat-side="left"
+        aria-labelledby="hero-title"
+        className="relative min-h-screen"
+      >
         <div className="shell-wide relative z-10 flex min-h-screen flex-col justify-center pt-24 pb-16">
           <HeroCopy>
             <div className="mt-8">
@@ -224,8 +216,12 @@ function AnimatedHero() {
         </div>
       </section>
 
-      <section data-beat="1" aria-label={genes.headline} className="relative min-h-screen">
-        <Veil />
+      <section
+        data-beat="1"
+        data-beat-side="left"
+        aria-label={genes.headline}
+        className="relative min-h-screen"
+      >
         <div className="shell-wide relative z-10 flex min-h-screen flex-col justify-center py-16">
           <BeatBody {...genes} />
         </div>

@@ -19,6 +19,7 @@ const SCALARS = [
   'recovery',
   'zoomOut',
   'cameraMultiple',
+  'lookX',
 ] as const;
 
 if (BEATS.length !== 12) {
