@@ -23,7 +23,7 @@ export function CodePaintingTeaser() {
   const local = share('local');
 
   return (
-    <Section id="painting">
+    <Section id="painting" beat={4}>
       <div className="grid gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-20">
         <div>
           <Eyebrow index="03">Code Painting</Eyebrow>

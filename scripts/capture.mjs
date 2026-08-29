@@ -53,9 +53,7 @@ if (PATHNAME === '/' && !targetUrl.searchParams.has('helix') && !REDUCED && !NO_
   targetUrl.searchParams.set('helix', 'high');
 }
 
-/* The five beats plus the closing hold. Anything scroll-driven is only worth
-   judging at the positions the copy changes on. */
-const HERO_BEATS = [0, 0.22, 0.44, 0.65, 0.86, 1];
+/* Twelve section anchors. The driver reads `[data-beat]`, not scroll fractions. */
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const chromePath = CHROME_CANDIDATES.find((p) => existsSync(p));
@@ -216,32 +214,55 @@ const diag = await evaluate(`(async () => {
     frames,
     meanDt: Number(mean.toFixed(1)),
     hero: document.querySelector('[data-hero]')?.dataset.hero ?? null,
+    beats: document.querySelectorAll('[data-beat]').length,
+    helixFrames: window.__HELIX_FRAMES ?? null,
+    helixLoop: window.__HELIX_LOOP ?? document.documentElement.dataset.helixLoop ?? null,
     canvas: canvas ? [canvas.width, canvas.height] : null,
     search: window.location.search,
   };
 })()`);
 console.log('diag', JSON.stringify(diag));
-if (diag.frames === 0) console.log('WARNING: no animation frames — nothing 3D will have rendered');
+if (diag.frames === 0 && !diag.helixFrames) {
+  console.log('WARNING: no animation frames — nothing 3D will have rendered');
+}
 
-const hero = await evaluate(`!!document.querySelector('[data-hero="animated"]')`);
+const beatCount = await evaluate(`document.querySelectorAll('[data-beat]').length`);
 
-if (hero && PATHNAME === '/') {
-  for (const p of HERO_BEATS) {
+const waitScroll = async () => {
+  await evaluate(`(async () => {
+    let last = -1, stable = 0;
+    for (let i = 0; i < 40; i += 1) {
+      await new Promise((r) => setTimeout(r, 50));
+      if (window.scrollY === last) { if ((stable += 1) >= 3) break; } else { stable = 0; last = window.scrollY; }
+    }
+    await new Promise((r) => setTimeout(r, 900));
+  })()`);
+};
+
+if (PATHNAME === '/' && beatCount > 0) {
+  const beats = await evaluate(`[...new Set([...document.querySelectorAll('[data-beat]')]
+    .map((el) => Number(el.dataset.beat))
+    .filter((n) => Number.isFinite(n)))].sort((a, b) => a - b)`);
+  for (const beat of beats) {
     await evaluate(`(async () => {
-      const track = document.querySelector('[data-hero="animated"]');
-      const rect = track.getBoundingClientRect();
-      const top = rect.top + window.scrollY;
-      const scrollable = Math.max(0, rect.height - window.innerHeight);
-      window.scrollTo(0, top + scrollable * ${p});
-      let last = -1, stable = 0;
-      for (let i = 0; i < 40; i += 1) {
-        await new Promise((r) => setTimeout(r, 50));
-        if (window.scrollY === last) { if ((stable += 1) >= 3) break; } else { stable = 0; last = window.scrollY; }
-      }
-      await new Promise((r) => setTimeout(r, 900));
+      const el = document.querySelector('[data-beat="${beat}"]');
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const y = rect.top + window.scrollY + rect.height / 2 - window.innerHeight / 2;
+      window.scrollTo(0, Math.max(0, y));
     })()`);
-    await shoot(`beat-${String(p).replace('.', '_')}`);
+    await waitScroll();
+    await shoot(`beat-${String(beat).padStart(2, '0')}`);
   }
+
+  await evaluate(`window.scrollTo(0, document.documentElement.scrollHeight)`);
+  await waitScroll();
+  const before = await evaluate(`window.__HELIX_FRAMES ?? 0`);
+  await sleep(800);
+  const after = await evaluate(`window.__HELIX_FRAMES ?? 0`);
+  const loop = await evaluate(`window.__HELIX_LOOP ?? document.documentElement.dataset.helixLoop ?? null`);
+  console.log('suspend', JSON.stringify({ loop, helixFramesDelta: after - before, before, after }));
+  await shoot('footer-suspend');
 } else {
   await shoot(PATHNAME.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'index');
 }

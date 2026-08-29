@@ -64,7 +64,7 @@ export function TrustLadder() {
   const cleared = RUNGS.filter((rung) => met(rung.key)).length;
 
   return (
-    <Section id="trust">
+    <Section id="trust" beat={6}>
       <div className="grid gap-14 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20">
         <div>
           <Eyebrow index="05">Trust ladder</Eyebrow>

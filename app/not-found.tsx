@@ -32,7 +32,7 @@ export default function NotFound() {
         <p className="text-muted label mb-4">Everywhere else</p>
         <ul className="flex flex-wrap gap-x-8 gap-y-3">
           {nav.map((item) => (
-            <li key={item.href}>
+            <li key={item.label}>
               <Link
                 href={item.href}
                 className="text-text-soft hover:text-acid text-[14px] transition-colors"

@@ -2,11 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
-import { nav, site } from '@/lib/site';
+import { connectCta, nav, site, type NavItem } from '@/lib/site';
 import { HelixMark } from '@/components/ui/HelixMark';
 import { ButtonLink } from '@/components/ui/Button';
+
+const isActive = (pathname: string, href: string) =>
+  pathname === href || (href !== '/' && pathname.startsWith(`${href}/`));
 
 export function SiteHeader() {
   const pathname = usePathname();
@@ -14,14 +17,16 @@ export function SiteHeader() {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24);
-    const raf = requestAnimationFrame(onScroll);
-    window.addEventListener('scroll', onScroll, { passive: true });
+    const handleScroll = () => setScrolled(window.scrollY > 24);
+    const raf = requestAnimationFrame(handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => {
       cancelAnimationFrame(raf);
-      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('scroll', handleScroll);
     };
   }, []);
+
+  const handleToggleMenu = () => setOpen((value) => !value);
 
   return (
     <header
@@ -46,32 +51,38 @@ export function SiteHeader() {
         </Link>
 
         <nav aria-label="Primary" className="hidden items-center gap-7 lg:flex">
-          {nav.map((item) => {
-            const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-            return (
+          {nav.map((item) =>
+            item.menu ? (
+              <NavDisclosure key={item.label} item={item} pathname={pathname} />
+            ) : (
               <Link
-                key={item.href}
+                key={item.label}
                 href={item.href}
-                aria-current={active ? 'page' : undefined}
+                aria-current={isActive(pathname, item.href) ? 'page' : undefined}
                 className={cn(
                   'text-[13px] transition-colors',
-                  active ? 'text-text' : 'text-muted hover:text-text',
+                  isActive(pathname, item.href) ? 'text-text' : 'text-muted hover:text-text',
                 )}
               >
                 {item.label}
               </Link>
-            );
-          })}
+            ),
+          )}
         </nav>
 
         <div className="flex items-center gap-2">
-          <ButtonLink href="/#join" variant="secondary" size="sm" className="hidden sm:inline-flex">
-            Join alpha
+          <ButtonLink
+            href={connectCta.href}
+            variant="secondary"
+            size="sm"
+            className="hidden sm:inline-flex"
+          >
+            {connectCta.label}
           </ButtonLink>
 
           <button
             type="button"
-            onClick={() => setOpen((v) => !v)}
+            onClick={handleToggleMenu}
             aria-expanded={open}
             aria-controls="mobile-nav"
             aria-label={open ? 'Close menu' : 'Open menu'}
@@ -92,7 +103,7 @@ export function SiteHeader() {
         >
           <ul className="shell-wide flex flex-col py-3">
             {nav.map((item) => (
-              <li key={item.href}>
+              <li key={item.label}>
                 <Link
                   href={item.href}
                   onClick={() => setOpen(false)}
@@ -100,16 +111,31 @@ export function SiteHeader() {
                 >
                   {item.label}
                 </Link>
+                {item.menu && (
+                  <ul className="border-line/70 mb-2 ml-3 border-l pl-3">
+                    {item.menu.map((entry) => (
+                      <li key={`${item.label}-${entry.label}`}>
+                        <Link
+                          href={entry.href}
+                          onClick={() => setOpen(false)}
+                          className="text-muted hover:text-text block py-1.5 text-[13px]"
+                        >
+                          {entry.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </li>
             ))}
             <li className="pt-2">
               <ButtonLink
-                href="/#join"
+                href={connectCta.href}
                 variant="primary"
                 size="sm"
                 onClick={() => setOpen(false)}
               >
-                Join alpha
+                {connectCta.label}
               </ButtonLink>
             </li>
           </ul>
@@ -118,3 +144,62 @@ export function SiteHeader() {
     </header>
   );
 }
+
+const NavDisclosure = ({ item, pathname }: { item: NavItem; pathname: string }) => {
+  const [open, setOpen] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+  const menuId = useId();
+
+  useEffect(() => {
+    const handlePointer = (event: MouseEvent) => {
+      if (!root.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', handlePointer);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handlePointer);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, []);
+
+  const handleToggle = () => setOpen((value) => !value);
+
+  return (
+    <div ref={root} className="relative">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={menuId}
+        aria-haspopup="true"
+        onClick={handleToggle}
+        className={cn(
+          'text-[13px] transition-colors',
+          isActive(pathname, item.href) || open ? 'text-text' : 'text-muted hover:text-text',
+        )}
+      >
+        {item.label}
+      </button>
+      {open && item.menu && (
+        <ul
+          id={menuId}
+          className="border-line bg-panel/95 absolute top-[calc(100%+12px)] left-0 min-w-[11rem] border p-2 shadow-lg backdrop-blur-xl"
+        >
+          {item.menu.map((entry) => (
+            <li key={entry.label}>
+              <Link
+                href={entry.href}
+                onClick={() => setOpen(false)}
+                className="text-text-soft hover:bg-hover hover:text-text block px-3 py-2 text-[13px]"
+              >
+                {entry.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};

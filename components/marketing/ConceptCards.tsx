@@ -129,7 +129,7 @@ const CONCEPTS: Concept[] = [
 
 export function ConceptCards() {
   return (
-    <Section id="concepts">
+    <Section id="concepts" beat={2}>
       <div className="max-w-[760px]">
         <Eyebrow index="01">Four questions the registry answers</Eyebrow>
         <h2 className="text-headline mt-4 text-balance">

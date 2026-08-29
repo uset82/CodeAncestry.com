@@ -21,6 +21,7 @@ import {
   STRANDS,
   STRANDS_BY_ID,
   UPSTREAM_PATH,
+  applyConvergeInto,
   axisPointAtInto,
   backbonePointAtInto,
   GROW_WIDTH,
@@ -34,7 +35,7 @@ import {
   strandBasis,
   strandEased,
 } from './strands';
-import { cameraProgress, climaxAmount, daylight, holdProgress, type BeatState } from './beats';
+import { climaxAmount, daylight, holdProgress, type BeatState } from './beats';
 import {
   climaxEmissive,
   depthMaterialOf,
@@ -80,6 +81,15 @@ const FAMILY_LOOK_LIFT = 0.8;
  * done in the camera rather than by boxing the canvas into a column.
  */
 const FAMILY_LOOK_X = -4.6;
+
+/** Centre of the strands the current generation count has revealed. */
+function liveFamilyY(generations: number): number {
+  const live = STRANDS.filter((spec) => spec.generation < generations + 0.02);
+  if (live.length === 0) return FAMILY_Y;
+  const top = Math.max(...live.map((spec) => Math.max(spec.start.y, spec.end.y)));
+  const bottom = Math.min(...live.map((spec) => Math.min(spec.start.y, spec.end.y)));
+  return (top + bottom) / 2;
+}
 
 const RUNGS_PER_STRAND = 24;
 const UPSTREAM_PULSES = 3;
@@ -245,6 +255,8 @@ function Backbones({ state, tier, materials, pointer }: Props) {
                  closing beat. */
               axisPointAtInto(strand.spec, 0, current.flatten, AXIS_A);
               axisPointAtInto(strand.spec, 1, current.flatten, AXIS_B);
+              applyConvergeInto(strand.spec, current.converge, AXIS_A);
+              applyConvergeInto(strand.spec, current.converge, AXIS_B);
               syncOrganic(strand.material, {
                 grow: strandEased(current.generations, strand.spec.generation),
                 flatten: current.flatten,
@@ -298,11 +310,13 @@ function GrowingTips({
       const t = Math.min(0.999, Math.max(0, eased));
       strand.curve.getPoint(t, position);
       axisPointAtInto(strand.spec, t, current.flatten, axis);
+      applyConvergeInto(strand.spec, current.converge, axis);
       /* Follow the tube as it tapers onto the axis, then as flatten collapses
          the whole strand. Otherwise the tip sits on the full-radius helix
          while the backbone has already closed to a point. */
       const taper = pathTaper(t, eased, startTaperWidth(strand.spec.generation));
       position.lerp(axis, 1 - taper * (1 - current.flatten));
+      applyConvergeInto(strand.spec, current.converge, position);
       const growing = eased > 0.03 && eased < 0.985;
       const settled = eased >= 0.985 ? 0.046 : 0;
       scale.setScalar(growing ? 0.068 : settled);
@@ -370,6 +384,7 @@ function Rungs({ state, materials }: Pick<Props, 'state' | 'materials'>) {
       const { matrix, position, quaternion, scale, up } = scratch;
 
       axisPointAtInto(slot.spec, slot.t, current.flatten, position);
+      applyConvergeInto(slot.spec, current.converge, position);
       quaternion.setFromUnitVectors(up, slot.direction);
 
       const breathe = 1 + Math.sin(time * 1.1 + i * 0.7) * 0.06 * (1 - current.flatten);
@@ -441,6 +456,7 @@ function Loci({ state, tier, materials }: Props) {
       quaternion: new Quaternion(),
       scale: new Vector3(),
       color: new Color(),
+      alarm: new Color(),
     }),
     [],
   );
@@ -457,47 +473,77 @@ function Loci({ state, tier, materials }: Props) {
       const eased = grow - growthJitterAt(grow);
       const overshoot = slot.kind === 'junction' && slot.t === 1 && grow >= 1 ? GROW_WIDTH : 0;
       const front = growthAlong(eased, slot.t, overshoot);
-      const { matrix, position, quaternion, scale, color } = scratch;
+      const { matrix, position, quaternion, scale, color, alarm } = scratch;
 
       axisPointAtInto(slot.spec, slot.t, current.flatten, position);
+      applyConvergeInto(slot.spec, current.converge, position);
       if (slot.kind === 'gene') {
         position.addScaledVector(slot.direction, slot.spec.radius * (1 - current.flatten));
+      }
+
+      const agentLocus =
+        slot.kind === 'gene' &&
+        slot.spec.generation > 0 &&
+        Math.floor(slot.t * slot.spec.loci) % 2 === 0;
+      if (agentLocus) {
+        position.addScaledVector(slot.direction, slot.spec.radius * 0.45 * current.agents);
+      }
+      if (slot.mutated) {
+        position.addScaledVector(slot.direction, 0.08 * current.mutate);
       }
 
       const pulse = 1 + Math.sin(time * 2 + slot.seed) * (slot.kind === 'junction' ? 0.06 : 0.16);
       const terminal = slot.kind === 'junction' && slot.t === 1;
       const emphasis = slot.mutated
-        ? 1.7 + current.upstream * 0.6
+        ? 1.7 + current.upstream * 0.6 + current.recovery * 0.4
         : terminal
           ? 1.2
           : slot.kind === 'junction'
             ? 1.45
             : 1;
+      const focus = slot.kind === 'gene' ? 0.4 + current.geneFocus * 0.6 : 1;
       /* Loci grow as the helix flattens. The closing beat collapses the
          structure toward a line, which sheds visual mass exactly where the
          story peaks; the nodes carrying that mass have to compensate. */
       const bulk = 1 + current.flatten * 0.5;
-      /* The junction node has to be big enough to be a joint.
-         Both sides of a branch point taper to a needle — the parent over its
-         last 3.5% and each child over its first 6% — which on the longest child
-         is a 0.41-unit stretch of near-invisible thread. At radius 0.09 the old
-         node bridged none of it, and the family read as loose chains that do
-         not touch. A branch in anything living is a node, not a seam. */
       const size =
-        (slot.kind === 'junction' ? 0.15 : 0.055) * pulse * emphasis * front * bulk;
-      scale.setScalar(size);
+        (slot.kind === 'junction' ? 0.15 : 0.055) * pulse * emphasis * front * bulk * focus;
+
+      const alarmed =
+        slot.mutated ||
+        (slot.spec.origin === true && slot.kind === 'gene') ||
+        (slot.spec.id === 'tutor' && slot.kind === 'gene');
+      if (alarmed && current.alarm > 0) {
+        scale.set(
+          size * (1 + current.alarm * 0.55),
+          size * (1 - current.alarm * 0.5),
+          size * (1 + current.alarm * 0.55),
+        );
+      } else {
+        scale.setScalar(size);
+      }
 
       matrix.compose(position, quaternion, scale);
       node.setMatrixAt(i, matrix);
 
-      if (slot.mutated) {
-        color.copy(HELIX.violet);
-      } else if (slot.spec.generation === 0) {
+      if (slot.spec.generation === 0) {
         color.copy(HELIX.acid).lerp(HELIX.cyan, slot.kind === 'junction' ? 0.08 : 0.22);
       } else {
         color.copy(HELIX.cyan).lerp(HELIX.dim, 0.42 - current.inheritance * 0.36);
       }
       if (terminal) color.lerp(HELIX.acid, 0.28);
+      if (slot.mutated && current.mutate > 0) color.lerp(HELIX.violet, current.mutate);
+      if (agentLocus && current.agents > 0) color.lerp(HELIX.violet, current.agents * 0.55);
+      if (alarmed && current.alarm > 0) {
+        alarm.copy(HELIX.amber).lerp(HELIX.rose, current.alarm);
+        color.lerp(alarm, current.alarm);
+      }
+      if (
+        (slot.mutated || (slot.spec.generation === 0 && slot.kind === 'junction' && slot.t === 0)) &&
+        current.recovery > 0
+      ) {
+        color.lerp(HELIX.acid, current.recovery);
+      }
       node.setColorAt(i, color);
     });
 
@@ -546,6 +592,7 @@ function LocusLabels({ state }: Pick<Props, 'state'>) {
       const frame = frames.current[i];
       if (frame) {
         axisPointAtInto(anchor.spec, anchor.t, current.flatten, scratch);
+        applyConvergeInto(anchor.spec, current.converge, scratch);
         scratch.addScaledVector(anchor.direction, anchor.spec.radius * 1.9 * (1 - current.flatten));
         frame.position.copy(scratch);
       }
@@ -554,12 +601,14 @@ function LocusLabels({ state }: Pick<Props, 'state'>) {
       const grow = strandEased(current.generations, anchor.spec.generation);
       const eased = grow - growthJitterAt(grow);
       const front = growthAlong(eased, anchor.t);
-      /* Fade out through the pull-back. At the reveal distance a label is
-         wider than the strand it names, and all eight collapse into an
-         overlapping stack across the top of the frame. */
-      const reveal = 1 - holdProgress(current.progress);
+      /* geneFocus fades labels in; zoomOut fades them out so they do not stack. */
+      const reveal = current.geneFocus * (1 - holdProgress(current) * 0.9);
       const opacity =
         front > 0.55 ? Math.round(Math.min(1, (front - 0.55) / 0.45) * reveal * 100) / 100 : 0;
+      const mark = node.querySelector('[data-locus-mark]');
+      if (mark) {
+        mark.textContent = current.recovery > 0.45 && anchor.label.mutated ? '✓' : '';
+      }
       if (lastOpacity.current[i] === opacity) return;
       lastOpacity.current[i] = opacity;
       node.style.opacity = String(opacity);
@@ -594,7 +643,11 @@ function LocusLabels({ state }: Pick<Props, 'state'>) {
                 }`}
                 style={{ pointerEvents: 'auto' }}
               >
-                <span aria-hidden="true" className="size-[3px] rounded-full bg-current" />
+                <span
+                  aria-hidden="true"
+                  data-locus-mark
+                  className="size-[3px] rounded-full bg-current text-[8px] leading-none"
+                />
                 {anchor.label.short}
               </button>
 
@@ -658,12 +711,15 @@ function Pulses({ state, tier, materials }: Props) {
     const downNode = down.current;
     if (downNode) {
       downSlots.forEach((slot, i) => {
-        const t = (time * 0.34 + i * 0.21) % 1;
+        const raw = (time * 0.34 + i * 0.21) % 1;
+        const t = raw + (1 - 2 * raw) * current.rewind;
         backbonePointAtInto(slot.spec, slot.basis, 0, t, current.flatten, position);
+        applyConvergeInto(slot.spec, current.converge, position);
         const edge = Math.min(1, Math.min(t, 1 - t) * 7);
         const grow = strandEased(current.generations, slot.spec.generation);
         const grown = growthAlong(grow - growthJitterAt(grow), t);
-        scale.setScalar(0.036 * edge * current.inheritance * grown);
+        const feed = current.inheritance + current.sources * (1 - t) * 0.85;
+        scale.setScalar(0.036 * edge * feed * grown);
         matrix.compose(position, quaternion, scale);
         downNode.setMatrixAt(i, matrix);
       });
@@ -673,13 +729,15 @@ function Pulses({ state, tier, materials }: Props) {
     const upNode = up.current;
     if (upNode && upSlots.length > 0) {
       for (let i = 0; i < UPSTREAM_PULSES; i += 1) {
-        const t = (time * 0.2 + i / UPSTREAM_PULSES) % 1;
+        const raw = (time * 0.2 + i / UPSTREAM_PULSES) % 1;
+        const t = raw + (1 - 2 * raw) * current.rewind;
         const scaled = (1 - t) * upSlots.length;
         const index = Math.min(upSlots.length - 1, Math.floor(scaled));
         const local = scaled - index;
         const slot = upSlots[index];
         if (!slot) continue;
         axisPointAtInto(slot.spec, local, current.flatten, position);
+        applyConvergeInto(slot.spec, current.converge, position);
         const edge = Math.min(1, Math.min(t, 1 - t) * 5);
         scale.setScalar(0.062 * edge * current.upstream);
         matrix.compose(position, quaternion, scale);
@@ -739,45 +797,20 @@ function CameraRig({
   useFrame((_, delta) => {
     const current = state.current;
     if (!current) return;
-    const story = cameraProgress(current.progress);
-    /* Pull back through the last two beats, not only on the written hold.
-       A tight crop at 0.86 was winning the luminance gate against the
-       closing frame — the family was smaller on screen once it was all in
-       shot. Starting the reveal earlier makes 05 and the hold the same
-       picture, so lighting can make the last beat the brightest. */
-    const reveal = Math.min(1, Math.max(0, (current.progress - 0.40) / 0.46));
-    const frame = reveal * reveal * (3 - 2 * reveal);
     const orbit = 1 - current.flatten;
-
-    /* The descent, and then the reveal.
-       Following the beats alone left the camera at y -3.30, z 6.72 looking at
-       y -3.51, which at fov 42 frames 5.16 of the 13.5 units the family spans —
-       38 % of it. The closing frame showed two tubes in close-up, not a family.
-       The hold now pulls back to FAMILY_Z so the whole lineage is in shot; the
-       copy at that beat is about four ancestors being offered a change, so all
-       four had better be visible. */
-    const storyY = 2.2 - story * 6.4;
-    const storyZ = 8.4 - current.flatten * 1.15;
-    const storyLookY = 1.6 - story * 6.2;
-
-    /* Read the fov off the camera instead of repeating the 42 set in
-       `HelixHero`, so the reveal still frames the family if that value or the
-       viewport changes. */
+    /* Distance is a multiple of the fit already computed here. No 0.82 fudge.
+       Look stays FAMILY_LOOK_LIFT / FAMILY_LOOK_X so copy and header stay clear. */
     const fov = 'fov' in camera ? (camera.fov as number) : 42;
-    const FAMILY_Z = (FAMILY_HALF_HEIGHT / Math.tan((fov * Math.PI) / 360)) * 0.82;
+    const fit = FAMILY_HALF_HEIGHT / Math.tan((fov * Math.PI) / 360);
+    const z = fit * current.cameraMultiple;
+    const lookY = liveFamilyY(current.generations) + FAMILY_LOOK_LIFT;
 
     desired.set(
-      Math.sin(story * Math.PI * 0.6) * 1.2 * (1 - frame) +
-        FAMILY_LOOK_X * frame +
-        pointer.current.x * 0.48 * orbit,
-      storyY + (FAMILY_Y + FAMILY_LOOK_LIFT - storyY) * frame + pointer.current.y * 0.24 * orbit,
-      storyZ + (FAMILY_Z - storyZ) * frame,
+      FAMILY_LOOK_X + pointer.current.x * 0.48 * orbit,
+      lookY + pointer.current.y * 0.24 * orbit,
+      z,
     );
-    lookAt.set(
-      -story * 0.9 * (1 - frame) + FAMILY_LOOK_X * frame,
-      storyLookY + (FAMILY_Y + FAMILY_LOOK_LIFT - storyLookY) * frame,
-      0,
-    );
+    lookAt.set(FAMILY_LOOK_X, lookY, 0);
 
     const lerp = Math.min(1, delta * 3.2);
     camera.position.lerp(desired, lerp);

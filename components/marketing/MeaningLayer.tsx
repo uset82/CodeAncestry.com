@@ -86,7 +86,7 @@ const CONTRASTS = [
 
 export function MeaningLayer() {
   return (
-    <Section id="meaning">
+    <Section id="meaning" beat={3}>
       <div className="grid gap-14 lg:grid-cols-[1.05fr_0.95fr] lg:gap-20">
         <div>
           <Eyebrow index="02">Position</Eyebrow>

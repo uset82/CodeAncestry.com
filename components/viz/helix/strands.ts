@@ -365,6 +365,17 @@ export function axisPointAt(spec: StrandSpec, t: number, flatten: number): Vecto
 }
 
 /**
+ * Re-pose a point toward a capability column. Generation becomes the track.
+ * Same instances, a second layout — not new geometry.
+ */
+export function applyConvergeInto(spec: StrandSpec, converge: number, target: Vector3): Vector3 {
+  if (converge <= 0) return target;
+  const columnX = (spec.generation - 1.5) * 0.95;
+  target.x += (columnX - target.x) * converge;
+  return target;
+}
+
+/**
  * One point on a backbone (phase 0 or π). Used by pulses so they follow the
  * live flatten value instead of a curve baked at construction.
  */

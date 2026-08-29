@@ -56,7 +56,7 @@ export function PropagationStrip() {
   const mutation = getHeroMutation();
 
   return (
-    <Section id="propagation">
+    <Section id="propagation" beat={5}>
       <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end md:gap-12">
         <div className="max-w-[640px]">
           <Eyebrow index="04">Propagation protocol</Eyebrow>

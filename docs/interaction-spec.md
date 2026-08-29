@@ -27,19 +27,11 @@ Do not treat the homepage as disconnected blocks. The existing 3D investment is 
 | 10 | Healthy ancestor found | Recovery |
 | 11 | Zoom out to entire network | CodeAncestry |
 
-### Current machine (do not pretend it is already 12)
+### Current machine
 
-`beats.ts` today:
-
-| Beat | Progress | 3D | Copy (KEYLIT piano — to be replaced) |
-| --- | --- | --- | --- |
-| 01 origin | 0 | 1 generation | One project |
-| 02 descent | 0.22 | 2 generations | Then it had descendants |
-| 03 inheritance | 0.44 | 3 generations + down pulses | They inherited capabilities |
-| 04 mutation | 0.65 | 4 generations + flatten start | A great-grandchild learned something |
-| 05 propagation | 0.86 → 1 | upstream + flatten | And sent it back up the family |
-
-Runway: **560vh** sticky. Measure progress from the section rect. Write `state.current` and `--daylight`. Scene reads the ref in `useFrame`. **No rAF on scroll.**
+`beats.ts` has twelve anchors and the nine named scalars. The canvas is a
+page-level fixed backdrop (`HelixStage`). The driver reads `[data-beat]` from
+the section at the viewport centre. **No rAF on scroll. No `at:` fractions.**
 
 ---
 
@@ -143,7 +135,7 @@ stays the phase order — do not build Trace Failure before the CodeTree exists.
 
 ## Hero
 
-- Sticky full-viewport canvas, full-bleed, under the 74px header (`-mt-[74px]` today — remeasure if header height changes).
+- Canvas is `position: fixed; inset: 0` behind the homepage, not a 560vh sticky pin.
 - High tier: HTML locus labels. Low tier: spheres only. None / reduced motion: `StaticHero` + `HeroFallback`.
 - Locus labels are buttons (already). They must name universal genes after Phase 3, not piano genes.
 - CTAs: Explore the Lineage, Build a Genome. Current “Open the CodeTree” / “Follow one mutation” are allowed as secondary once the primary pair exists — Claude’s hero spec lists only the primary pair.
@@ -212,4 +204,4 @@ SSR already assumes reduce. New sequences must ship a static equivalent that con
 
 Claude’s Explore and Research menus are disclosure, not new routes. Until those pages exist, a menu item that would 404 is omitted.
 
-**Open for Claude:** Trace in the header before `/trace` or `#trace` exists.
+**Trace in the header (Claude, 2026-08-29):** omit until section 13 exists as `#trace` on the homepage; then add the item. Retarget to `/trace` when that route exists. Phase 9 task.

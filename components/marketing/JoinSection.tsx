@@ -11,7 +11,7 @@ export function JoinSection() {
   const stats = getFamilyStats();
 
   return (
-    <Section id="join">
+    <Section id="join" beat={11} className="min-h-screen">
       <div className="grid gap-14 lg:grid-cols-[1.05fr_0.95fr] lg:gap-20">
         <div>
           <Eyebrow index="06">Alpha</Eyebrow>
@@ -41,7 +41,7 @@ export function JoinSection() {
           />
         </div>
 
-        <div>
+        <div className="bg-void/90 relative rounded-xl">
           <WaitlistForm />
 
           <div className="border-line/60 mt-10 border-t pt-6">

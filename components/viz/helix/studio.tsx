@@ -28,6 +28,8 @@ export const HELIX = {
      the void and left the chain looking severed. */
   rung: new Color('#33465c'),
   rungGlow: new Color('#4b6b84'),
+  amber: new Color('#ffb340'),
+  rose: new Color('#ff5c7a'),
 } as const;
 
 /**
@@ -213,7 +215,7 @@ function GroundRig({ state }: { state: React.RefObject<BeatState> }) {
     const current = state.current;
     if (!current) return;
     const day = daylight(current.progress);
-    const hold = holdProgress(current.progress);
+    const hold = holdProgress(current);
 
     ground.copy(VOID);
     fog.color.copy(VOID);
@@ -254,7 +256,7 @@ export function StudioRig({
     if (!current) return;
     const climax = climaxAmount(current);
     const day = daylight(current.progress);
-    const hold = holdProgress(current.progress);
+    const hold = holdProgress(current);
 
     /* White key stays modest on the hold — it was washing the family to bone.
        The lift is the coloured practicals, which keep the specimen acid / cyan

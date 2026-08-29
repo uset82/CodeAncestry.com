@@ -1,18 +1,16 @@
 import Link from 'next/link';
-import { nav, site } from '@/lib/site';
+import { nav, researchMenu, site } from '@/lib/site';
 import { HelixMark } from '@/components/ui/HelixMark';
 
 const RESOURCES = [
-  { href: '/docs', label: 'Protocol specification' },
+  ...researchMenu,
   { href: '/docs/formats', label: 'File formats' },
-  { href: '/docs/standards', label: 'Standards interop' },
   { href: '/docs/language', label: 'Language and ethics' },
-  { href: '/research', label: 'Research' },
 ];
 
 export function SiteFooter() {
   return (
-    <footer className="border-line border-t">
+    <footer className="border-line relative z-10 border-t bg-void">
       <div className="shell-wide grid gap-12 py-14 md:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
         <div>
           <div className="flex items-center gap-2.5 font-bold tracking-[-0.03em]">
@@ -30,7 +28,7 @@ export function SiteFooter() {
           <h2 className="text-muted mb-3 font-mono text-nano uppercase">Product</h2>
           <ul className="flex flex-col gap-2">
             {nav.map((item) => (
-              <li key={item.href}>
+              <li key={item.label}>
                 <Link href={item.href} className="text-text-soft hover:text-text text-[13px]">
                   {item.label}
                 </Link>
@@ -43,7 +41,7 @@ export function SiteFooter() {
           <h2 className="text-muted mb-3 font-mono text-nano uppercase">Resources</h2>
           <ul className="flex flex-col gap-2">
             {RESOURCES.map((item) => (
-              <li key={item.href}>
+              <li key={item.label}>
                 <Link href={item.href} className="text-text-soft hover:text-text text-[13px]">
                   {item.label}
                 </Link>

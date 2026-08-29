@@ -7,7 +7,7 @@ import { Section } from './Section';
  */
 export function Endgame() {
   return (
-    <Section id="endgame" className="overflow-hidden">
+    <Section id="endgame" beat={7} className="overflow-hidden">
       <figure className="relative m-0 mx-auto max-w-[900px] text-center">
         <p className="text-acid font-mono text-micro uppercase">The long horizon</p>
 

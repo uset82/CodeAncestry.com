@@ -20,8 +20,8 @@ export const site = {
 } as const;
 
 /**
- * Canonical entry points into the seeded demo. Every marketing link goes
- * through here so a fixture rename never leaves a dead link behind.
+ * Canonical entry points into the seeded KEYLIT demo. Homepage narrative
+ * fixtures live in `data/demo/` and must not reuse these accessions.
  */
 export const demo = {
   family: '/family/keylit',
@@ -34,11 +34,45 @@ export const demo = {
   compare: `/compare?a=${GENOME.keylit}&b=${GENOME.kidsEs}`,
 } as const;
 
-export const nav = [
-  { href: '/explore', label: 'Explore' },
-  { href: demo.family, label: 'CodeTree' },
-  { href: demo.rootGenome, label: 'Genome' },
+export type NavLink = {
+  href: string;
+  label: string;
+};
+
+export type NavItem = NavLink & {
+  menu?: readonly NavLink[];
+};
+
+/**
+ * Claude’s primary IA. Trace stays out of the header until section 13 exists
+ * as `#trace` (Phase 9), then retargets `/trace` when that route exists.
+ * Connect Repository is the alpha waitlist — not a fake OAuth.
+ */
+export const exploreMenu = [
+  { href: '/explore', label: 'Projects' },
+  { href: '/explore', label: 'Genes' },
+  { href: '/explore', label: 'Mutations' },
+  { href: '/explore', label: 'Agents' },
   { href: '/blast', label: 'CodeBLAST' },
+] as const satisfies readonly NavLink[];
+
+export const researchMenu = [
+  { href: '/docs', label: 'Protocol' },
+  { href: '/research', label: 'Paper' },
+  { href: '/docs/schema', label: 'Schemas' },
+  { href: '/research', label: 'Experiments' },
   { href: '/docs', label: 'Docs' },
-  { href: '/research', label: 'Research' },
-] as const;
+] as const satisfies readonly NavLink[];
+
+export const nav: readonly NavItem[] = [
+  { href: '/explore', label: 'Explore', menu: exploreMenu },
+  { href: '/lineage', label: 'Lineage' },
+  { href: '/explore', label: 'Genome' },
+  { href: '/explore', label: 'Agents' },
+  { href: '/research', label: 'Research', menu: researchMenu },
+];
+
+export const connectCta = {
+  href: '/#join',
+  label: 'Connect Repository',
+} as const;

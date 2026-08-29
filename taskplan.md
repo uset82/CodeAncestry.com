@@ -134,33 +134,27 @@ Acceptance: new architecture works without losing the existing visual foundation
 These were impossible while the beat map was open; they are Phase 2 because they
 are architectural, not visual.
 
-- [ ] Move the canvas out of `HelixHero` into a page-level fixed backdrop —
-      `position: fixed; inset: 0`, one WebGL context mounted once for the
-      homepage, sections scrolling over it in normal document flow. The 560vh
-      sticky hero and its `-mt-[74px]` offset go away.
-      Verify: `npm run capture` frames > 0 and the helix is visible behind at
-      least three different sections, not only the hero.
-- [ ] Extend `beats.ts` from five entries to twelve, adding the scalars
-      `geneFocus`, `mutate`, `agents`, `sources`, `converge`, `alarm`,
-      `rewind`, `recovery`, `zoomOut`. All 0→1, all lerped by `beatStateAt`.
-      **No new geometry and no robot model** — a scalar that cannot be
-      expressed as a pose of the existing node set is mis-specified; return it.
-      Verify: `beatStateAt` returns every scalar at each of the twelve anchors.
-- [ ] Anchor beats to sections with `data-beat="N"` and drive from the section
-      owning the viewport centre. Delete the hardcoded `at:` fractions.
-      **Measure synchronously in the scroll handler — no rAF.**
-      Verify: reordering two sections changes which beat they show, with no
-      code edit.
-- [ ] Suspend the scene when no 3D-owning section is in view
-      (`frameloop="demand"`), and on the reduced-motion and no-WebGL paths.
-      Verify: capture at a section with no beat shows no rising frame count.
-- [ ] Capture all twelve anchors and look at every one before ticking this
-      phase. A task is not done until someone has opened the PNG.
+- [x] Move the canvas out of `HelixHero` into a page-level fixed backdrop —
+      `HelixStage` `position: fixed; inset: 0`, one WebGL context. 560vh sticky
+      and `-mt-[74px]` gone. Capture `.captures/phase2-canvas/`: `frames: 8`,
+      `helixFrames: 31`, helix visible behind hero / concepts / meaning /
+      painting / propagation / trust / endgame / join.
+- [x] Extend `beats.ts` from five entries to twelve with `geneFocus`, `mutate`,
+      `agents`, `sources`, `converge`, `alarm`, `rewind`, `recovery`, `zoomOut`.
+      No new geometry. `npx tsx scripts/check-beats.ts` — 12 anchors, 0 failures.
+- [x] Anchor beats to sections with `data-beat="N"`. Driver is
+      `measureViewportBeat` in the scroll handler — no rAF, no `at:` fractions.
+      Mapping is the attribute (`lib/homepage.ts` `HOMEPAGE_BEAT_STANDINS`).
+- [x] Suspend when no 3D section is in view (`frameloop="demand"`). Capture
+      `footer-suspend`: `loop: demand`, `helixFramesDelta: 0` (280→280).
+- [x] Capture all twelve anchors (`.captures/phase2-canvas/beat-00` … `beat-11`)
+      and opened every PNG before ticking.
 
 ---
 
 ## PHASE 3 — HERO + PROBLEM + PLATFORM
 
+- [ ] Align the header verb *Connect Repository* with the join headline (two promises, one verb). Keep “What the alpha will not do”.
 - [ ] Rebuild hero messaging (What if software had DNA? / family trees / machines)
 - [ ] Replace KEYLIT-specific gene labels with VISION MEMORY REASONING SAFETY LANGUAGE NAVIGATION AGENT INTERFACE
 - [ ] Implement Problem section
@@ -246,6 +240,7 @@ Acceptance: AX-2041 is the primary future-facing demo. KEYLIT is not.
 
 Highest-priority interactive demo.
 
+- [ ] Add Trace to the header once section 13 exists as `#trace` on the homepage; retarget the item to `/trace` when that route exists.
 - [ ] Implement abnormal-behavior trigger
 - [ ] Implement rewind animation
 - [ ] Trace gene
@@ -353,28 +348,42 @@ Claude reviews. Cursor/Grok fix sequentially.
 
 ### COMPLETED PHASE
 
-Phase 2 — Foundation refactor (and Phase 0 audit + Phase 1 design docs this session).
+Phase 2 — Foundation refactor, including the five architectural tasks from
+Claude’s twelve-position decision. Phase 3 has not started.
 
 ### COMPLETED TASKS
 
-Phase 0, Phase 1, Phase 2 checkboxes.
+Phase 0, Phase 1, Phase 2 (chrome + demo fixtures + page-level canvas + 12
+beats + `data-beat` driver + suspend + twelve-anchor capture).
 
 ### VERIFICATION PERFORMED
 
-Local 3100 homepage, explore, family/keylit, blast, lineage. Nav menus. Capture phase2 frames=8 animated. `tsc`, eslint, `next build`. Production is Railway + Cloudflare.
+`npx tsx scripts/check-beats.ts` 12/0. `npm run verify` (tsc, eslint, 211
+fixtures). `npx next build` pass. Capture `.captures/phase2-canvas/`:
+`diag.frames = 8`, `helixFrames = 31`, `hero: animated`, twelve PNGs opened,
+`suspend.loop = demand`, `helixFramesDelta = 0`.
 
 ### FILES CHANGED
 
-`taskplan.md`, `docs/site-audit.md`, `docs/content-architecture.md`, `docs/design-system.md`, `docs/interaction-spec.md`, `docs/data-model.md`, `lib/site.ts`, `lib/homepage.ts`, `components/marketing/SiteHeader.tsx`, `components/marketing/SiteFooter.tsx`, `app/page.tsx`, `app/not-found.tsx`, `data/demo/*`. Helix files not touched.
+`HelixStage.tsx`, `HelixHero.tsx`, `HelixScene.tsx`, `beats.ts`, `strands.ts`,
+`studio.tsx`, `app/page.tsx`, marketing `Section` / scaffolds / beats,
+`scripts/capture.mjs`, `scripts/check-beats.ts`, `taskplan.md`,
+`docs/interaction-spec.md`, `docs/content-architecture.md`, plus the earlier
+Phase 2 chrome, `data/demo/`, and `research/{masternewUIdesign,newUI}.md`.
 
 ### CLAUDE DESIGN REVIEW
 
-Needed on: (1) 5-beat helix vs 12-position story — proposed alternative in this file; (2) Trace in the header before `/trace` exists — omitted; (3) Connect Repository → `/#join` alpha waitlist.
+Needed on the twelve captured anchors (`.captures/phase2-canvas/beat-00` …
+`beat-11`). Camera look-Y follows the live generation bounds so 0.45× still
+frames generation 0; distance multiples are as specified. Return if that
+look-Y is wrong.
 
 ### OPEN BLOCKERS
 
-Claude must approve the 5-vs-12 helix mapping before any beat-count or 560vh change.
+None for Phase 2 architecture. Phase 3 is next; do not start it until Claude
+issues APROBADO or REVISIÓN REQUERIDA on the twelve anchors.
 
 ### FIRST UNCHECKED TASK
 
-Phase 3 — Rebuild hero messaging.
+Phase 3 — Align Connect Repository with the join headline, then rebuild hero
+messaging. **Wait for Claude’s capture review first.**
