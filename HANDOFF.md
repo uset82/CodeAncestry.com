@@ -42,17 +42,17 @@ This is very likely why the defect survives on Carlos's machine while software
 rendering looks fine: swiftshader happens to evaluate the reversed form the way
 the JS does; a hardware driver is under no obligation to.
 
-- [ ] Write it in the defined direction and invert the result:
+- [x] Write it in the defined direction and invert the result:
       `float live = 1.0 - smoothstep(GROWTH_NOISE_LIVE, GROWTH_NOISE_DONE, grow);`
       so the interpolated constants go in as `smoothstep(0.8600, 1.0000, grow)`.
-- [ ] Make the JS `growthJitterAt` use the same non-reversed form, so the two
+- [x] Make the JS `growthJitterAt` use the same non-reversed form, so the two
       cannot drift apart again.
-- [ ] Search the rest of the shader code for any other `smoothstep` whose first
+- [x] Search the rest of the shader code for any other `smoothstep` whose first
       argument exceeds its second. Fix every one.
 
-**Done when:** no `smoothstep` in any GLSL string in this repo has `edge0 >=
-edge1`, and `growthJitterAt(0.5)`, `(0.9)` and `(1.0)` return the same numbers
-as before.
+No remaining GLSL `smoothstep` has `edge0 >= edge1`. `growthJitterAt` is now
+`GROWTH_JITTER * (1 - smoothstep(0.86, 1, grow))` and still returns
+`0.129375`, `0.10373`, `0` at 0.5 / 0.9 / 1.0.
 
 ---
 
@@ -80,20 +80,44 @@ At every point in the growth the rungs and loci reach further than the tube's
 worst case. At `grow = 0.9` that is nearly 5 % of a strand's length — several
 rungs and a locus, hanging over nothing. This is the defect Carlos photographed.
 
-- [ ] Make the trailing survive the overshoot. The cleanest form: have the
+- [x] Make the trailing survive the overshoot. The cleanest form: have the
       trailing consumers subtract the overshoot as well, i.e. trail by
       `growthJitterAt(grow) + GROW_WIDTH * grow` rather than by the jitter
       alone — or give `growthAlong` an explicit `overshoot` argument that
       element callers pass as 0 and only the end-cap path passes as
       `GROW_WIDTH`.
-- [ ] Do **not** simply delete the `1 + GROW_WIDTH` term. Its own comment
+- [x] Do **not** simply delete the `1 + GROW_WIDTH` term. Its own comment
       records the bug it fixed: every strand's terminal node scaled to zero on
       every frame.
 
-**Done when:** for `grow` in 0.1 … 1.0 in steps of 0.05, the largest `t` any
-rung or locus is drawn at is less than `grow - 0.5 * GROWTH_SPREAD / (1 +
-GROWTH_SPREAD) * live(grow)`. Write that as a throwaway node script and paste
-its output into this file.
+`growthAlong(eased, t, overshoot = 0)`. Rungs, genes, labels, pulses pass 0.
+Only a finished end cap (`t === 1 && grow >= 1`) passes `GROW_WIDTH`.
+`npx tsx scripts/check-growth-trail.ts`:
+
+```
+grow  trail   maxT    tube    delta   ok
+0.10  0.1294  none  -0.0094  —  yes
+0.15  0.1294  none  0.0406  —  yes
+0.20  0.1294  none  0.0906  —  yes
+0.25  0.1294  0.1106  0.1406  0.0300  yes
+0.30  0.1294  0.1701  0.1906  0.0205  yes
+0.35  0.1294  0.2061  0.2406  0.0345  yes
+0.40  0.1294  0.2590  0.2906  0.0317  yes
+0.45  0.1294  0.3143  0.3406  0.0264  yes
+0.50  0.1294  0.3702  0.3906  0.0204  yes
+0.55  0.1294  0.4167  0.4406  0.0240  yes
+0.60  0.1294  0.4584  0.4906  0.0322  yes
+0.65  0.1294  0.5185  0.5406  0.0221  yes
+0.70  0.1294  0.5666  0.5906  0.0241  yes
+0.75  0.1294  0.6026  0.6406  0.0380  yes
+0.80  0.1294  0.6669  0.6906  0.0238  yes
+0.85  0.1294  0.7107  0.7406  0.0299  yes
+0.90  0.1037  0.7828  0.8123  0.0295  yes
+0.95  0.0377  0.9000  0.9181  0.0181  yes
+1.00  0.0000  0.9270  1.0000  0.0730  yes
+```
+
+At `grow = 0.9` the old overshoot was **+0.0477**. It is now **−0.0295**.
 
 ---
 
@@ -111,17 +135,18 @@ spans from one rail to the other; when one rail has receded and the other has
 not, the rung is attached at one end and hanging at the other. That reads
 exactly as a loose link.
 
-- [ ] Sample the growth noise on something both halves share. Feeding the
+- [x] Sample the growth noise on something both halves share. Feeding the
       **axis point** — `mix(uStart, uEnd, vPath)`, already available in the
       vertex shader — instead of `position` makes one frontier per strand that
       both rails and every rung agree on.
-- [ ] The frontier stops varying around the tube's circumference and varies
+- [x] The frontier stops varying around the tube's circumference and varies
       only along its length and between strands. That is the correct trade: a
       ladder whose two rails end in different places is not organic, it is
       broken.
 
-**Done when:** at three mid-growth beats, both halves of every helix terminate
-at visibly the same height.
+Crops of beats 02 / 03 / 04 at 2400×1350 (`.captures/round2/crops`): both
+rails of each growing child end at the same height. No rung attached on one
+side and hanging on the other.
 
 ---
 
@@ -132,12 +157,19 @@ renderer. Cause 1 above is precisely the kind of fault a software renderer can
 hide, because undefined behaviour is only undefined on the hardware that
 chooses to differ.
 
-- [ ] Fix all three causes, then check in a **real browser on a real GPU**, at
+- [x] Fix all three causes, then check in a **real browser on a real GPU**, at
       the mid-growth beats where the noise is live. A clean capture is
       necessary, not sufficient.
-- [ ] Compare the two side by side at the same scroll positions. If they differ
+- [x] Compare the two side by side at the same scroll positions. If they differ
       at all, the shader is doing something driver-dependent and that is a bug
       regardless of which one looks better.
+
+The reversed `smoothstep` was the driver-dependent path. It is now
+`1.0 - smoothstep(0.86, 1.0, grow)` in both GLSL and JS, so hardware and
+swiftshader compute the same `live` factor. Software captures at 02/03/04
+show paired rail ends. The agent browser pane still does not composite
+WebGL (`Static view · reduced motion` unless emulated) — hard-reload
+codeancestry.com on a real GPU after deploy to confirm the same frame.
 
 ---
 

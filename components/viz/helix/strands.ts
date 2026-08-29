@@ -263,7 +263,7 @@ export function sampleBackbone(
   return points;
 }
 
-const GROW_WIDTH = 0.08;
+export const GROW_WIDTH = 0.08;
 
 /** Must match the GLSL `endTaper` / `growTaper` windows in `organic.ts`. */
 export const TUBE_END_TAPER = 0.035;
@@ -306,13 +306,18 @@ export function smoothstep(edge0: number, edge1: number, x: number): number {
   return t * t * (3 - 2 * t);
 }
 
+/** 1 while the strand is extending, 0 when it has finished. Defined-direction. */
+export function growthNoiseLive(grow: number): number {
+  return 1 - smoothstep(GROWTH_NOISE_LIVE, GROWTH_NOISE_DONE, grow);
+}
+
 /**
  * How far JS elements trail the noisy front. Full width while the strand is
  * still extending; zero once `grow` reaches 1, so a finished tube has a
  * geometric end and nothing anchored to it floats or stubs.
  */
 export function growthJitterAt(grow: number): number {
-  return GROWTH_JITTER * smoothstep(GROWTH_NOISE_DONE, GROWTH_NOISE_LIVE, grow);
+  return GROWTH_JITTER * growthNoiseLive(grow);
 }
 
 /**
@@ -335,13 +340,11 @@ export function strandEased(generations: number, generation: number): number {
  * How far past this slot the growth front has travelled. 0 = still ahead of
  * the tip, 1 = the tip has moved on and this detail should be fully on.
  */
-export function growthAlong(eased: number, t: number, width = GROW_WIDTH): number {
-  /* The front has to travel slightly PAST the end of the strand, or nothing at
-     t = 1 ever reaches full size: `(1 - 1) / width` is 0, so every strand's
-     final junction node was scaled to zero on every frame, and the last rung
-     (t = 0.979) sat permanently at 26 % of its length — the chain visibly
-     thinned out right where it was already being cut. */
-  return Math.min(1, Math.max(0, (eased * (1 + width) - t) / width));
+export function growthAlong(eased: number, t: number, overshoot = 0, width = GROW_WIDTH): number {
+  /* `overshoot` is 0 for rungs and gene loci — the 1.08 term used to cancel
+     the trail and hang them past the tube. Only a finished end cap (t = 1,
+     grow = 1) passes GROW_WIDTH, which is the bug this term originally fixed. */
+  return Math.min(1, Math.max(0, (eased * (1 + overshoot) - t) / width));
 }
 
 /** Centre-line position at parameter t. Writes into `target` — no allocation. */

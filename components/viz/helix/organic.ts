@@ -81,8 +81,9 @@ float helixCoverage(vec3 lp, float grow, float seed, float path) {
   float n = helixFbm(q);
   n += (helixNoise(q * 5.0) - 0.5) * 0.26;
   float local = grow - path;
-  /* Noise belongs to the act of growing. A finished strand has a hard end. */
-  float live = smoothstep(${GROWTH_NOISE_DONE.toFixed(4)}, ${GROWTH_NOISE_LIVE.toFixed(4)}, grow);
+  /* Defined direction: GLSL ES leaves smoothstep undefined if edge0 >= edge1.
+     Invert so hardware and swiftshader compute the same live factor. */
+  float live = 1.0 - smoothstep(${GROWTH_NOISE_LIVE.toFixed(4)}, ${GROWTH_NOISE_DONE.toFixed(4)}, grow);
   return local * (1.0 + ${GROWTH_SPREAD.toFixed(4)}) - (n - 0.5) * ${GROWTH_SPREAD.toFixed(4)} * live;
 }
 `;
@@ -115,7 +116,7 @@ function patchColorShaders(shader: OrganicShader) {
        uniform float uStartTaper;
        uniform float uSeed;
        varying float vPath;
-       varying vec3 vLocal;
+       varying vec3 vAxis;
        ${FBM}
        ${GROWTH}`,
     )
@@ -123,7 +124,6 @@ function patchColorShaders(shader: OrganicShader) {
       '#include <begin_vertex>',
       `#include <begin_vertex>
        vPath = uv.x;
-       vLocal = position;
        float live = (1.0 - uFlatten) * uDrift;
        float n = helixFbm(transformed * 1.85 + vec3(0.0, uTime * 0.11, uTime * 0.07));
        float m = helixFbm(transformed.zyx * 1.6 + vec3(uTime * 0.08));
@@ -134,12 +134,12 @@ function patchColorShaders(shader: OrganicShader) {
        transformed.x += uPointer.x * vPath * 0.16 * live;
        transformed.y += uPointer.y * vPath * 0.07 * live;
        vec3 axisPoint = mix(uStart, uEnd, vPath);
+       vAxis = axisPoint;
 
-       /* Termini only. The living edge is a coverage isosurface in the
-          fragment shader — pinching the growth front to a point here is what
-          turned that field back into a travelling ring. */
+       /* Termini only. Coverage is sampled on the axis so both rails of one
+          ladder share one frontier — object-space position made them disagree. */
        float endTaper = smoothstep(0.0, uStartTaper, vPath) * (1.0 - smoothstep(0.965, 1.0, vPath));
-       float cover = helixCoverage(position, uGrow, uSeed, vPath);
+       float cover = helixCoverage(axisPoint, uGrow, uSeed, vPath);
        float growTaper = mix(0.55, 1.0, smoothstep(0.0, 0.10, cover));
        transformed = axisPoint + (transformed - axisPoint) * min(endTaper, growTaper);
 
@@ -154,7 +154,7 @@ function patchColorShaders(shader: OrganicShader) {
        uniform float uGrow;
        uniform float uSeed;
        varying float vPath;
-       varying vec3 vLocal;
+       varying vec3 vAxis;
        float vCover;
        ${FBM}
        ${GROWTH}`,
@@ -162,7 +162,7 @@ function patchColorShaders(shader: OrganicShader) {
     .replace(
       '#include <clipping_planes_fragment>',
       `#include <clipping_planes_fragment>
-       vCover = helixCoverage(vLocal, uGrow, uSeed, vPath);
+       vCover = helixCoverage(vAxis, uGrow, uSeed, vPath);
        if (vCover < 0.0) discard;`,
     )
     .replace(
@@ -189,7 +189,7 @@ function patchDepthShaders(shader: OrganicShader) {
        uniform float uStartTaper;
        uniform float uSeed;
        varying float vPath;
-       varying vec3 vLocal;
+       varying vec3 vAxis;
        ${FBM}
        ${GROWTH}`,
     )
@@ -197,10 +197,10 @@ function patchDepthShaders(shader: OrganicShader) {
       '#include <begin_vertex>',
       `#include <begin_vertex>
        vPath = uv.x;
-       vLocal = position;
        vec3 axisPoint = mix(uStart, uEnd, vPath);
+       vAxis = axisPoint;
        float endTaper = smoothstep(0.0, uStartTaper, vPath) * (1.0 - smoothstep(0.965, 1.0, vPath));
-       float cover = helixCoverage(position, uGrow, uSeed, vPath);
+       float cover = helixCoverage(axisPoint, uGrow, uSeed, vPath);
        float growTaper = mix(0.55, 1.0, smoothstep(0.0, 0.10, cover));
        transformed = axisPoint + (transformed - axisPoint) * min(endTaper, growTaper);
        transformed = mix(transformed, axisPoint, uFlatten * 0.42);`,
@@ -213,14 +213,14 @@ function patchDepthShaders(shader: OrganicShader) {
        uniform float uGrow;
        uniform float uSeed;
        varying float vPath;
-       varying vec3 vLocal;
+       varying vec3 vAxis;
        ${FBM}
        ${GROWTH}`,
     )
     .replace(
       '#include <clipping_planes_fragment>',
       `#include <clipping_planes_fragment>
-       if (helixCoverage(vLocal, uGrow, uSeed, vPath) < 0.0) discard;`,
+       if (helixCoverage(vAxis, uGrow, uSeed, vPath) < 0.0) discard;`,
     );
 }
 
@@ -232,7 +232,7 @@ export function patchGrowingMaterial(material: MeshStandardMaterial, role: strin
     patchColorShaders(next);
     material.userData.shader = next;
   };
-  material.customProgramCacheKey = () => `helix-cover-${role}`;
+  material.customProgramCacheKey = () => `helix-cover-axis-${role}`;
 
   const depth = new MeshDepthMaterial({ depthPacking: RGBADepthPacking });
   depth.defines = { USE_UV: '' };
@@ -247,7 +247,7 @@ export function patchGrowingMaterial(material: MeshStandardMaterial, role: strin
     patchDepthShaders(next);
     depth.userData.shader = next;
   };
-  depth.customProgramCacheKey = () => `helix-cover-depth-${role}`;
+  depth.customProgramCacheKey = () => `helix-cover-axis-depth-${role}`;
   material.userData.depthMaterial = depth;
 }
 

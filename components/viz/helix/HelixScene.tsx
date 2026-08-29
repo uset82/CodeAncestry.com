@@ -23,6 +23,7 @@ import {
   UPSTREAM_PATH,
   axisPointAtInto,
   backbonePointAtInto,
+  GROW_WIDTH,
   growthAlong,
   growthJitterAt,
   pathTaper,
@@ -293,7 +294,7 @@ function GrowingTips({
          noise field. The trail vanishes at grow = 1 so a finished tip rests
          on a real end, not a stub. */
       const grow = strandEased(current.generations, strand.spec.generation);
-      const eased = grow - growthJitterAt(grow) * 0.5;
+      const eased = grow - growthJitterAt(grow);
       const t = Math.min(0.999, Math.max(0, eased));
       strand.curve.getPoint(t, position);
       axisPointAtInto(strand.spec, t, current.flatten, axis);
@@ -454,7 +455,8 @@ function Loci({ state, tier, materials }: Props) {
     slots.forEach((slot, i) => {
       const grow = strandEased(current.generations, slot.spec.generation);
       const eased = grow - growthJitterAt(grow);
-      const front = growthAlong(eased, slot.t);
+      const overshoot = slot.kind === 'junction' && slot.t === 1 && grow >= 1 ? GROW_WIDTH : 0;
+      const front = growthAlong(eased, slot.t, overshoot);
       const { matrix, position, quaternion, scale, color } = scratch;
 
       axisPointAtInto(slot.spec, slot.t, current.flatten, position);
