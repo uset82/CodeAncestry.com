@@ -35,11 +35,19 @@ const CHROME_CANDIDATES = [
 ];
 
 const ORIGIN = process.env.CAPTURE_ORIGIN ?? 'http://localhost:3100';
-const PATHNAME = process.argv[2] ?? '/';
+const RAW = process.argv[2] ?? '/';
+const targetUrl = new URL(RAW, ORIGIN);
+const PATHNAME = targetUrl.pathname;
 const OUT = process.argv[3] ?? '.captures';
 const PORT = 9222;
 const WIDTH = Number(process.env.CAPTURE_WIDTH ?? 1600);
 const HEIGHT = Number(process.env.CAPTURE_HEIGHT ?? 900);
+const REDUCED = process.env.CAPTURE_REDUCED_MOTION === '1';
+const NO_WEBGL = process.env.CAPTURE_NO_WEBGL === '1';
+
+if (PATHNAME === '/' && !targetUrl.searchParams.has('helix') && !REDUCED && !NO_WEBGL) {
+  targetUrl.searchParams.set('helix', 'high');
+}
 
 /* The five beats plus the closing hold. Anything scroll-driven is only worth
    judging at the positions the copy changes on. */
@@ -69,6 +77,7 @@ const chrome = spawn(
     '--no-first-run',
     '--no-default-browser-check',
     '--disable-extensions',
+    ...(NO_WEBGL ? ['--disable-webgl', '--disable-webgl2'] : []),
     'about:blank',
   ],
   { stdio: 'ignore' },
@@ -119,11 +128,33 @@ const evaluate = async (expression) => {
   if (failure) throw new Error(failure.exception?.description ?? JSON.stringify(failure));
   return r.result?.result?.value;
 };
+const luminanceOf = async (data) =>
+  evaluate(`(async () => {
+    const img = new Image();
+    img.src = 'data:image/png;base64,${data}';
+    await img.decode();
+    const c = document.createElement('canvas');
+    c.width = img.width;
+    c.height = img.height;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    const pix = ctx.getImageData(0, 0, c.width, c.height).data;
+    let above = 0;
+    let max = 0;
+    for (let i = 0; i < pix.length; i += 4) {
+      const y = 0.2126 * pix[i] + 0.7152 * pix[i + 1] + 0.0722 * pix[i + 2];
+      if (y > 120) above += 1;
+      if (y > max) max = y;
+    }
+    return { above: Number(((100 * above) / (pix.length / 4)).toFixed(2)), max: Number(max.toFixed(1)) };
+  })()`);
+
 const shoot = async (name) => {
   const r = await send('Page.captureScreenshot', { format: 'png' });
   if (!r.result?.data) return console.log('no data for', name);
   writeFileSync(join(OUT, `${name}.png`), Buffer.from(r.result.data, 'base64'));
-  console.log('wrote', join(OUT, `${name}.png`));
+  const lum = await luminanceOf(r.result.data);
+  console.log('wrote', join(OUT, `${name}.png`), 'luminance', JSON.stringify(lum));
 };
 
 await send('Page.enable');
@@ -132,9 +163,14 @@ await send('Emulation.setDeviceMetricsOverride', {
   width: WIDTH,
   height: HEIGHT,
   deviceScaleFactor: 1,
-  mobile: false,
+  mobile: WIDTH < 800,
 });
-await send('Page.navigate', { url: ORIGIN + PATHNAME });
+if (REDUCED) {
+  await send('Emulation.setEmulatedMedia', {
+    features: [{ name: 'prefers-reduced-motion', value: 'reduce' }],
+  });
+}
+await send('Page.navigate', { url: targetUrl.href });
 for (let i = 0; i < 50 && !seen.includes('Page.loadEventFired'); i += 1) await sleep(200);
 /* The scene is a dynamic import behind a WebGL feature check; software
    rendering needs a while to produce a first frame worth looking at. */
@@ -142,17 +178,28 @@ await sleep(3500);
 
 const diag = await evaluate(`(async () => {
   let frames = 0;
-  const tick = () => { frames += 1; requestAnimationFrame(tick); };
+  const dts = [];
+  let last = performance.now();
+  const tick = (now) => {
+    frames += 1;
+    dts.push(now - last);
+    last = now;
+    requestAnimationFrame(tick);
+  };
   requestAnimationFrame(tick);
   await new Promise((r) => setTimeout(r, 600));
   /* smooth scrolling makes scrollTo asynchronous, which silently returns
      identical, plausible, wrong frames for every beat */
   document.documentElement.style.setProperty('scroll-behavior', 'auto', 'important');
   const canvas = document.querySelector('canvas');
+  const sample = dts.slice(1);
+  const mean = sample.length ? sample.reduce((a, b) => a + b, 0) / sample.length : 0;
   return {
     frames,
+    meanDt: Number(mean.toFixed(1)),
     hero: document.querySelector('[data-hero]')?.dataset.hero ?? null,
     canvas: canvas ? [canvas.width, canvas.height] : null,
+    search: window.location.search,
   };
 })()`);
 console.log('diag', JSON.stringify(diag));

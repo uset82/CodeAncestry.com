@@ -8,5 +8,5 @@ import { RegistryShell } from '@/components/registry/RegistryShell';
  * as a segment layout so it renders on the server and there is no flash.
  */
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return <RegistryShell>{children}</RegistryShell>;
+  return <RegistryShell voice="ui">{children}</RegistryShell>;
 }

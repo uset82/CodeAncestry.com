@@ -68,14 +68,14 @@
   --radius-2xl: 32px;
 
   /* --- typography ----------------------------------------------------- */
-  /* Three voices, one per job. The narrative headline is an editorial serif;
-     reading text is a screen serif with optical sizes; every accession,
-     identifier and registry label stays monospaced. No interface sans — the
-     grotesque that used to sit here read as generic. */
+  /* Four voices. Narrative headline is an editorial serif; reading text is a
+     screen serif with optical sizes; accessions stay monospaced; registry
+     records scan in a grotesque from the same foundry as the display face. */
   --font-display: var(--font-display-face), 'Iowan Old Style', Georgia, serif;
   --font-sans: var(--font-reading), Charter, Georgia, serif;
   --font-mono:
     var(--font-plex-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-ui: var(--font-ui-face), 'Avenir Next', sans-serif;
 
   /* Display sizes carry the serif at its single drawn weight. A high-contrast
      serif breaks apart under the tight negative tracking a grotesque wants, and
@@ -352,6 +352,24 @@
    structural rather than stylistic — reverting the palette must not break the
    pages that rely on them, so they map onto the tokens above.
    ========================================================================== */
+
+/* Registry interface voice. Scoped to data surfaces so the homepage and
+   docs keep the serifs. Headings must be restated: the base layer pins
+   h1–h3 and the display sizes to Instrument Serif. */
+@utility font-ui {
+  font-family: var(--font-ui);
+}
+
+.font-ui h1,
+.font-ui h2,
+.font-ui h3,
+.font-ui .text-display,
+.font-ui .text-hero,
+.font-ui .text-headline,
+.font-ui .text-title {
+  font-family: var(--font-ui);
+  letter-spacing: -0.03em;
+}
 
 /* The tracked-out mono label. Same voice as text-micro. */
 @utility label {

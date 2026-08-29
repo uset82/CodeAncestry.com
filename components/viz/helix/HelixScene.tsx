@@ -87,8 +87,18 @@ type Quality = { tubular: number; radial: number; radius: number; sphere: number
 
 const QUALITY: Record<'low' | 'high', Quality> = {
   low: { tubular: 48, radial: 5, radius: 0.034, sphere: 10 },
-  high: { tubular: 96, radial: 8, radius: 0.04, sphere: 12 },
+  /* 120: the 0.035 end taper is ~4.2 segments. 96 was a cut with no frame-cost
+     number behind it. `?tubular=` overrides for the capture measurement. */
+  high: { tubular: 120, radial: 8, radius: 0.04, sphere: 16 },
 };
+
+function qualityFor(tier: 'low' | 'high'): Quality {
+  const base = QUALITY[tier];
+  if (tier !== 'high' || typeof window === 'undefined') return base;
+  const tubular = Number(new URLSearchParams(window.location.search).get('tubular'));
+  if (tubular === 96 || tubular === 120) return { ...base, tubular };
+  return base;
+}
 
 type Props = {
   state: React.RefObject<BeatState>;
@@ -133,7 +143,7 @@ function OrganicTicker({
 /* ------------------------------------------------------------- backbones */
 
 function Backbones({ state, tier, materials, pointer }: Props) {
-  const quality = QUALITY[tier];
+  const quality = qualityFor(tier);
 
   const strands = useMemo<StrandGeometry[]>(
     () =>
@@ -182,8 +192,6 @@ function Backbones({ state, tier, materials, pointer }: Props) {
   }, [strands]);
 
   const group = useRef<Mesh[]>([]);
-  const shells = tier === 'high' ? [0, 1, 2] : [0];
-  const shellCount = shells.length;
 
   useFrame(({ clock }) => {
     const current = state.current;
@@ -203,11 +211,9 @@ function Backbones({ state, tier, materials, pointer }: Props) {
       );
       const visible = eased > 0.012;
       for (let side = 0; side < 2; side += 1) {
-        for (let shell = 0; shell < shellCount; shell += 1) {
-          const mesh = group.current[i * 2 * shellCount + side * shellCount + shell];
-          if (!mesh) continue;
-          mesh.visible = visible;
-        }
+        const mesh = group.current[i * 2 + side];
+        if (!mesh) continue;
+        mesh.visible = visible;
       }
     });
   });
@@ -215,42 +221,40 @@ function Backbones({ state, tier, materials, pointer }: Props) {
   return (
     <>
       {strands.map((strand, i) =>
-        strand.geometries.map((geometry, side) =>
-          shells.map((shell) => (
-            <mesh
-              key={`${strand.spec.id}-${side}-${shell}`}
-              ref={(node) => {
-                if (node) group.current[i * 2 * shellCount + side * shellCount + shell] = node;
-              }}
-              geometry={geometry}
-              material={strand.material}
-              customDepthMaterial={depthMaterialOf(strand.material)}
-              castShadow={shell === 0}
-              onBeforeRender={() => {
-                const current = state.current;
-                if (!current) return;
-                /* The axis handed to the shader has to be the SAME axis every
-                   other element collapses onto. `axisPointAtInto` additionally
-                   squashes depth by `1 - flatten * 0.85`; passing the raw
-                   start/end here meant the tubes collapsed toward a line at full
-                   Z while the rungs, loci and labels collapsed toward a line at
-                   z * 0.388 — so the dots visibly came off their strands on the
-                   closing beat. */
-                axisPointAtInto(strand.spec, 0, current.flatten, AXIS_A);
-                axisPointAtInto(strand.spec, 1, current.flatten, AXIS_B);
-                syncOrganic(strand.material, {
-                  grow: strandEased(current.generations, strand.spec.generation),
-                  flatten: current.flatten,
-                  start: AXIS_A,
-                  end: AXIS_B,
-                  startTaper: startTaperWidth(strand.spec.generation),
-                  seed: strand.spec.seed,
-                  shell,
-                });
-              }}
-            />
-          )),
-        ),
+        strand.geometries.map((geometry, side) => (
+          <mesh
+            key={`${strand.spec.id}-${side}`}
+            ref={(node) => {
+              if (node) group.current[i * 2 + side] = node;
+            }}
+            geometry={geometry}
+            material={strand.material}
+            customDepthMaterial={depthMaterialOf(strand.material)}
+            castShadow
+            receiveShadow
+            onBeforeRender={() => {
+              const current = state.current;
+              if (!current) return;
+              /* The axis handed to the shader has to be the SAME axis every
+                 other element collapses onto. `axisPointAtInto` additionally
+                 squashes depth by `1 - flatten * 0.85`; passing the raw
+                 start/end here meant the tubes collapsed toward a line at full
+                 Z while the rungs, loci and labels collapsed toward a line at
+                 z * 0.388 — so the dots visibly came off their strands on the
+                 closing beat. */
+              axisPointAtInto(strand.spec, 0, current.flatten, AXIS_A);
+              axisPointAtInto(strand.spec, 1, current.flatten, AXIS_B);
+              syncOrganic(strand.material, {
+                grow: strandEased(current.generations, strand.spec.generation),
+                flatten: current.flatten,
+                start: AXIS_A,
+                end: AXIS_B,
+                startTaper: startTaperWidth(strand.spec.generation),
+                seed: strand.spec.seed,
+              });
+            }}
+          />
+        )),
       )}
       <GrowingTips strands={strands} state={state} materials={materials} />
     </>
@@ -392,6 +396,7 @@ function Rungs({ state, materials }: Pick<Props, 'state' | 'materials'>) {
       frustumCulled={false}
       material={materials.rung}
       castShadow
+      receiveShadow
     >
       <cylinderGeometry args={[0.02, 0.02, 1, 8]} />
     </instancedMesh>

@@ -36,6 +36,14 @@ export function useWebGL(): { tier: WebGLTier; supported: boolean } {
         return;
       }
 
+      /* Capture and local inspection can force the high kit (`?helix=high`)
+         so shadow and quality checks are not silently run on the low tier. */
+      const forced = new URLSearchParams(window.location.search).get('helix');
+      if (forced === 'high' || forced === 'low') {
+        setTier(forced);
+        return;
+      }
+
       const smallViewport = window.innerWidth < 900;
       const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
       const fewCores = (navigator.hardwareConcurrency ?? 4) <= 4;

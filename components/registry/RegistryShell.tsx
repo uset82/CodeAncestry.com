@@ -11,11 +11,16 @@ import { cn } from '@/lib/cn';
 export function RegistryShell({
   children,
   className,
+  voice = 'reading',
 }: {
   children: React.ReactNode;
   className?: string;
+  /** `ui` = Instrument Sans for dense records. Docs and research stay `reading`. */
+  voice?: 'reading' | 'ui';
 }) {
-  return <div className={cn('min-h-screen', className)}>{children}</div>;
+  return (
+    <div className={cn('min-h-screen', voice === 'ui' && 'font-ui', className)}>{children}</div>
+  );
 }
 
 /**

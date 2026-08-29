@@ -96,8 +96,6 @@ function injectGrowUniforms(shader: OrganicShader, tip: Color) {
   shader.uniforms.uEnd = { value: new Vector3() };
   shader.uniforms.uStartTaper = { value: 0.035 };
   shader.uniforms.uSeed = { value: 0 };
-  shader.uniforms.uShellOffset = { value: 0 };
-  shader.uniforms.uShellBias = { value: 0 };
 }
 
 function patchColorShaders(shader: OrganicShader) {
@@ -114,7 +112,6 @@ function patchColorShaders(shader: OrganicShader) {
        uniform vec3 uEnd;
        uniform float uStartTaper;
        uniform float uSeed;
-       uniform float uShellOffset;
        varying float vPath;
        varying vec3 vLocal;
        ${FBM}
@@ -143,9 +140,6 @@ function patchColorShaders(shader: OrganicShader) {
        float cover = helixCoverage(position, uGrow, uSeed, vPath);
        float growTaper = mix(0.55, 1.0, smoothstep(0.0, 0.10, cover));
        transformed = axisPoint + (transformed - axisPoint) * min(endTaper, growTaper);
-       vec3 radial = transformed - axisPoint;
-       float radialLen = length(radial);
-       if (radialLen > 1e-4) transformed += radial / radialLen * uShellOffset;
 
        transformed = mix(transformed, axisPoint, uFlatten * 0.42);`
     );
@@ -157,7 +151,6 @@ function patchColorShaders(shader: OrganicShader) {
        uniform vec3 uTipColor;
        uniform float uGrow;
        uniform float uSeed;
-       uniform float uShellBias;
        varying float vPath;
        varying vec3 vLocal;
        float vCover;
@@ -167,7 +160,7 @@ function patchColorShaders(shader: OrganicShader) {
     .replace(
       '#include <clipping_planes_fragment>',
       `#include <clipping_planes_fragment>
-       vCover = helixCoverage(vLocal, uGrow, uSeed, vPath) - uShellBias;
+       vCover = helixCoverage(vLocal, uGrow, uSeed, vPath);
        if (vCover < 0.0) discard;`,
     )
     .replace(
@@ -193,7 +186,6 @@ function patchDepthShaders(shader: OrganicShader) {
        uniform vec3 uEnd;
        uniform float uStartTaper;
        uniform float uSeed;
-       uniform float uShellOffset;
        varying float vPath;
        varying vec3 vLocal;
        ${FBM}
@@ -209,9 +201,6 @@ function patchDepthShaders(shader: OrganicShader) {
        float cover = helixCoverage(position, uGrow, uSeed, vPath);
        float growTaper = mix(0.55, 1.0, smoothstep(0.0, 0.10, cover));
        transformed = axisPoint + (transformed - axisPoint) * min(endTaper, growTaper);
-       vec3 radial = transformed - axisPoint;
-       float radialLen = length(radial);
-       if (radialLen > 1e-4) transformed += radial / radialLen * uShellOffset;
        transformed = mix(transformed, axisPoint, uFlatten * 0.42);`,
     );
 
@@ -221,7 +210,6 @@ function patchDepthShaders(shader: OrganicShader) {
       `#include <common>
        uniform float uGrow;
        uniform float uSeed;
-       uniform float uShellBias;
        varying float vPath;
        varying vec3 vLocal;
        ${FBM}
@@ -230,7 +218,7 @@ function patchDepthShaders(shader: OrganicShader) {
     .replace(
       '#include <clipping_planes_fragment>',
       `#include <clipping_planes_fragment>
-       if (helixCoverage(vLocal, uGrow, uSeed, vPath) - uShellBias < 0.0) discard;`,
+       if (helixCoverage(vLocal, uGrow, uSeed, vPath) < 0.0) discard;`,
     );
 }
 
@@ -254,8 +242,6 @@ export function patchGrowingMaterial(material: MeshStandardMaterial, role: strin
     next.uniforms.uEnd = { value: new Vector3() };
     next.uniforms.uStartTaper = { value: 0.035 };
     next.uniforms.uSeed = { value: 0 };
-    next.uniforms.uShellOffset = { value: 0 };
-    next.uniforms.uShellBias = { value: 0 };
     patchDepthShaders(next);
     depth.userData.shader = next;
   };
@@ -281,20 +267,14 @@ export function syncOrganic(
     end: Vector3;
     startTaper: number;
     seed: number;
-    shell?: number;
   },
 ) {
-  const shell = values.shell ?? 0;
-  const offset = shell * 0.012;
-  const bias = shell * 0.05;
   const shader = material.userData.shader as OrganicShader | undefined;
   if (shader) {
     writeUniform(shader, 'uGrow', values.grow);
     writeUniform(shader, 'uFlatten', values.flatten);
     writeUniform(shader, 'uStartTaper', values.startTaper);
     writeUniform(shader, 'uSeed', values.seed);
-    writeUniform(shader, 'uShellOffset', offset);
-    writeUniform(shader, 'uShellBias', bias);
     (shader.uniforms.uStart?.value as Vector3 | undefined)?.copy(values.start);
     (shader.uniforms.uEnd?.value as Vector3 | undefined)?.copy(values.end);
   }
@@ -304,8 +284,6 @@ export function syncOrganic(
     writeUniform(depth, 'uFlatten', values.flatten);
     writeUniform(depth, 'uStartTaper', values.startTaper);
     writeUniform(depth, 'uSeed', values.seed);
-    writeUniform(depth, 'uShellOffset', offset);
-    writeUniform(depth, 'uShellBias', bias);
     (depth.uniforms.uStart?.value as Vector3 | undefined)?.copy(values.start);
     (depth.uniforms.uEnd?.value as Vector3 | undefined)?.copy(values.end);
   }

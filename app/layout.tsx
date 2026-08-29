@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { IBM_Plex_Mono, Instrument_Serif, Newsreader } from 'next/font/google';
+import { IBM_Plex_Mono, Instrument_Sans, Instrument_Serif, Newsreader } from 'next/font/google';
 import { ChatDock } from '@/components/chat/ChatDock';
 import { SiteFooter } from '@/components/marketing/SiteFooter';
 import { SiteHeader } from '@/components/marketing/SiteHeader';
@@ -36,6 +36,16 @@ const plexMono = IBM_Plex_Mono({
   subsets: ['latin'],
   weight: ['400', '500', '600'],
   variable: '--font-plex-mono',
+  display: 'swap',
+});
+
+/* Dense registry UI. Same foundry as the display serif, a grotesque with a
+   cut of its own — not Inter, not Roboto, not the system stack. Homepage and
+   docs keep the serifs; record lists use this. */
+const instrumentSans = Instrument_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-ui-face',
   display: 'swap',
 });
 
@@ -83,7 +93,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${instrumentSerif.variable} ${newsreader.variable} ${plexMono.variable}`}
+      className={`${instrumentSerif.variable} ${newsreader.variable} ${plexMono.variable} ${instrumentSans.variable}`}
     >
       <body>
         <JsonLd data={websiteJsonLd()} />
