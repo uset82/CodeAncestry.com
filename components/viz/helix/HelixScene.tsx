@@ -33,7 +33,7 @@ import {
   strandBasis,
   strandEased,
 } from './strands';
-import { cameraProgress, climaxAmount, holdProgress, type BeatState } from './beats';
+import { cameraProgress, climaxAmount, daylight, holdProgress, type BeatState } from './beats';
 import {
   climaxEmissive,
   depthMaterialOf,
@@ -61,8 +61,16 @@ const AXIS_B = new Vector3();
 const FAMILY_TOP = Math.max(...STRANDS.map((s) => Math.max(s.start.y, s.end.y)));
 const FAMILY_BOTTOM = Math.min(...STRANDS.map((s) => Math.min(s.start.y, s.end.y)));
 const FAMILY_Y = (FAMILY_TOP + FAMILY_BOTTOM) / 2;
-/** Family height plus a tenth of margin, the distance the pull-back reaches. */
-const FAMILY_HALF_HEIGHT = ((FAMILY_TOP - FAMILY_BOTTOM) * 1.1) / 2;
+/**
+ * Half the height the reveal has to cover: the family plus a quarter of margin.
+ *
+ * A tenth was not enough. The sticky header sits over the top 8% of the frame,
+ * so a crown placed 5% from the top edge lands underneath it, and the trunk —
+ * the one strand the whole story starts from — was the part being clipped.
+ */
+const FAMILY_HALF_HEIGHT = ((FAMILY_TOP - FAMILY_BOTTOM) * 1.26) / 2;
+/** Aim above centre so the extra margin lands at the top, under the header. */
+const FAMILY_LOOK_LIFT = 0.8;
 
 const RUNGS_PER_STRAND = 24;
 const UPSTREAM_PULSES = 3;
@@ -108,7 +116,7 @@ function OrganicTicker({
     tickOrganic(materials.backboneOrigin, time, drift, pointer.current);
     tickOrganic(materials.backboneMutated, time, drift, pointer.current);
     tickOrganic(materials.backboneDescendant, time, drift, pointer.current);
-    tickClimax(materials, climax);
+    tickClimax(materials, climax, daylight(current?.progress ?? 0));
   });
 
   return null;
@@ -166,6 +174,8 @@ function Backbones({ state, tier, materials, pointer }: Props) {
   }, [strands]);
 
   const group = useRef<Mesh[]>([]);
+  const shells = tier === 'high' ? [0, 1, 2] : [0];
+  const shellCount = shells.length;
 
   useFrame(({ clock }) => {
     const current = state.current;
@@ -181,11 +191,15 @@ function Backbones({ state, tier, materials, pointer }: Props) {
         strand.spec.generation,
         strand.origin,
         climax,
+        daylight(current.progress),
       );
+      const visible = eased > 0.012;
       for (let side = 0; side < 2; side += 1) {
-        const mesh = group.current[i * 2 + side];
-        if (!mesh) continue;
-        mesh.visible = eased > 0.012;
+        for (let shell = 0; shell < shellCount; shell += 1) {
+          const mesh = group.current[i * 2 * shellCount + side * shellCount + shell];
+          if (!mesh) continue;
+          mesh.visible = visible;
+        }
       }
     });
   });
@@ -193,39 +207,42 @@ function Backbones({ state, tier, materials, pointer }: Props) {
   return (
     <>
       {strands.map((strand, i) =>
-        strand.geometries.map((geometry, side) => (
-          <mesh
-            key={`${strand.spec.id}-${side}`}
-            ref={(node) => {
-              if (node) group.current[i * 2 + side] = node;
-            }}
-            geometry={geometry}
-            material={strand.material}
-            customDepthMaterial={depthMaterialOf(strand.material)}
-            castShadow
-            onBeforeRender={() => {
-              const current = state.current;
-              if (!current) return;
-              /* The axis handed to the shader has to be the SAME axis every
-                 other element collapses onto. `axisPointAtInto` additionally
-                 squashes depth by `1 - flatten * 0.85`; passing the raw
-                 start/end here meant the tubes collapsed toward a line at full
-                 Z while the rungs, loci and labels collapsed toward a line at
-                 z * 0.388 — so the dots visibly came off their strands on the
-                 closing beat. */
-              axisPointAtInto(strand.spec, 0, current.flatten, AXIS_A);
-              axisPointAtInto(strand.spec, 1, current.flatten, AXIS_B);
-              syncOrganic(strand.material, {
-                grow: strandEased(current.generations, strand.spec.generation),
-                flatten: current.flatten,
-                start: AXIS_A,
-                end: AXIS_B,
-                startTaper: startTaperWidth(strand.spec.generation),
-                seed: strand.spec.seed,
-              });
-            }}
-          />
-        )),
+        strand.geometries.map((geometry, side) =>
+          shells.map((shell) => (
+            <mesh
+              key={`${strand.spec.id}-${side}-${shell}`}
+              ref={(node) => {
+                if (node) group.current[i * 2 * shellCount + side * shellCount + shell] = node;
+              }}
+              geometry={geometry}
+              material={strand.material}
+              customDepthMaterial={depthMaterialOf(strand.material)}
+              castShadow={shell === 0}
+              onBeforeRender={() => {
+                const current = state.current;
+                if (!current) return;
+                /* The axis handed to the shader has to be the SAME axis every
+                   other element collapses onto. `axisPointAtInto` additionally
+                   squashes depth by `1 - flatten * 0.85`; passing the raw
+                   start/end here meant the tubes collapsed toward a line at full
+                   Z while the rungs, loci and labels collapsed toward a line at
+                   z * 0.388 — so the dots visibly came off their strands on the
+                   closing beat. */
+                axisPointAtInto(strand.spec, 0, current.flatten, AXIS_A);
+                axisPointAtInto(strand.spec, 1, current.flatten, AXIS_B);
+                syncOrganic(strand.material, {
+                  grow: strandEased(current.generations, strand.spec.generation),
+                  flatten: current.flatten,
+                  start: AXIS_A,
+                  end: AXIS_B,
+                  startTaper: startTaperWidth(strand.spec.generation),
+                  seed: strand.spec.seed,
+                  shell,
+                });
+              }}
+            />
+          )),
+        ),
       )}
       <GrowingTips strands={strands} state={state} materials={materials} />
     </>
@@ -518,7 +535,12 @@ function LocusLabels({ state }: Pick<Props, 'state'>) {
 
       const eased = strandEased(current.generations, anchor.spec.generation);
       const front = growthAlong(eased, anchor.t);
-      const opacity = front > 0.55 ? Math.min(1, (front - 0.55) / 0.45) : 0;
+      /* Fade out through the pull-back. At the reveal distance a label is
+         wider than the strand it names, and all eight collapse into an
+         overlapping stack across the top of the frame. */
+      const reveal = 1 - holdProgress(current.progress);
+      const opacity =
+        front > 0.55 ? Math.round(Math.min(1, (front - 0.55) / 0.45) * reveal * 100) / 100 : 0;
       if (lastOpacity.current[i] === opacity) return;
       lastOpacity.current[i] = opacity;
       node.style.opacity = String(opacity);
@@ -723,12 +745,12 @@ function CameraRig({
 
     desired.set(
       Math.sin(story * Math.PI * 0.6) * 1.2 * (1 - hold) + pointer.current.x * 0.48 * orbit,
-      storyY + (FAMILY_Y - storyY) * hold + pointer.current.y * 0.24 * orbit,
+      storyY + (FAMILY_Y + FAMILY_LOOK_LIFT - storyY) * hold + pointer.current.y * 0.24 * orbit,
       storyZ + (FAMILY_Z - storyZ) * hold,
     );
     lookAt.set(
       -story * 0.9 * (1 - hold),
-      storyLookY + (FAMILY_Y - storyLookY) * hold,
+      storyLookY + (FAMILY_Y + FAMILY_LOOK_LIFT - storyLookY) * hold,
       0,
     );
 

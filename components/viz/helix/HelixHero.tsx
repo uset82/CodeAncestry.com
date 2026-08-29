@@ -258,7 +258,7 @@ function AnimatedHero({ tier }: { tier: 'low' | 'high' }) {
             owns the background and the fog. */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 opacity-45 lg:inset-y-0 lg:right-0 lg:left-[44%] lg:opacity-100"
+          className="pointer-events-none absolute inset-0 lg:inset-y-0 lg:right-0 lg:left-[36%]"
         >
           <Canvas
             shadows={tier === 'high' ? { type: PCFSoftShadowMap, enabled: true } : false}
@@ -288,11 +288,12 @@ function AnimatedHero({ tier }: { tier: 'low' | 'high' }) {
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 lg:hidden"
           style={{
-            background: 'color-mix(in oklab, transparent, #07090d calc(var(--daylight, 0) * 74%))',
+            background:
+              'linear-gradient(180deg, #07090d 0%, color-mix(in oklab, #07090d 82%, transparent) 42%, color-mix(in oklab, #07090d calc(58% + var(--daylight, 0) * 28%), transparent) 100%)',
           }}
         />
 
-        <div className="shell-wide relative z-10 flex flex-1 flex-col justify-center pt-20 pb-16 lg:grid lg:grid-cols-[minmax(0,36rem)_minmax(0,1fr)] lg:items-center lg:gap-10">
+        <div className="shell-wide relative z-10 flex flex-1 flex-col justify-center pt-20 pb-16 lg:grid lg:grid-cols-[minmax(0,32rem)_minmax(0,1fr)] lg:items-center lg:gap-10">
           <div className="lg:order-1">
             <HeroCopy>
             {/* All five beats stay in the DOM; the active one is emphasised. */}

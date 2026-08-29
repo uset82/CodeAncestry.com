@@ -268,14 +268,12 @@ const GROW_WIDTH = 0.08;
 /** Must match the GLSL `endTaper` / `growTaper` windows in `organic.ts`. */
 export const TUBE_END_TAPER = 0.035;
 /**
- * How far the growth frontier wanders either side of `uGrow`, full width.
- *
- * `organic.ts` interpolates this straight into its GLSL, and the rungs subtract
- * half of it from their own growth front so a rung can never appear on a
- * stretch of backbone the noise has pulled back behind it. One constant, two
- * consumers — the alternative is a floating dash at the growing tip.
+ * Vine-style coverage spread. The living edge is
+ * `local * (1 + spread) - (n - 0.5) * spread`, so the front can recede by
+ * `0.5 * spread / (1 + spread)` behind `uGrow`. Rungs trail that distance.
  */
-export const GROWTH_JITTER = 0.075;
+export const GROWTH_SPREAD = 0.28;
+export const GROWTH_JITTER = (0.5 * GROWTH_SPREAD) / (1 + GROWTH_SPREAD) + 0.02;
 /** Children stay on their own axis for this first fraction, then bloom. */
 export const TUBE_CHILD_START = 0.1;
 export const TUBE_GROW_TAPER = 0.045;
