@@ -134,7 +134,7 @@ export function ConceptCards() {
         <Eyebrow index="01">Four questions the registry answers</Eyebrow>
         <h2 className="text-headline mt-4 text-balance">
           Software already behaves like a species.{' '}
-          <span className="text-outline">Nothing records it.</span>
+          <span className="text-emphasis">Nothing records it.</span>
         </h2>
         <p className="text-text-soft mt-5 max-w-[620px] leading-relaxed">
           Forks, rewrites, ports and agent refactors move capabilities between projects every day.

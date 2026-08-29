@@ -23,6 +23,7 @@ import {
   UPSTREAM_PATH,
   axisPointAtInto,
   backbonePointAtInto,
+  GROWTH_JITTER,
   growthAlong,
   pathTaper,
   rungDirection,
@@ -54,6 +55,14 @@ import {
    synchronously and the values are consumed before the next call. */
 const AXIS_A = new Vector3();
 const AXIS_B = new Vector3();
+
+/* The extent of the whole lineage, measured from the strands rather than typed
+   in, so moving a branch cannot silently crop the closing frame. */
+const FAMILY_TOP = Math.max(...STRANDS.map((s) => Math.max(s.start.y, s.end.y)));
+const FAMILY_BOTTOM = Math.min(...STRANDS.map((s) => Math.min(s.start.y, s.end.y)));
+const FAMILY_Y = (FAMILY_TOP + FAMILY_BOTTOM) / 2;
+/** Family height plus a tenth of margin, the distance the pull-back reaches. */
+const FAMILY_HALF_HEIGHT = ((FAMILY_TOP - FAMILY_BOTTOM) * 1.1) / 2;
 
 const RUNGS_PER_STRAND = 24;
 const UPSTREAM_PULSES = 3;
@@ -212,6 +221,7 @@ function Backbones({ state, tier, materials, pointer }: Props) {
                 start: AXIS_A,
                 end: AXIS_B,
                 startTaper: startTaperWidth(strand.spec.generation),
+                seed: strand.spec.seed,
               });
             }}
           />
@@ -250,7 +260,11 @@ function GrowingTips({
     const { matrix, position, axis, quaternion, scale } = scratch;
 
     strands.forEach((strand, i) => {
-      const eased = strandEased(current.generations, strand.spec.generation);
+      /* Half the jitter, not the full width: the tip marker belongs at the
+         frontier, but the frontier is a noise field, so sitting exactly on its
+         mean leaves it floating wherever the noise has pulled the tube back. */
+      const eased =
+        strandEased(current.generations, strand.spec.generation) - GROWTH_JITTER * 0.5;
       const t = Math.min(0.999, Math.max(0, eased));
       strand.curve.getPoint(t, position);
       axisPointAtInto(strand.spec, t, current.flatten, axis);
@@ -320,7 +334,12 @@ function Rungs({ state, materials }: Pick<Props, 'state' | 'materials'>) {
     const time = clock.elapsedTime;
 
     slots.forEach((slot, i) => {
-      const eased = strandEased(current.generations, slot.spec.generation);
+      /* Trail the frontier by its full jitter. The tube's growth front is a
+         noise field now, so on any given rung the backbone may have pulled back
+         by up to half of GROWTH_JITTER; a rung using the mean would sit on a
+         stretch of strand that is not there yet. That is the floating dash,
+         reintroduced by the back door. */
+      const eased = strandEased(current.generations, slot.spec.generation) - GROWTH_JITTER;
       const front = growthAlong(eased, slot.t);
       const { matrix, position, quaternion, scale, up } = scratch;
 
@@ -525,10 +544,15 @@ function LocusLabels({ state }: Pick<Props, 'state'>) {
             >
               <button
                 type="button"
-                className={`hover:border-current focus-visible:border-current inline-flex items-center gap-1.5 rounded-sm border px-1.5 py-[3px] font-mono text-[9px] tracking-[0.14em] uppercase backdrop-blur-sm ${
+                /* Opaque, not a translucent blurred chip. These labels sit on
+                   top of a scene whose ground now travels from near-black to
+                   bone, and a 70%-void plate reading against both is not a
+                   contrast anyone can guarantee. A solid plate is legible over
+                   whatever is behind it. */
+                className={`hover:border-current focus-visible:border-current bg-void inline-flex items-center gap-1.5 rounded-xs border px-1.5 py-[3px] font-mono text-[9px] tracking-[0.14em] uppercase ${
                   anchor.label.mutated
-                    ? 'border-violet/50 bg-violet/15 text-violet'
-                    : 'border-acid/30 bg-void/70 text-acid/90'
+                    ? 'border-violet/50 text-violet'
+                    : 'border-acid/30 text-acid'
                 }`}
                 style={{ pointerEvents: 'auto' }}
               >
@@ -536,7 +560,7 @@ function LocusLabels({ state }: Pick<Props, 'state'>) {
                 {anchor.label.short}
               </button>
 
-              <div className="border-line bg-void/95 pointer-events-none absolute top-full left-0 mt-1.5 hidden w-max max-w-[220px] rounded-sm border p-2 group-hover/locus:block group-focus-within/locus:block">
+              <div className="border-line bg-void pointer-events-none absolute top-full left-0 mt-1.5 hidden w-max max-w-[220px] rounded-xs border p-2 group-hover/locus:block group-focus-within/locus:block">
                 <p className="text-text text-[12px] font-semibold">{anchor.label.gene}</p>
                 <p className="text-faint mt-0.5 text-[11px]">{anchor.label.origin}</p>
                 <p className="text-muted mt-1 font-mono text-[10px]">{anchor.label.accession}</p>
@@ -680,12 +704,33 @@ function CameraRig({
     const hold = holdProgress(current.progress);
     const orbit = 1 - current.flatten;
 
+    /* The descent, and then the reveal.
+       Following the beats alone left the camera at y -3.30, z 6.72 looking at
+       y -3.51, which at fov 42 frames 5.16 of the 13.5 units the family spans —
+       38 % of it. The closing frame showed two tubes in close-up, not a family.
+       The hold now pulls back to FAMILY_Z so the whole lineage is in shot; the
+       copy at that beat is about four ancestors being offered a change, so all
+       four had better be visible. */
+    const storyY = 2.2 - story * 6.4;
+    const storyZ = 8.4 - current.flatten * 1.15;
+    const storyLookY = 1.6 - story * 6.2;
+
+    /* Read the fov off the camera instead of repeating the 42 set in
+       `HelixHero`, so the reveal still frames the family if that value or the
+       viewport changes. */
+    const fov = 'fov' in camera ? (camera.fov as number) : 42;
+    const FAMILY_Z = FAMILY_HALF_HEIGHT / Math.tan((fov * Math.PI) / 360);
+
     desired.set(
-      Math.sin(story * Math.PI * 0.6) * 1.2 + pointer.current.x * 0.48 * orbit,
-      2.2 - story * 6.4 + pointer.current.y * 0.24 * orbit,
-      8.4 - current.flatten * 1.15 - hold * 0.85,
+      Math.sin(story * Math.PI * 0.6) * 1.2 * (1 - hold) + pointer.current.x * 0.48 * orbit,
+      storyY + (FAMILY_Y - storyY) * hold + pointer.current.y * 0.24 * orbit,
+      storyZ + (FAMILY_Z - storyZ) * hold,
     );
-    lookAt.set(-story * 0.9, 1.6 - story * 6.2 + hold * 0.22, 0);
+    lookAt.set(
+      -story * 0.9 * (1 - hold),
+      storyLookY + (FAMILY_Y - storyLookY) * hold,
+      0,
+    );
 
     const lerp = Math.min(1, delta * 3.2);
     camera.position.lerp(desired, lerp);

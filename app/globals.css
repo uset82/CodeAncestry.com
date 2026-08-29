@@ -49,6 +49,16 @@
   --color-rose: #ff5c7a;
   --color-rose-dim: #c4425c;
 
+  /* --- daylight ------------------------------------------------------- */
+  /* The specimen's world dawns as the family grows: by the closing beat the
+     helix stands on a warm lit ground instead of fading into fog. That ground
+     lives in the WebGL scene (`studio.tsx` owns the colour), not here — the
+     page only warms slightly alongside it. See `hero-dawn` below for why.
+
+     Warm bone rather than a neutral white: against pure white the specimen's
+     own highlights stop reading as material and start reading as clipping. */
+  --color-dawn-ground: #e7e3d8;
+
   /* --- radii ---------------------------------------------------------- */
   --radius-xs: 6px;
   --radius-sm: 10px;
@@ -58,33 +68,38 @@
   --radius-2xl: 32px;
 
   /* --- typography ----------------------------------------------------- */
-  --font-sans:
-    var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
-    sans-serif;
+  /* Three voices, one per job. The narrative headline is an editorial serif;
+     reading text is a screen serif with optical sizes; every accession,
+     identifier and registry label stays monospaced. No interface sans — the
+     grotesque that used to sit here read as generic. */
+  --font-display: var(--font-display-face), 'Iowan Old Style', Georgia, serif;
+  --font-sans: var(--font-reading), Charter, Georgia, serif;
   --font-mono:
-    var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    var(--font-plex-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-  /* display: the tight negative-tracking headline voice */
+  /* Display sizes carry the serif at its single drawn weight. A high-contrast
+     serif breaks apart under the tight negative tracking a grotesque wants, and
+     its descenders need the extra leading. */
   --text-display: clamp(3.25rem, 9vw, 8rem);
-  --text-display--line-height: 0.83;
-  --text-display--letter-spacing: -0.075em;
-  --text-display--font-weight: 750;
+  --text-display--line-height: 0.92;
+  --text-display--letter-spacing: -0.02em;
+  --text-display--font-weight: 400;
 
   /* hero: display voice, sized to survive a two-line headline in one viewport */
   --text-hero: clamp(2.75rem, 6.6vw, 5.75rem);
-  --text-hero--line-height: 0.86;
-  --text-hero--letter-spacing: -0.07em;
-  --text-hero--font-weight: 750;
+  --text-hero--line-height: 0.95;
+  --text-hero--letter-spacing: -0.02em;
+  --text-hero--font-weight: 400;
 
   --text-headline: clamp(2.375rem, 5vw, 4rem);
-  --text-headline--line-height: 0.95;
-  --text-headline--letter-spacing: -0.055em;
-  --text-headline--font-weight: 700;
+  --text-headline--line-height: 1;
+  --text-headline--letter-spacing: -0.015em;
+  --text-headline--font-weight: 400;
 
   --text-title: clamp(1.5rem, 2.6vw, 2rem);
-  --text-title--line-height: 1.15;
-  --text-title--letter-spacing: -0.035em;
-  --text-title--font-weight: 700;
+  --text-title--line-height: 1.2;
+  --text-title--letter-spacing: -0.01em;
+  --text-title--font-weight: 400;
 
   --text-lead: 1.25rem;
   --text-lead--line-height: 1.55;
@@ -161,15 +176,24 @@
   body {
     margin: 0;
     background-color: var(--color-void);
-    background-image:
-      radial-gradient(circle at 72% 6%, rgb(99 231 255 / 0.07), transparent 30%),
-      radial-gradient(circle at 22% 30%, rgb(183 255 57 / 0.05), transparent 26%);
-    background-attachment: fixed;
     color: var(--color-text);
     font-family: var(--font-sans);
-    font-feature-settings: 'cv11', 'ss01';
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+  }
+
+  /* The narrative voice. Tailwind's `--text-*` tokens carry size, leading,
+     tracking and weight but not family, so the display sizes are named here
+     rather than adding a `font-display` class to every headline. */
+  h1,
+  h2,
+  h3,
+  .text-display,
+  .text-hero,
+  .text-headline,
+  .text-title {
+    font-family: var(--font-display);
+    font-weight: 400;
   }
 
   ::selection {
@@ -243,10 +267,43 @@
   margin-inline: auto;
 }
 
-/* the outlined display word used in the hero and section headings */
-@utility text-outline {
-  color: transparent;
-  -webkit-text-stroke: 1px rgb(255 255 255 / 0.5);
+/* The emphasised half of a display headline. This used to be hollow stroke text
+   — transparent fill over a 1px white stroke — which reads as a generated
+   effect and disappears entirely at small sizes and in high-contrast modes.
+   The serif's own italic carries the same emphasis and is actually legible. */
+@utility text-emphasis {
+  font-style: italic;
+  color: var(--color-text-soft);
+}
+
+/* The hero's travelling ground.
+   `--daylight` (0 → 1) is written by the scroll handler in `HelixHero`, which
+   reads it from `daylight()` in `beats.ts` — the same number `StudioRig` uses to
+   lerp the scene background, so the page and the render cannot drift apart.
+
+   Overriding the semantic tokens here rather than restyling each element means
+   every `text-muted`, `border-line` and `bg-panel` inside the hero travels with
+   the ground for free, including ones added later. */
+@utility hero-dawn {
+  --daylight: 0;
+  --mix: calc(var(--daylight) * 100%);
+
+  /* The page does NOT travel to daylight, and this is measured rather than
+     preferred. Inverting the copy alongside the ground makes the two cross:
+     at the midpoint of a full travel, body text lands at 1.28:1 against its
+     own background — invisible — and `text-soft`, `muted` and `faint` all sit
+     under 1.3:1 across most of the middle. No ordering of the two ramps avoids
+     it, because the ink has to pass through the ground to get to the far side.
+
+     So the dawn happens where the payoff is: inside the canvas, where lighting
+     a warm ground is what finally gives the specimen something to reflect. The
+     page warms from the void toward charcoal, enough to feel the change, never
+     enough to threaten the copy — a dark room with a lit window in it. */
+  --color-line: color-mix(in oklab, #202937, #2f3128 var(--mix));
+  --color-panel: color-mix(in oklab, #0d1118, #17180f var(--mix));
+  --color-panel-2: color-mix(in oklab, #111722, #1c1e14 var(--mix));
+
+  background-color: color-mix(in oklab, #07090d, #14150f var(--mix));
 }
 
 @utility hairline {

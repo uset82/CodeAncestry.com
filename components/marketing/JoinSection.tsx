@@ -18,7 +18,7 @@ export function JoinSection() {
           <h2 className="text-headline mt-4 text-balance">
             Generate your project&rsquo;s
             <br />
-            <span className="text-outline">first genome.</span>
+            <span className="text-emphasis">first genome.</span>
           </h2>
           <p className="text-text-soft mt-6 max-w-[540px] leading-relaxed">
             The alpha reads a repository you already own, proposes its capability genes, and shows

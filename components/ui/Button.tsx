@@ -5,8 +5,7 @@ type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type Size = 'sm' | 'md' | 'lg';
 
 const VARIANTS: Record<Variant, string> = {
-  primary:
-    'bg-acid text-void border-transparent font-extrabold hover:shadow-[0_0_34px_rgb(183_255_57/0.22)]',
+  primary: 'bg-acid text-on-acid border-transparent hover:bg-acid-dim',
   secondary: 'bg-transparent border-line text-text hover:border-line-strong hover:bg-panel-2',
   ghost: 'bg-transparent border-transparent text-muted hover:text-text hover:bg-panel-2',
   danger: 'bg-transparent border-rose/40 text-rose hover:bg-rose/10',
@@ -18,8 +17,11 @@ const SIZES: Record<Size, string> = {
   lg: 'px-6 py-3.5 text-[15px]',
 };
 
+/* Not a pill. The design contract reserves the full radius for binary filters,
+   compact status and tags — an ordinary action reads as a control, and a glow
+   shadow behind it is decoration standing in for hierarchy. */
 const BASE =
-  'inline-flex items-center justify-center gap-2 rounded-full border font-bold transition-[color,background-color,border-color,box-shadow] duration-200 disabled:pointer-events-none disabled:opacity-45';
+  'inline-flex items-center justify-center gap-2 rounded-xs border font-medium tracking-tight transition-[color,background-color,border-color] duration-200 disabled:pointer-events-none disabled:opacity-45';
 
 type CommonProps = {
   variant?: Variant;

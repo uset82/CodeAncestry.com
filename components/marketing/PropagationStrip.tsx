@@ -63,7 +63,7 @@ export function PropagationStrip() {
           <h2 className="text-headline mt-4 text-balance">
             A descendant can teach
             <br />
-            <span className="text-outline">its ancestor something.</span>
+            <span className="text-emphasis">its ancestor something.</span>
           </h2>
         </div>
 

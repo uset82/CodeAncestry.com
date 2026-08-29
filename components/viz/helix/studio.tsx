@@ -1,18 +1,18 @@
 'use client';
 
+import { Environment, Lightformer } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
-import { useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect, useMemo, useRef } from 'react';
 import {
   Color,
   FogExp2,
   MeshPhysicalMaterial,
   MeshStandardMaterial,
-  PMREMGenerator,
   type DirectionalLight,
+  type HemisphereLight,
   type PointLight,
 } from 'three';
-import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { climaxAmount, type BeatState } from './beats';
+import { climaxAmount, daylight, type BeatState } from './beats';
 import { patchGrowingMaterial } from './organic';
 
 /** Token-locked specimen palette. Same hexes as `app/globals.css`. */
@@ -36,6 +36,9 @@ export const HELIX = {
  * instead of an unlit wire.
  */
 export function createHelixMaterials() {
+  /* `dithering` on every large smooth surface. A backbone lit by a soft area
+     source is a long, very gradual ramp, which is exactly the case 8-bit output
+     banks into visible bands; the reference turns it on throughout. */
   const backboneOrigin = new MeshPhysicalMaterial({
     color: HELIX.acidDim,
     emissive: HELIX.acid,
@@ -44,6 +47,7 @@ export function createHelixMaterials() {
     metalness: 0.12,
     clearcoat: 0.22,
     clearcoatRoughness: 0.5,
+    dithering: true,
   });
   const backboneMutated = new MeshStandardMaterial({
     color: HELIX.violet,
@@ -51,6 +55,7 @@ export function createHelixMaterials() {
     emissiveIntensity: 0.62,
     roughness: 0.36,
     metalness: 0.1,
+    dithering: true,
   });
   const backboneDescendant = new MeshStandardMaterial({
     color: HELIX.cyanDim,
@@ -58,6 +63,7 @@ export function createHelixMaterials() {
     emissiveIntensity: 0.42,
     roughness: 0.4,
     metalness: 0.08,
+    dithering: true,
   });
 
   patchGrowingMaterial(backboneOrigin, 'origin', HELIX.acid);
@@ -118,48 +124,98 @@ function backboneMaterial(materials: HelixMaterials, generation: number, origin:
 export { backboneMaterial };
 
 /**
- * The same IBL the official Three.js editor uses (`RoomEnvironment` + PMREM).
- * Without it, metal/clearcoat reads as charcoal.
+ * The environment the specimen reflects.
+ *
+ * `RoomEnvironment` used to stand here, and it is why the strands read as flat
+ * plastic: it is a grey box, so `roughness`, `metalness` and `clearcoat` had
+ * almost nothing to work with. Three shaped emitters give the backbone a
+ * specular that moves with the camera, which is the single largest realism
+ * lever in this scene and the reason the reference carries an environment on
+ * every material.
+ *
+ * Baked once, not per frame. The dawn is carried by `scene.environmentIntensity`
+ * — a scalar, free to animate — rather than by re-rendering the cube map.
  */
-function EditorEnvironment() {
-  const { gl, scene } = useThree();
+function SpecimenEnvironment() {
+  return (
+    <Environment resolution={256}>
+      {/* Key: a wide soft ceiling panel, the long highlight down each strand. */}
+      <Lightformer
+        form="rect"
+        intensity={3.4}
+        color="#fffdf6"
+        position={[0, 7, -3]}
+        rotation={[Math.PI / 2, 0, 0]}
+        scale={[14, 9, 1]}
+      />
+      {/* Cold rim from behind-left: separates the strands from the ground. */}
+      <Lightformer
+        form="rect"
+        intensity={1.3}
+        color="#63e7ff"
+        position={[-7, 1, -4]}
+        rotation={[0, Math.PI / 2, 0]}
+        scale={[9, 10, 1]}
+      />
+      {/* The dawn itself, low and warm on the right, where the family ends. */}
+      <Lightformer
+        form="rect"
+        intensity={2.1}
+        color="#ffe6bd"
+        position={[6, -5, 2]}
+        rotation={[0, -Math.PI / 2, 0]}
+        scale={[9, 12, 1]}
+      />
+    </Environment>
+  );
+}
+
+/**
+ * Background and fog, both driven by `daylight()`.
+ *
+ * The fog colour has to track the background exactly or the horizon tears —
+ * distant strands fade toward one colour while the empty canvas behind them is
+ * another. Density drops as the world lights up: fog is what buried the closing
+ * frame, and a lit scene should not be hazier than an unlit one.
+ */
+const NIGHT_GROUND = new Color('#07090d');
+const DAWN_GROUND = new Color('#e7e3d8');
+
+function GroundRig({ state }: { state: React.RefObject<BeatState> }) {
+  const { scene } = useThree();
+  const fog = useMemo(() => new FogExp2(NIGHT_GROUND.getHex(), 0.022), []);
+  const ground = useMemo(() => NIGHT_GROUND.clone(), []);
 
   useLayoutEffect(() => {
-    const pmrem = new PMREMGenerator(gl);
-    const envScene = new RoomEnvironment();
-    const env = pmrem.fromScene(envScene, 0.04).texture;
-
     /* eslint-disable react-hooks/immutability -- `scene` comes from useThree(),
        and mutating the three.js scene graph is the entire React Three Fiber
        programming model; the rule cannot see that the object is intentionally
-       mutable. The cleanup below restores and disposes everything set here. */
-    scene.environment = env;
-    scene.environmentIntensity = 0.7;
-    /* eslint-enable react-hooks/immutability */
-
-    return () => {
-      scene.environment = null;
-      env.dispose();
-      envScene.dispose();
-      pmrem.dispose();
-    };
-  }, [gl, scene]);
-
-  return null;
-}
-
-function FogRig() {
-  const { scene } = useThree();
-
-  useLayoutEffect(() => {
-    const fog = new FogExp2('#07090d', 0.022);
-    /* eslint-disable react-hooks/immutability -- three.js scene graph */
+       mutable. The cleanup below restores everything set here. */
     scene.fog = fog;
+    scene.background = ground;
+    /* eslint-enable react-hooks/immutability */
     return () => {
       if (scene.fog === fog) scene.fog = null;
+      if (scene.background === ground) scene.background = null;
     };
+  }, [scene, fog, ground]);
+
+  useFrame(() => {
+    const current = state.current;
+    if (!current) return;
+    const day = daylight(current.progress);
+
+    ground.copy(NIGHT_GROUND).lerp(DAWN_GROUND, day);
+    fog.color.copy(ground);
+    /* eslint-disable react-hooks/immutability -- driving a three.js scene by
+       mutating it every frame is what `useFrame` is for; the rule sees a value
+       that came from `useMemo`/`useThree` and cannot tell that the whole point
+       of these objects is to be written to. Both are torn down in the layout
+       effect above. */
+    fog.density = 0.022 - day * 0.0135;
+    scene.environmentIntensity = 0.34 + day * 0.72;
     /* eslint-enable react-hooks/immutability */
-  }, [scene]);
+  });
 
   return null;
 }
@@ -179,20 +235,35 @@ export function StudioRig({
 }) {
   const key = useRef<DirectionalLight>(null);
   const acid = useRef<PointLight>(null);
+  const sky = useRef<HemisphereLight>(null);
+  const rim = useRef<DirectionalLight>(null);
 
   useFrame(() => {
     const current = state.current;
     if (!current) return;
     const climax = climaxAmount(current);
-    if (key.current) key.current.intensity = 1.55 + climax * 1.35;
+    const day = daylight(current.progress);
+
+    if (key.current) key.current.intensity = 1.55 + climax * 1.35 + day * 1.5;
     if (acid.current) acid.current.intensity = 2.4 + climax * 4.4;
+
+    /* The sky term is what makes a lit world read as lit rather than as a dark
+       world with a brighter lamp in it: it fills the shadow side. Its ground
+       colour has to follow the actual ground or the bounce is a lie. */
+    if (sky.current) {
+      sky.current.intensity = 0.55 + day * 1.15;
+      sky.current.groundColor.copy(NIGHT_GROUND).lerp(DAWN_GROUND, day);
+    }
+    /* The cold rim earns its keep against a dark ground and only muddies a
+       light one, so it retreats as the dawn arrives. */
+    if (rim.current) rim.current.intensity = 0.7 - day * 0.42;
   });
 
   return (
     <>
-      <FogRig />
-      <EditorEnvironment />
-      <hemisphereLight args={['#63e7ff', '#07090d', 0.55]} />
+      <GroundRig state={state} />
+      <SpecimenEnvironment />
+      <hemisphereLight ref={sky} args={['#63e7ff', '#07090d', 0.55]} />
       <directionalLight
         ref={key}
         position={[4.4, 6.6, 3.6]}
@@ -208,7 +279,7 @@ export function StudioRig({
         shadow-camera-top={6}
         shadow-camera-bottom={-12}
       />
-      <directionalLight position={[-5.4, 1.1, -3.2]} intensity={0.7} color="#63e7ff" />
+      <directionalLight ref={rim} position={[-5.4, 1.1, -3.2]} intensity={0.7} color="#63e7ff" />
       <pointLight
         ref={acid}
         position={[0, 2.5, 0.7]}
@@ -218,13 +289,16 @@ export function StudioRig({
         decay={2}
       />
       <pointLight position={[-4.4, -6.6, 0.5]} color="#a985ff" intensity={1.8} distance={8} decay={2} />
-      {/* No ground plane. A 36x36 receiver used to sit at y = -10.7, but a
-          roughness-1 up-facing quad integrates the whole RoomEnvironment IBL at
-          environmentIntensity 0.55, plus the hemisphere light, lifted again by
-          ACES at exposure 1.08 — so it read as a grey slab, and the camera
-          descending through the last beat brought it into frame as a rectangle floating
-          in the void. The strands shadow each other, which is what actually
-          sells the depth; nothing here needs a floor to catch them. */}
+      {/* Still no ground plane, and deliberately no `ContactShadows` either.
+          A 36x36 receiver used to sit at y = -10.7 and read as a grey slab that
+          the descending camera brought into frame as a rectangle floating in
+          the void. A contact-shadow plane would reproduce exactly that: this
+          lineage hangs from y = 3.6 down to y = -9.9 rather than resting on
+          anything, so a catcher placed under it is 13 units from most of what
+          it is meant to catch and resolves to a vague smudge.
+
+          What actually carries the depth here is strand-on-strand shadowing
+          plus the environment's moving specular. */}
     </>
   );
 }

@@ -8,6 +8,7 @@
  * Each backbone clones its role material so uGrow is per-strand.
  */
 
+import { GROWTH_JITTER } from './strands';
 import {
   MeshDepthMaterial,
   RGBADepthPacking,
@@ -54,6 +55,36 @@ float helixFbm(vec3 p) {
 }
 `;
 
+/**
+ * Where the strand has grown to.
+ *
+ * This used to be `uGrow` alone — one number, so the frontier was a clean ring
+ * travelling down a tube at a constant rate on every strand at once. That is
+ * what read as machined rather than grown.
+ *
+ * The frontier is now a threshold on a domain-warped fbm: noise displaces the
+ * noise lookup before it is read, which is what makes the edge curl instead of
+ * blob. Sampled in the strand's own local space and offset by a per-strand
+ * seed, so the front varies around the tube's circumference, along its length,
+ * and between siblings.
+ *
+ * `GROWTH_JITTER` is the full width the frontier can wander. It is imported
+ * from `strands.ts` and interpolated into the GLSL rather than typed twice,
+ * because the rungs have to trail the worst case of this number and the two
+ * cannot be allowed to drift apart.
+ */
+const GROWTH = /* glsl */ `
+float helixFront(vec3 lp, float grow, float seed) {
+  vec3 q = lp * 0.9 + seed * 7.31;
+  vec3 w = vec3(
+    helixNoise(q * 1.7 + 3.1),
+    helixNoise(q * 1.7 + 7.7),
+    helixNoise(q * 1.7 + 13.2)) - 0.5;
+  q += w * 0.55;
+  return grow + (helixFbm(q) - 0.5) * ${GROWTH_JITTER.toFixed(4)};
+}
+`;
+
 function injectGrowUniforms(shader: OrganicShader, tip: Color) {
   shader.uniforms.uGrow = { value: 1 };
   shader.uniforms.uTime = { value: 0 };
@@ -64,6 +95,7 @@ function injectGrowUniforms(shader: OrganicShader, tip: Color) {
   shader.uniforms.uStart = { value: new Vector3() };
   shader.uniforms.uEnd = { value: new Vector3() };
   shader.uniforms.uStartTaper = { value: 0.035 };
+  shader.uniforms.uSeed = { value: 0 };
 }
 
 function patchColorShaders(shader: OrganicShader) {
@@ -79,8 +111,11 @@ function patchColorShaders(shader: OrganicShader) {
        uniform vec3 uStart;
        uniform vec3 uEnd;
        uniform float uStartTaper;
+       uniform float uSeed;
        varying float vPath;
-       ${FBM}`,
+       varying float vFront;
+       ${FBM}
+       ${GROWTH}`,
     )
     .replace(
       '#include <begin_vertex>',
@@ -113,7 +148,8 @@ function patchColorShaders(shader: OrganicShader) {
           tip arrives as a point and the discard only removes what is already
           degenerate. */
        float endTaper = smoothstep(0.0, uStartTaper, vPath) * (1.0 - smoothstep(0.965, 1.0, vPath));
-       float growTaper = 1.0 - smoothstep(uGrow - 0.045, uGrow, vPath);
+       vFront = helixFront(position, uGrow, uSeed);
+       float growTaper = 1.0 - smoothstep(vFront - 0.045, vFront, vPath);
        transformed = axisPoint + (transformed - axisPoint) * min(endTaper, growTaper);
 
        transformed = mix(transformed, axisPoint, uFlatten * 0.42);`
@@ -123,20 +159,20 @@ function patchColorShaders(shader: OrganicShader) {
     .replace(
       '#include <common>',
       `#include <common>
-       uniform float uGrow;
        uniform vec3 uTipColor;
        varying float vPath;
+       varying float vFront;
        ${FBM}`,
     )
     .replace(
       '#include <clipping_planes_fragment>',
       `#include <clipping_planes_fragment>
-       if (vPath > uGrow + 0.0015) discard;`,
+       if (vPath > vFront + 0.0015) discard;`,
     )
     .replace(
       '#include <emissivemap_fragment>',
       `#include <emissivemap_fragment>
-       float tip = smoothstep(uGrow - 0.055, uGrow, vPath);
+       float tip = smoothstep(vFront - 0.055, vFront, vPath);
        float grain = helixFbm(vViewPosition * 0.35);
        totalEmissiveRadiance += uTipColor * tip * 1.85;
        totalEmissiveRadiance *= 0.88 + grain * 0.22;`,
@@ -157,7 +193,11 @@ function patchDepthShaders(shader: OrganicShader) {
        uniform vec3 uStart;
        uniform vec3 uEnd;
        uniform float uStartTaper;
-       varying float vPath;`,
+       uniform float uSeed;
+       varying float vPath;
+       varying float vFront;
+       ${FBM}
+       ${GROWTH}`,
     )
     .replace(
       '#include <begin_vertex>',
@@ -165,7 +205,8 @@ function patchDepthShaders(shader: OrganicShader) {
        vPath = uv.x;
        vec3 axisPoint = mix(uStart, uEnd, vPath);
        float endTaper = smoothstep(0.0, uStartTaper, vPath) * (1.0 - smoothstep(0.965, 1.0, vPath));
-       float growTaper = 1.0 - smoothstep(uGrow - 0.045, uGrow, vPath);
+       vFront = helixFront(position, uGrow, uSeed);
+       float growTaper = 1.0 - smoothstep(vFront - 0.045, vFront, vPath);
        transformed = axisPoint + (transformed - axisPoint) * min(endTaper, growTaper);
        transformed = mix(transformed, axisPoint, uFlatten * 0.42);`,
     );
@@ -174,13 +215,13 @@ function patchDepthShaders(shader: OrganicShader) {
     .replace(
       '#include <common>',
       `#include <common>
-       uniform float uGrow;
-       varying float vPath;`,
+       varying float vPath;
+       varying float vFront;`,
     )
     .replace(
       '#include <clipping_planes_fragment>',
       `#include <clipping_planes_fragment>
-       if (vPath > uGrow + 0.0015) discard;`,
+       if (vPath > vFront + 0.0015) discard;`,
     );
 }
 
@@ -203,6 +244,7 @@ export function patchGrowingMaterial(material: MeshStandardMaterial, role: strin
     next.uniforms.uStart = { value: new Vector3() };
     next.uniforms.uEnd = { value: new Vector3() };
     next.uniforms.uStartTaper = { value: 0.035 };
+    next.uniforms.uSeed = { value: 0 };
     patchDepthShaders(next);
     depth.userData.shader = next;
   };
@@ -227,6 +269,7 @@ export function syncOrganic(
     start: Vector3;
     end: Vector3;
     startTaper: number;
+    seed: number;
   },
 ) {
   const shader = material.userData.shader as OrganicShader | undefined;
@@ -234,6 +277,7 @@ export function syncOrganic(
     writeUniform(shader, 'uGrow', values.grow);
     writeUniform(shader, 'uFlatten', values.flatten);
     writeUniform(shader, 'uStartTaper', values.startTaper);
+    writeUniform(shader, 'uSeed', values.seed);
     (shader.uniforms.uStart?.value as Vector3 | undefined)?.copy(values.start);
     (shader.uniforms.uEnd?.value as Vector3 | undefined)?.copy(values.end);
   }
@@ -242,6 +286,7 @@ export function syncOrganic(
     writeUniform(depth, 'uGrow', values.grow);
     writeUniform(depth, 'uFlatten', values.flatten);
     writeUniform(depth, 'uStartTaper', values.startTaper);
+    writeUniform(depth, 'uSeed', values.seed);
     (depth.uniforms.uStart?.value as Vector3 | undefined)?.copy(values.start);
     (depth.uniforms.uEnd?.value as Vector3 | undefined)?.copy(values.end);
   }

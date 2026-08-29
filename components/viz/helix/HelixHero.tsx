@@ -11,7 +11,7 @@ import { cn } from '@/lib/cn';
 import { useReducedMotion } from '@/lib/hooks/useReducedMotion';
 import { useWebGL } from '@/lib/hooks/useWebGL';
 import { ButtonLink } from '@/components/ui/Button';
-import { BEATS, beatStateAt, type BeatState } from './beats';
+import { BEATS, beatStateAt, daylight, type BeatState } from './beats';
 import { HeroFallback } from './HeroFallback';
 
 gsap.registerPlugin(useGSAP);
@@ -43,18 +43,17 @@ function HeroCopy({ children }: { children?: React.ReactNode }) {
 
   return (
     <div ref={copy} className="max-w-[720px]">
-      <p className="text-acid mb-5 flex items-center gap-3 font-mono text-micro uppercase">
-        <span
-          aria-hidden="true"
-          className="bg-acid size-[7px] animate-[breathe_4s_ease-in-out_infinite] rounded-full shadow-[0_0_16px_var(--color-acid)]"
-        />
+      {/* A rule, not a pulsing dot. The dot claimed something was live when
+          nothing was, and its glow shadow was decoration. */}
+      <p className="text-muted mb-6 flex items-center gap-3 font-mono text-micro uppercase">
+        <span aria-hidden="true" className="bg-acid h-px w-8 shrink-0" />
         A living genealogy for software
       </p>
 
       <h1 id="hero-title" className="text-hero">
         Every machine
         <br />
-        <span className="text-outline">has ancestors.</span>
+        <span className="text-emphasis">has ancestors.</span>
       </h1>
 
       {children}
@@ -94,7 +93,7 @@ function WhatAmILookingAt() {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-controls={panelId}
-        className="border-line text-muted hover:border-line-strong hover:text-text inline-flex items-center gap-2 rounded-full border px-3 py-1.5 font-mono text-nano uppercase transition-colors"
+        className="border-line text-muted hover:border-line-strong hover:text-text inline-flex items-center gap-2 rounded-xs border px-3 py-1.5 font-mono text-nano uppercase transition-colors"
       >
         <span aria-hidden="true" className="text-acid">
           ?
@@ -105,7 +104,7 @@ function WhatAmILookingAt() {
       {open && (
         <div
           id={panelId}
-          className="border-line bg-panel/80 order-last w-full max-w-[560px] rounded-md border p-4 backdrop-blur-sm"
+          className="border-line bg-panel-2 order-last w-full max-w-[560px] rounded-xs border p-4"
         >
           <ol className="text-text-soft space-y-2 text-[14px] leading-relaxed">
             <li>
@@ -139,7 +138,7 @@ function BeatBody({ index, headline, outlined, body }: (typeof BEATS)[number]) {
         {outlined && (
           <>
             {' '}
-            <span className="text-outline">{outlined}</span>
+            <span className="text-emphasis">{outlined}</span>
           </>
         )}
       </p>
@@ -213,6 +212,11 @@ function AnimatedHero({ tier }: { tier: 'low' | 'high' }) {
 
       const next = beatStateAt(progress);
       state.current = next;
+      /* Written straight to the element, not through React state — the ground
+         has to move every frame of the scroll, and re-rendering the hero for a
+         colour would be an unnecessary render per pixel scrolled. `StudioRig`
+         reads the same `daylight()` off the state ref. */
+      node.style.setProperty('--daylight', daylight(progress).toFixed(4));
       setActive((prev) => (prev === next.activeIndex ? prev : next.activeIndex));
     };
 
@@ -234,44 +238,62 @@ function AnimatedHero({ tier }: { tier: 'low' | 'high' }) {
       /* Five beats of scroll runway, plus one viewport for the closing frame.
          Pulled under the 74px sticky header so the pinned frame is full-height
          from the first paint. */
-      className="relative -mt-[74px] h-[560vh]"
+      /* No colour transition. The ground is driven continuously by scroll, so a
+         300ms ease would make it lag the scroll — and the text inside it, which
+         inherits the same tokens without a transition, would arrive first. */
+      className="hero-dawn relative -mt-[74px] h-[560vh]"
     >
       <div className="sticky top-0 flex h-screen flex-col overflow-hidden">
-        <div className="shell-wide relative flex flex-1 flex-col justify-center pt-20 pb-16 lg:grid lg:grid-cols-[minmax(0,34rem)_minmax(0,1fr)] lg:items-center lg:gap-8">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 opacity-40 lg:relative lg:inset-auto lg:order-2 lg:h-full lg:min-h-[min(78vh,700px)] lg:opacity-100"
-          >
-            <div
-              className="absolute top-1/2 left-1/2 size-[min(900px,90vw)] -translate-1/2 rounded-full opacity-70 blur-3xl"
-              style={{
-                background:
-                  'radial-gradient(circle, rgb(99 231 255 / 0.1), rgb(183 255 57 / 0.05) 45%, transparent 68%)',
-              }}
-            />
-            <Canvas
-              shadows={
-                tier === 'high' ? { type: PCFSoftShadowMap, enabled: true } : false
-              }
-              dpr={tier === 'low' ? [1, 1.4] : [1, 1.9]}
-              camera={{ position: [0, 2.2, 8.4], fov: 42, near: 0.1, far: 100 }}
-              gl={{
-                antialias: tier === 'high',
-                alpha: true,
-                powerPreference: 'high-performance',
-                toneMapping: ACESFilmicToneMapping,
-                outputColorSpace: SRGBColorSpace,
-              }}
-              onCreated={({ gl }) => {
-                gl.toneMappingExposure = 1.16;
-              }}
-              style={{ position: 'absolute', inset: 0 }}
-            >
-              <HelixScene state={state} tier={tier} />
-            </Canvas>
-          </div>
+        {/* The aperture.
+            Lifted out of the centred `shell-wide` container so it can bleed off
+            the right and vertical edges of the viewport. Once the scene owns an
+            opaque, lightening ground, a canvas boxed inside the content column
+            would read as a pale rectangle pasted onto a dark page — the same
+            failure as the grey shadow quad. Running it to three edges makes it
+            a window instead: a dark room with a lit world visible through it.
 
-          <div className="relative z-10 lg:order-1">
+            No CSS glow behind it either. A blurred gradient orb sitting *behind*
+            a transparent canvas cannot light anything in it; the atmosphere
+            belongs to the scene, where it can wrap the specimen. `StudioRig`
+            owns the background and the fog. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 opacity-45 lg:inset-y-0 lg:right-0 lg:left-[44%] lg:opacity-100"
+        >
+          <Canvas
+            shadows={tier === 'high' ? { type: PCFSoftShadowMap, enabled: true } : false}
+            dpr={tier === 'low' ? [1, 1.4] : [1, 1.9]}
+            camera={{ position: [0, 2.2, 8.4], fov: 42, near: 0.1, far: 100 }}
+            gl={{
+              antialias: tier === 'high',
+              alpha: true,
+              powerPreference: 'high-performance',
+              toneMapping: ACESFilmicToneMapping,
+              outputColorSpace: SRGBColorSpace,
+            }}
+            onCreated={({ gl }) => {
+              gl.toneMappingExposure = 1.16;
+            }}
+            style={{ position: 'absolute', inset: 0 }}
+          >
+            <HelixScene state={state} tier={tier} />
+          </Canvas>
+        </div>
+
+        {/* Narrow screens have no second column, so the copy sits on top of the
+            aperture. As the scene lights up, that would put body text on bone;
+            this veil deepens with the same `--daylight` to hold it back. Never
+            shown on `lg`, where the two do not overlap. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 lg:hidden"
+          style={{
+            background: 'color-mix(in oklab, transparent, #07090d calc(var(--daylight, 0) * 74%))',
+          }}
+        />
+
+        <div className="shell-wide relative z-10 flex flex-1 flex-col justify-center pt-20 pb-16 lg:grid lg:grid-cols-[minmax(0,36rem)_minmax(0,1fr)] lg:items-center lg:gap-10">
+          <div className="lg:order-1">
             <HeroCopy>
             {/* All five beats stay in the DOM; the active one is emphasised. */}
             <div className="relative mt-8 min-h-[188px]">
@@ -303,7 +325,6 @@ function AnimatedHero({ tier }: { tier: 'low' | 'high' }) {
                     className={cn(
                       'block h-[3px] rounded-full transition-all duration-500',
                       i <= active ? 'bg-acid w-9' : 'bg-line w-5',
-                      i === active && i === BEATS.length - 1 && 'shadow-[0_0_14px_var(--color-acid)]',
                     )}
                   >
                     <span className="sr-only">

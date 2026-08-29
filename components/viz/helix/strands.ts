@@ -28,6 +28,11 @@ export type StrandSpec = {
    * siblings used +Y.
    */
   frameAxis: 'x' | 'y';
+  /**
+   * Offset into the growth noise field. Spaced far enough apart that no two
+   * strands sample correlated regions, so siblings never grow in step.
+   */
+  seed: number;
 };
 
 /* Every child starts exactly on its parent's `end`. Generation 1 used to start
@@ -45,6 +50,7 @@ export const STRANDS: StrandSpec[] = [
     radius: 0.46,
     loci: 6,
     frameAxis: 'x',
+    seed: 0.0,
   },
   {
     id: 'kids',
@@ -57,6 +63,7 @@ export const STRANDS: StrandSpec[] = [
     loci: 5,
     parent: 'keylit',
     frameAxis: 'y',
+    seed: 1.7,
   },
   {
     id: 'studio',
@@ -69,6 +76,7 @@ export const STRANDS: StrandSpec[] = [
     loci: 5,
     parent: 'keylit',
     frameAxis: 'y',
+    seed: 3.4,
   },
   {
     id: 'accessible',
@@ -81,6 +89,7 @@ export const STRANDS: StrandSpec[] = [
     loci: 5,
     parent: 'keylit',
     frameAxis: 'y',
+    seed: 5.1,
   },
   {
     id: 'kidsEs',
@@ -94,6 +103,7 @@ export const STRANDS: StrandSpec[] = [
     parent: 'kids',
     origin: true,
     frameAxis: 'y',
+    seed: 6.8,
   },
   {
     id: 'classroom',
@@ -106,6 +116,7 @@ export const STRANDS: StrandSpec[] = [
     loci: 4,
     parent: 'kids',
     frameAxis: 'y',
+    seed: 8.5,
   },
   {
     id: 'producer',
@@ -118,6 +129,7 @@ export const STRANDS: StrandSpec[] = [
     loci: 4,
     parent: 'studio',
     frameAxis: 'y',
+    seed: 10.2,
   },
   {
     id: 'tutor',
@@ -131,6 +143,7 @@ export const STRANDS: StrandSpec[] = [
     parent: 'kidsEs',
     parentB: 'producer',
     frameAxis: 'y',
+    seed: 11.9,
   },
 ];
 
@@ -254,6 +267,15 @@ const GROW_WIDTH = 0.08;
 
 /** Must match the GLSL `endTaper` / `growTaper` windows in `organic.ts`. */
 export const TUBE_END_TAPER = 0.035;
+/**
+ * How far the growth frontier wanders either side of `uGrow`, full width.
+ *
+ * `organic.ts` interpolates this straight into its GLSL, and the rungs subtract
+ * half of it from their own growth front so a rung can never appear on a
+ * stretch of backbone the noise has pulled back behind it. One constant, two
+ * consumers — the alternative is a floating dash at the growing tip.
+ */
+export const GROWTH_JITTER = 0.075;
 /** Children stay on their own axis for this first fraction, then bloom. */
 export const TUBE_CHILD_START = 0.1;
 export const TUBE_GROW_TAPER = 0.045;

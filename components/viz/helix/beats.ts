@@ -144,3 +144,26 @@ export function climaxAmount(state: { progress: number; upstream: number }): num
   const rise = Math.max(0, (state.progress - 0.62) / 0.38);
   return Math.max(state.upstream, rise) + holdProgress(state.progress) * 0.32;
 }
+
+function smoothstep(edge0: number, edge1: number, x: number): number {
+  const t = Math.min(1, Math.max(0, (x - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
+}
+
+/**
+ * How lit the specimen's world is. 0 is the unlit origin — one project, nothing
+ * around it. 1 is the closing frame, where the whole family stands in light.
+ *
+ * The transition is deliberately fast and late. A ground held at mid-grey can
+ * carry neither light nor dark text at an accessible contrast, so the dawn
+ * crosses that zone in about a sixth of the runway, and it lands exactly where
+ * the copy says a descendant sent something back up the family.
+ *
+ * This single number is the only thing that crosses the CSS/WebGL boundary:
+ * `HelixHero` writes it to `--daylight` and CSS does its own mixing, while
+ * `StudioRig` lerps the scene background, the fog and the lights from it. One
+ * value, so the page and the render cannot drift apart.
+ */
+export function daylight(progress: number): number {
+  return smoothstep(0.62, 0.78, Math.min(1, Math.max(0, progress)));
+}

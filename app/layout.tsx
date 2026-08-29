@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, JetBrains_Mono } from 'next/font/google';
+import { IBM_Plex_Mono, Instrument_Serif, Newsreader } from 'next/font/google';
 import { ChatDock } from '@/components/chat/ChatDock';
 import { SiteFooter } from '@/components/marketing/SiteFooter';
 import { SiteHeader } from '@/components/marketing/SiteHeader';
@@ -10,15 +10,32 @@ import { websiteJsonLd } from '@/lib/seo/jsonld';
 import { site } from '@/lib/site';
 import './globals.css';
 
-const inter = Inter({
+/* The narrative voice. A high-contrast editorial serif carries the headline and
+   its italic carries the emphasis that used to be a hollow stroke outline. */
+const instrumentSerif = Instrument_Serif({
   subsets: ['latin'],
-  variable: '--font-inter',
+  weight: '400',
+  style: ['normal', 'italic'],
+  /* Not `--font-display`: that is the Tailwind theme token, and pointing it at
+     itself makes the custom property resolve to nothing. */
+  variable: '--font-display-face',
   display: 'swap',
 });
 
-const jetbrainsMono = JetBrains_Mono({
+/* Reading text. Newsreader is drawn for screens and ships optical sizes, so a
+   caption and a lead paragraph are not the same shape scaled. */
+const newsreader = Newsreader({
   subsets: ['latin'],
-  variable: '--font-jetbrains-mono',
+  style: ['normal', 'italic'],
+  variable: '--font-reading',
+  display: 'swap',
+});
+
+/* Accessions, identifiers and every registry label. */
+const plexMono = IBM_Plex_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+  variable: '--font-plex-mono',
   display: 'swap',
 });
 
@@ -64,7 +81,10 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
+    <html
+      lang="en"
+      className={`${instrumentSerif.variable} ${newsreader.variable} ${plexMono.variable}`}
+    >
       <body>
         <JsonLd data={websiteJsonLd()} />
         <NoiseOverlay />

@@ -93,7 +93,7 @@ export function MeaningLayer() {
           <h2 className="text-headline mt-4 text-balance">
             Git stores lines.
             <br />
-            <span className="text-outline">CodeAncestry stores meaning.</span>
+            <span className="text-emphasis">CodeAncestry stores meaning.</span>
           </h2>
           <p className="text-text-soft mt-6 max-w-[560px] leading-relaxed">
             This is a semantic layer, not a replacement. Git keeps every commit; CodeAncestry adds
@@ -128,7 +128,7 @@ export function MeaningLayer() {
             {LAYERS.map((layer, i) => (
               <li key={layer.id} className="relative">
                 <div
-                  className={`bg-panel/50 rounded-md border ${layer.edge} px-4 py-3.5 backdrop-blur-[2px]`}
+                  className={`bg-panel-2 rounded-xs border ${layer.edge} px-4 py-3.5`}
                   style={{
                     /* Narrows toward Git so the diagram reads as a stack rather
                        than a list, without needing perspective transforms. */

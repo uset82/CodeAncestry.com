@@ -12,7 +12,7 @@ export function Panel({
   return (
     <Tag
       className={cn(
-        'border-line bg-panel/75 rounded-xl border backdrop-blur-[2px]',
+        'border-line bg-panel rounded-sm border',
         className,
       )}
     >
@@ -95,16 +95,12 @@ export function StatRail({ stats, className }: { stats: readonly Stat[]; classNa
 export function StatusDot({ label, tone = 'acid' }: { label: string; tone?: 'acid' | 'cyan' | 'violet' }) {
   const color =
     tone === 'acid' ? 'bg-acid' : tone === 'cyan' ? 'bg-cyan' : 'bg-violet';
-  const glow =
-    tone === 'acid'
-      ? 'shadow-[0_0_14px_var(--color-acid)]'
-      : tone === 'cyan'
-        ? 'shadow-[0_0_14px_var(--color-cyan)]'
-        : 'shadow-[0_0_14px_var(--color-violet)]';
+  /* No glow ring. The colour plus the label is the encoding; a halo behind a
+     4px dot is decoration, and the contract requires a non-colour cue anyway. */
 
   return (
     <span className="text-muted flex items-center gap-2 font-mono text-nano uppercase">
-      <span aria-hidden="true" className={cn('size-[7px] rounded-full', color, glow)} />
+      <span aria-hidden="true" className={cn('size-[7px] rounded-full', color)} />
       {label}
     </span>
   );

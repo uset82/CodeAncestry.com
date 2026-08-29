@@ -71,7 +71,7 @@ export function TrustLadder() {
           <h2 className="text-headline mt-4 text-balance">
             Confidence is earned
             <br />
-            <span className="text-outline">one rung at a time.</span>
+            <span className="text-emphasis">one rung at a time.</span>
           </h2>
           <p className="text-text-soft mt-6 leading-relaxed">
             Most tools present machine output and human review as equivalent. They are not. Every
