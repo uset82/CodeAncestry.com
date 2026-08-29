@@ -4,7 +4,8 @@ A semantic lineage layer above Git. Git records that bytes changed; CodeAncestry
 records what a project can *do*, where each capability came from, who decided to
 adopt it, and which capabilities travelled sideways between unrelated projects.
 
-This repository is the `codeancestry.com` website: a working concept driven by
+This repository is the website at
+[codeancestry.com](https://codeancestry.com): a working concept driven by
 seeded fixtures, not live repository ingestion. Every screen says so.
 
 ## The model in one screen
@@ -41,7 +42,16 @@ The site runs at `http://localhost:3000`.
 npm run verify        # typecheck, lint and fixture validation
 npm run build         # production build
 npm run analyze       # build with bundle analysis
+npm run capture       # screenshot the hero, including WebGL
 ```
+
+`npm run capture` drives headless Chrome over CDP and writes PNGs to
+`.captures/`. It exists because the 3D hero cannot be judged from source, and
+several rounds of it were shipped without anyone looking at a frame.
+
+**Working on this repo? Read [HANDOFF.md](HANDOFF.md) first.** It carries the
+open tasks, the decisions already made and reverted, and the measurement traps
+that have produced confident wrong answers here.
 
 ## The site assistant
 
@@ -144,9 +154,10 @@ before spending serious money on the brand.
 
 ## Shipping
 
-The site is live at [codeancestry.vercel.app](https://codeancestry.vercel.app)
-while Cloudflare still serves the apex. Production target:
-`https://codeancestry.com` (apex). `www` 308s onto the apex in `next.config.ts`.
+The live product is [codeancestry.com](https://codeancestry.com) (apex).
+`www` 308s onto the apex in `next.config.ts`.
+[codeancestry.vercel.app](https://codeancestry.vercel.app) is only Vercel's
+default alias for the same deployment — not the public URL.
 The footer subdomains (`app`, `api`, `docs`, `registry`, `research`, `lab`)
 are reserved on the Vercel project: once they CNAME they redirect to the
 surfaces that already exist.
@@ -197,8 +208,9 @@ After they resolve: `npx vercel domains verify codeancestry.com`. Apex + `www`
 are the live site. The six subdomains are placeholders so the names cannot be
 registered out from under the project before those services exist.
 
-### After go-live
+### Production smoke
 
-Smoke the production URL on a real phone, then Chrome, Safari, Firefox and
-iOS Safari: homepage helix (and the reduced-motion fallback), Explore, one
-genome, one gene, the CodeTree, Docs, Research, Privacy and Terms.
+Smoke [codeancestry.com](https://codeancestry.com) on a real phone, then
+Chrome, Safari, Firefox and iOS Safari: homepage helix (and the
+reduced-motion fallback), Explore, one genome, one gene, the CodeTree, Docs,
+Research, Privacy and Terms.
