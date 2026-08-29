@@ -1,3 +1,5 @@
+/* eslint-disable no-console -- a CLI tool whose entire output is its report */
+
 /**
  * Screenshot any page of the running dev server, including WebGL.
  *
