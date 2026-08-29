@@ -299,11 +299,9 @@
      a warm ground is what finally gives the specimen something to reflect. The
      page warms from the void toward charcoal, enough to feel the change, never
      enough to threaten the copy — a dark room with a lit window in it. */
-  --color-line: color-mix(in oklab, #202937, #2f3128 var(--mix));
-  --color-panel: color-mix(in oklab, #0d1118, #17180f var(--mix));
-  --color-panel-2: color-mix(in oklab, #111722, #1c1e14 var(--mix));
+  --color-line: color-mix(in oklab, #202937, #2a2c22 var(--mix));
 
-  background-color: color-mix(in oklab, #07090d, #14150f var(--mix));
+  background-color: color-mix(in oklab, #07090d, #0f110b var(--mix));
 }
 
 @utility hairline {

@@ -192,7 +192,11 @@ function SpecimenEnvironment() {
  * frame, and a lit scene should not be hazier than an unlit one.
  */
 const NIGHT_GROUND = new Color('#07090d');
-const DAWN_GROUND = new Color('#e7e3d8');
+/* Not bone. A light ground made the specimen read as material, but it turned
+   the closing frame white and cut the page in half along the canvas edge. The
+   ground stays in the dark and warms by a few percent; what actually lights the
+   specimen is the environment and the key, which keep rising. */
+const DAWN_GROUND = new Color('#12140e');
 
 function GroundRig({ state }: { state: React.RefObject<BeatState> }) {
   const { scene } = useThree();
@@ -225,8 +229,8 @@ function GroundRig({ state }: { state: React.RefObject<BeatState> }) {
        that came from `useMemo`/`useThree` and cannot tell that the whole point
        of these objects is to be written to. Both are torn down in the layout
        effect above. */
-    fog.density = 0.022 - day * 0.0135;
-    scene.environmentIntensity = 0.34 + day * 0.72;
+    fog.density = 0.022 - day * 0.0125;
+    scene.environmentIntensity = 0.34 + day * 1.05;
     /* eslint-enable react-hooks/immutability */
   });
 
@@ -257,14 +261,14 @@ export function StudioRig({
     const climax = climaxAmount(current);
     const day = daylight(current.progress);
 
-    if (key.current) key.current.intensity = 1.55 + climax * 1.35 + day * 1.5;
+    if (key.current) key.current.intensity = 2.3 + climax * 1.6 + day * 2.2;
     if (acid.current) acid.current.intensity = 2.4 + climax * 4.4;
 
     /* The sky term is what makes a lit world read as lit rather than as a dark
        world with a brighter lamp in it: it fills the shadow side. Its ground
        colour has to follow the actual ground or the bounce is a lie. */
     if (sky.current) {
-      sky.current.intensity = 0.55 + day * 1.15;
+      sky.current.intensity = 0.7 + day * 1.3;
       sky.current.groundColor.copy(NIGHT_GROUND).lerp(DAWN_GROUND, day);
     }
     /* The cold rim earns its keep against a dark ground and only muddies a

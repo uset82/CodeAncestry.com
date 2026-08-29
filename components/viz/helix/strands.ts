@@ -275,7 +275,7 @@ export const TUBE_END_TAPER = 0.035;
 export const GROWTH_SPREAD = 0.28;
 export const GROWTH_JITTER = (0.5 * GROWTH_SPREAD) / (1 + GROWTH_SPREAD) + 0.02;
 /** Children stay on their own axis for this first fraction, then bloom. */
-export const TUBE_CHILD_START = 0.1;
+export const TUBE_CHILD_START = 0.06;
 export const TUBE_GROW_TAPER = 0.045;
 
 export function startTaperWidth(generation: number): number {

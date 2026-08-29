@@ -68,9 +68,17 @@ const FAMILY_Y = (FAMILY_TOP + FAMILY_BOTTOM) / 2;
  * so a crown placed 5% from the top edge lands underneath it, and the trunk —
  * the one strand the whole story starts from — was the part being clipped.
  */
-const FAMILY_HALF_HEIGHT = ((FAMILY_TOP - FAMILY_BOTTOM) * 1.26) / 2;
+const FAMILY_HALF_HEIGHT = ((FAMILY_TOP - FAMILY_BOTTOM) * 1.06) / 2;
 /** Aim above centre so the extra margin lands at the top, under the header. */
 const FAMILY_LOOK_LIFT = 0.8;
+/**
+ * Aim left of the lineage so the lineage sits right of frame.
+ *
+ * The canvas is full-bleed now — the specimen runs under the copy the way the
+ * vine reference runs under its own headline — so the composition has to be
+ * done in the camera rather than by boxing the canvas into a column.
+ */
+const FAMILY_LOOK_X = -4.6;
 
 const RUNGS_PER_STRAND = 24;
 const UPSTREAM_PULSES = 3;
@@ -457,16 +465,22 @@ function Loci({ state, tier, materials }: Props) {
       const emphasis = slot.mutated
         ? 1.7 + current.upstream * 0.6
         : terminal
-          ? 1.7
+          ? 1.2
           : slot.kind === 'junction'
-            ? 1.25
+            ? 1.45
             : 1;
       /* Loci grow as the helix flattens. The closing beat collapses the
          structure toward a line, which sheds visual mass exactly where the
          story peaks; the nodes carrying that mass have to compensate. */
       const bulk = 1 + current.flatten * 0.5;
+      /* The junction node has to be big enough to be a joint.
+         Both sides of a branch point taper to a needle — the parent over its
+         last 3.5% and each child over its first 6% — which on the longest child
+         is a 0.41-unit stretch of near-invisible thread. At radius 0.09 the old
+         node bridged none of it, and the family read as loose chains that do
+         not touch. A branch in anything living is a node, not a seam. */
       const size =
-        (slot.kind === 'junction' ? 0.072 : 0.055) * pulse * emphasis * front * bulk;
+        (slot.kind === 'junction' ? 0.15 : 0.055) * pulse * emphasis * front * bulk;
       scale.setScalar(size);
 
       matrix.compose(position, quaternion, scale);
@@ -744,12 +758,14 @@ function CameraRig({
     const FAMILY_Z = FAMILY_HALF_HEIGHT / Math.tan((fov * Math.PI) / 360);
 
     desired.set(
-      Math.sin(story * Math.PI * 0.6) * 1.2 * (1 - hold) + pointer.current.x * 0.48 * orbit,
+      Math.sin(story * Math.PI * 0.6) * 1.2 * (1 - hold) +
+        FAMILY_LOOK_X * hold +
+        pointer.current.x * 0.48 * orbit,
       storyY + (FAMILY_Y + FAMILY_LOOK_LIFT - storyY) * hold + pointer.current.y * 0.24 * orbit,
       storyZ + (FAMILY_Z - storyZ) * hold,
     );
     lookAt.set(
-      -story * 0.9 * (1 - hold),
+      -story * 0.9 * (1 - hold) + FAMILY_LOOK_X * hold,
       storyLookY + (FAMILY_Y + FAMILY_LOOK_LIFT - storyLookY) * hold,
       0,
     );

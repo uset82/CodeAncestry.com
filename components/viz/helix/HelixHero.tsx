@@ -258,7 +258,7 @@ function AnimatedHero({ tier }: { tier: 'low' | 'high' }) {
             owns the background and the fog. */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 lg:inset-y-0 lg:right-0 lg:left-[36%]"
+          className="pointer-events-none absolute inset-0"
         >
           <Canvas
             shadows={tier === 'high' ? { type: PCFSoftShadowMap, enabled: true } : false}
@@ -286,10 +286,10 @@ function AnimatedHero({ tier }: { tier: 'low' | 'high' }) {
             shown on `lg`, where the two do not overlap. */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 lg:hidden"
+          className="pointer-events-none absolute inset-0"
           style={{
             background:
-              'linear-gradient(180deg, #07090d 0%, color-mix(in oklab, #07090d 82%, transparent) 42%, color-mix(in oklab, #07090d calc(58% + var(--daylight, 0) * 28%), transparent) 100%)',
+              'linear-gradient(100deg, #07090d 0%, color-mix(in oklab, #07090d 88%, transparent) 34%, transparent 62%)',
           }}
         />
 

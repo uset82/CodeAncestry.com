@@ -327,7 +327,7 @@ export function climaxEmissive(
 ): number {
   const base =
     generation === 0 ? 0.55 + climax * 1.35 : origin ? 0.62 + climax * 1.45 : 0.42 + climax * 1.05;
-  return base * (1 - day * 0.86);
+  return base * (1 - day * 0.12);
 }
 
 export function tickClimax(
@@ -343,7 +343,7 @@ export function tickClimax(
   materials.backboneOrigin.emissiveIntensity = climaxEmissive(0, false, climax, day);
   materials.backboneMutated.emissiveIntensity = climaxEmissive(1, true, climax, day);
   materials.backboneDescendant.emissiveIntensity = climaxEmissive(1, false, climax, day);
-  materials.rung.emissiveIntensity = (0.5 + climax * 0.95) * (1 - day * 0.86);
+  materials.rung.emissiveIntensity = (0.5 + climax * 0.95) * (1 - day * 0.12);
 }
 
 export function tickOrganic(
