@@ -1,255 +1,263 @@
-# CodeAncestry — handoff plan for Cursor and Grok
+# Fix the broken links in the helix — task plan for Cursor and Grok
 
-Written to be executed without me. Every task names the file, the exact change,
-and a done-condition you can check yourself. Nothing here needs taste.
+This document ships as `HANDOFF.md` at the repo root and is pushed to
+<https://github.com/uset82/CodeAncestry.com>, replacing the previous handoff.
+A plan kept in a local agent directory is a plan the agents never read.
 
 ---
 
-## 0. Read this first: you can now see your own work
+## Context
 
-The one thing that went wrong repeatedly on this project is that 3D work was
-"verified" by reading code and measuring numbers, then shipped without anyone
-looking at it. The agent browser panes do not composite — `requestAnimationFrame`
-never fires, React Three Fiber never renders, and screenshots come back black.
+Carlos reports, with zoomed screenshots, that **strand elements are detached
+from the chain**: dots and short dashes floating beside a strand with no
+backbone under them, and chains that visibly thin out and stop before their
+terminal node.
 
-**That is solved. Use it.**
+This is not a new defect class. It was diagnosed and fixed once already. It came
+back when the growth front moved from a clean parameter cut to a noise field,
+because **only some of the elements that ride on the strand were updated to
+follow the new front**.
+
+The root cause is measured below, not guessed. Both symptoms come from one
+mistake, and both are fixed by one change.
+
+---
+
+## The measurement
+
+The tube is now cut in the fragment shader by `helixCoverage`
+(`components/viz/helix/organic.ts`):
+
+```glsl
+float local = grow - path;
+return local * (1.0 + 0.28) - (n - 0.5) * 0.28;   // discard when < 0
+```
+
+With `GROWTH_SPREAD = 0.28` and `n` a noise value in [0, 1], the visible front
+wanders around `grow` by up to:
+
+```
+0.5 * 0.28 / 1.28  =  0.1094 of the strand's length
+```
+
+So at `grow = 1` — a fully grown strand — **the tube can be discarded anywhere
+past `path = 0.8906`**, depending on the noise.
+
+Three groups of elements ride on that tube. Only one of them knows:
+
+| element | file / line | follows the noisy front? |
+|---|---|---|
+| rungs | `HelixScene.tsx:371` | yes — subtracts `GROWTH_JITTER` |
+| growing tips | `HelixScene.tsx:296` | yes — subtracts half of it |
+| **loci (the dots)** | **`HelixScene.tsx:459`** | **no — raw `strandEased`** |
+
+### Symptom 1 — the dots float
+
+Gene loci sit at `t = (i + 0.5) / n`. Anything past 0.8906 can be left hanging
+over a discarded tube:
+
+| strand | loci | max `t` | |
+|---|---|---|---|
+| keylit | 6 | 0.9167 | **floats** |
+| kids / studio / accessible | 5 | 0.9000 | **floats** |
+| kidsEs / classroom / producer | 4 | 0.8750 | safe |
+| tutor | 3 | 0.8333 | safe |
+
+Worse, **every junction node at `t = 1`** is affected. There, `local = 0`, so
+coverage is `-(n - 0.5) * 0.28`, which is negative whenever the noise is above
+its midpoint — roughly half the time. All eight terminal nodes can be left
+floating off the end of their own strand. That is the big detached sphere in
+the screenshot.
+
+### Symptom 2 — the chain thins out and stops
+
+`GROWTH_JITTER` is a **constant** `0.1294`, subtracted whether the strand is
+still growing or finished. At `grow = 1` the rungs behave as if the front were
+at 0.871, so `growthAlong` gives the last rung (at `t = 0.928`) a length of:
+
+```
+(0.871 * 1.08 - 0.928) / 0.08  =  0.16
+```
+
+**16 % of its length, permanently.** The code comments in `growthAlong` describe
+this exact bug being fixed once before — a stunted final rung making the chain
+appear to thin out and be cut. The constant trail reintroduced it.
+
+---
+
+## The fix, in one idea
+
+**Growth noise belongs to the act of growing, not to the finished object.**
+
+A strand that is still extending should have a ragged, organic frontier — that
+is the whole point, and it should stay. A strand that has finished has a
+geometric end, and everything anchored to it must be able to rely on that.
+
+So the noise term must fade out as `grow` approaches 1, and the JavaScript side
+must fade its trailing by exactly the same amount. Then:
+
+- while growing → noisy frontier, elements trail it, nothing floats;
+- once grown → deterministic end at `path = 1`, nothing trails, no stub rungs,
+  terminal nodes sit on solid backbone.
+
+Do **not** fix this by simply making the loci subtract the constant too. That
+scales every terminal node to zero — `growthAlong(1 - 0.1294, 1)` is negative —
+which is the *other* old bug, where every strand's end cap was invisible on
+every frame.
+
+---
+
+## Task 1 — Make the growth noise vanish as a strand completes
+
+- [ ] In `helixCoverage` (`components/viz/helix/organic.ts`), scale the noise
+      term by a factor that is 1 while growing and 0 when `grow` reaches 1 —
+      e.g. `smoothstep(1.0, 0.86, grow)`. The deterministic `local * (1 + S)`
+      term stays as it is.
+- [ ] Export that same factor from `strands.ts` as a function, e.g.
+      `growthJitterAt(grow)`, returning `GROWTH_JITTER * smoothstep(1, 0.86, grow)`
+      with a JS `smoothstep` matching the GLSL one. `GROWTH_SPREAD` is already
+      shared into the GLSL by string interpolation — **keep it that way, do not
+      type the number twice.**
+- [ ] Replace the constant `- GROWTH_JITTER` at `HelixScene.tsx:371` (rungs) and
+      `- GROWTH_JITTER * 0.5` at `:296` (tips) with the new function.
+
+**Done when:** at `grow = 1`, `growthJitterAt(1) === 0`, the last rung reaches
+full length, and a capture of beat 05 shows chains that reach their terminal
+node instead of thinning out.
+
+---
+
+## Task 2 — Make the loci follow the front like everything else
+
+- [ ] At `HelixScene.tsx:459`, apply the same `growthJitterAt(...)` trail the
+      rungs use. Because it vanishes at `grow = 1`, terminal junction nodes stay
+      full size — verify this, it is the trap that broke it last time.
+
+**Done when:** captures at beats 02, 03 and 04 — *mid-growth*, where the noise
+is live — show no dot sitting off a strand. Zoom in: `computer` zoom on a
+capture, or raise `CAPTURE_WIDTH` and crop.
+
+---
+
+## Task 3 — Prove it with the case that is hardest to see
+
+The defect only appears where the noise happens to be high, so a single frame
+can pass by luck.
+
+- [ ] Capture all six beats at `CAPTURE_WIDTH=2400 CAPTURE_HEIGHT=1350`.
+- [ ] Inspect every strand terminus and every junction in all six. There are
+      8 strands, 2 junction nodes each.
+- [ ] Record in this file which beats you checked and what you saw.
+
+**Done when:** you can state that you looked at all sixteen nodes across six
+frames and none of them is detached.
+
+---
+
+## Task 4 — Restore the closing beat as the luminance peak
+
+Currently the beats measure:
+
+```
+3.01 · 4.56 · 5.02 · 5.77 · 6.43 · 4.31
+```
+
+The closing frame is **4.31 against a peak of 6.43** — it is the second dimmest
+frame in the sequence. The gate has always been that the closing frame is the
+brightest: it is where the story lands.
+
+This regressed when the light ground was reverted. The ground is staying dark —
+that decision is final, Carlos rejected the white outright — so the lift has to
+come from the specimen and its lighting.
+
+- [ ] Raise what the closing hold contributes: `climaxAmount` in `beats.ts`,
+      the key and sky in `studio.tsx`, and `scene.environmentIntensity`.
+- [ ] Re-measure. `scripts/capture.mjs` already prints luminance per beat.
+
+**Done when:** the last number is the largest of the six.
+
+---
+
+## Tools you may use
+
+Carlos asked for these to be listed. Use them where they help; none is mandatory.
+
+- **Three.js docs via Needle** — <https://engine.needle.tools/docs/three/>
+- **Three.js editor** — <https://threejs.org/editor/> — useful for trying a
+  material or a light rig in isolation before wiring it into the scene.
+- **WebDesigner** — <https://github.com/uset82/webdesigner> — Carlos's own
+  toolkit. `wd audit <file.html>` is the anti-slop gate. **Run it with
+  `~/.webdesigner` as the working directory**; it reads
+  `.antigravity/runtime/provider-registry.json` relative to cwd and there is no
+  such file in this repo.
+- **Claude design** — <https://claude.ai/design>
+
+---
+
+## How to verify anything at all
+
+**You can see your own work. There is no excuse for shipping this unlooked at.**
 
 ```bash
 npm run dev
-node scripts/capture.mjs                        # all six hero beats
-node scripts/capture.mjs "/explore"             # any page
+npm run capture          # six hero beats + luminance, into .captures/
 ```
 
-PNGs land in `.captures/` (gitignored). Then **open them and look**.
+- Git Bash rewrites a leading `/` into a Windows path. Prefix with
+  `MSYS_NO_PATHCONV=1` when you pass a route.
+- The script prints `diag {"frames":N,…}`. **If `frames` is 0 nothing 3D
+  rendered and your capture is worthless.**
+- Point it at production with `CAPTURE_ORIGIN=https://codeancestry.com`.
 
-- In Git Bash, prefix with `MSYS_NO_PATHCONV=1` or the leading `/` is rewritten
-  into a Windows path and you capture a blank page.
-- The script prints `diag {"frames":N,...}`. **If `frames` is 0, nothing 3D
-  rendered and your screenshot is worthless.** It warns you. Do not ignore it.
-- Software rendering runs at roughly 2 fps. Fine for judging a frame, useless
-  for judging motion.
+**A task is not done until you have opened the PNG and looked at it.** Every
+defect in this document reached production because someone checked the code
+instead of the picture.
 
-**A task is not done until you have looked at a capture of it.**
-
----
-
-## 1. Traps that have already produced confident wrong answers here
-
-- **Never put `requestAnimationFrame` in the scroll path.** It has broken this
-  codebase three times: feature detection once, the scroll driver twice. The
-  handler measures synchronously; browsers already coalesce scroll events to one
-  per frame, so the rAF hop buys nothing.
-- **`html { scroll-behavior: smooth }` makes `scrollTo` asynchronous.** Sampling
-  before it settles returns six identical, plausible, wrong readings. Force
-  `scroll-behavior: auto` with `!important` and poll until `scrollY` stops
-  moving. `scripts/capture.mjs` already does this.
-- **Reading a computed style straight after changing it returns the old value**
-  when the element has a transition on that property. Wait, or drop the
-  transition.
-- **The console buffer holds errors from mid-write states.** Judge runtime health
-  with an error listener over a fixed window, not by reading the buffer.
-- **Two agents edit these files at once.** Check `git status` and file mtimes
-  before starting, and commit as soon as your change is green. Work has been
-  lost here six times.
-
----
-
-## 2. Already done — do not redo
-
-Commits `c720f36` through `067fbfb`. Verified on rendered frames unless noted.
-
-- Strand ends close to a point; no floating dashes at any terminus.
-- The growth front is a domain-warped fbm threshold with a per-strand seed, not
-  a ring travelling down a tube. `GROWTH_JITTER` in `strands.ts` is the single
-  source of truth and is interpolated into the GLSL; rungs and tip markers trail
-  it so they never land on backbone the noise has pulled back.
-- `frameAxis` is explicit per strand. **`keylit` measures `|dir.y| = 1.0000`
-  exactly, so its `'x'` is mandatory — `'y'` produces a NaN frame.**
-- The environment is three drei `Lightformer`s, not `RoomEnvironment`. Zero
-  post-processing, deliberately: the reference bundle has none either.
-- The camera pulls back at the close and frames the whole 13.5-unit family.
-- Branch junctions are bridged by a node of radius 0.217, covering the
-  0.41-unit needle zone where parent and child both taper to a point.
-- The canvas is full-bleed; the copy sits on a gradient, not a panel.
-- **The ground is `#07090d` at every beat.** A bone token (`#e7e3d8`) and a
-  warm Lightformer (`#ffe6bd`) turned the closing frame into a cream slab
-  down the right side. Do not bring either back.
-- Fonts: Instrument Serif (display), Newsreader (reading), IBM Plex Mono
-  (technical). Inter is gone and stays gone.
-
----
-
-## Task 1 — The registry got the homepage fonts by accident  ← start here
-
-`app/layout.tsx` sets fonts globally, so a type change meant for the narrative
-homepage also landed on every registry surface. Capture `/explore` and look:
-record titles like *Junior Music Tutor* and *KEYLIT* are a display serif at
-about 16px inside a dense scannable list, and the body copy of a data registry
-is a reading serif.
-
-Real genomics registries — UCSC, Ensembl, IGV — use a sans UI voice for dense
-records, because records are scanned rather than read.
-
-- [x] Add a fourth face for interface text: a grotesque with character, **not
-      Inter, not Roboto, not a system stack** — all three are on the rejected
-      list. Wire it in `app/layout.tsx` beside the other three.
-- [x] Add `--font-ui` to the `@theme` block in `app/globals.css`.
-- [x] Apply it to the registry surfaces only: `app/explore`, `app/family`,
-      `app/gene`, `app/mutation`, `app/agent`, `app/project`, and everything
-      under `components/registry/`. The homepage and `app/docs` keep the serif.
-
-**Done when:** a capture of `/explore` shows record titles and list text in the
-UI face while a capture of `/` still shows Instrument Serif in the headline.
-Both captured, both looked at.
-
----
-
-## Task 2 — Confirm shadows actually render
-
-The plan called for shadows throughout and they were never confirmed on a frame.
-`HelixHero.tsx` enables them only on the `high` tier, and `useWebGL` drops to
-`low` on viewports under 900px, coarse pointers, or four or fewer logical cores.
-
-- [x] Capture the hero and confirm strands cast visible shadows on each other.
-- [x] If they do not: check `castShadow` on the meshes, `receiveShadow` wherever
-      shadows should land, and that the shadow camera in `studio.tsx`
-      (`shadow-camera-*`, currently top 6 and bottom -12) still contains the
-      family, which spans y +3.6 to -9.9.
-
-`receiveShadow` was missing on backbones and rungs. Added. Forced high-tier
-via `?helix=high`. On `.captures/q120/beat-0_65.png` the inner rungs sit in
-the umbra of the tubes (darker than the lit cyan wall) and overlapping
-branches darken each other. Shadow camera already covers y +3.6 to −9.9.
-
-**Done when:** you can point at a shadow in a capture.
-
----
-
-## Task 3 — Measure the quality settings that were changed without measuring
-
-`QUALITY.high` in `HelixScene.tsx` was cut from `tubular: 120` to `96` and
-`sphere: 16` to `12` with no frame-cost number behind it. At 96 segments the
-0.035 end taper is resolved by about 3.4 segments, so it is the first thing that
-will read faceted.
-
-- [x] Measure frame time on the high tier with shadows at both 96 and 120.
-- [x] Keep 96 only if 120 actually costs something. Otherwise restore it.
-
-**Done when:** the choice is backed by two numbers written into this file.
-
-Software capture (swiftshader, 1600×900, shadows on, `?helix=high`):
-
-| tubular | frames / 600ms | mean dt |
-|---|---|---|
-| 96 | 12 | 56.1 ms |
-| 120 | 2 | 16.6 ms |
-
-120 did not cost more — the 16.6 ms sample is the compositor, not the tube.
-Luminance at both settings was identical to two decimals. Restored
-`tubular: 120`, `sphere: 16`.
-
----
-
-## Task 4 — The two views nobody has captured since the redesign
-
-- [x] `/` at 375×812 (`CAPTURE_WIDTH=375 CAPTURE_HEIGHT=812`). The canvas is
-      full-bleed under the copy on narrow screens, held back only by a
-      left-to-right gradient. Confirm body text stays readable over the
-      specimen.
-- [x] The static hero. Force it by emulating `prefers-reduced-motion: reduce`,
-      and separately by disabling WebGL. Both must resolve to `StaticHero` with
-      `HeroFallback`, not a blank frame.
-
-Captures: `.captures/mobile/beat-0.png` (white copy reads over the olive
-strand; veil holds). `.captures/static-motion/index.png` and
-`.captures/static-nowebgl/index.png` — both `data-hero="static"`, no canvas,
-HeroFallback graph visible.
-
-**Done when:** three captures exist and none of them is broken.
-
----
-
-## Task 5 — Finish the shell texturing, or take it out
-
-Someone started porting the reference's shell technique into `organic.ts` —
-`uShellBias`, `vLocal` and `vCover` are in the shader. It compiles and renders,
-but it is half-landed.
-
-The reference draws the same mesh N times, each shell pushed along its normal
-and cut by a noise threshold:
-
-```glsl
-vMossH = aShell / max(uShellCount - 1.0, 1.0);
-float lump = 0.55 + 0.9 * vnoise(position * uLumpScale + aSeed * 5.13);
-transformed += normal * (vMossH * uShellHeight * lump + 0.004);
-```
-
-- [x] Either finish it — shells instanced, cut by `coverage()`, and
-      `customDepthMaterial` updated to match or the shadows are cast by a shape
-      that is not on screen — or remove it. Do not leave it half-in.
-- [x] **If you are about to add per-vertex radius variation, stop.** Rungs are
-      positioned in JS with no knowledge of the shader noise, so a wobbling
-      radius floats their ends off the backbone. That is the exact defect this
-      project already spent three rounds fixing.
-
-Removed. Extra shell draws shared one material (last `onBeforeRender` won),
-and offsetting along the radius would have floated the rungs. Coverage()
-stays. No per-vertex radius noise.
-
-**Done when:** captures at three beats show the technique working, or the code
-is gone.
-
----
-
-## Task 6 — The two gates that have never been run
-
-- [x] `wd audit` on the built homepage. **Run it with `~/.webdesigner` as the
-      working directory** — it reads `.antigravity/runtime/provider-registry.json`
-      relative to cwd and no such file exists in this repo. The last score was
-      85/100 for stock glyphs in `vocabulary.ts`, `TrustLadder.tsx`,
-      `FacetRail.tsx` and `genome.ts`.
-- [x] Luminance per beat, against the last baseline
-      `2.49 · 7.25 · 8.19 · 9.99 · 9.43 · 8.93`. Method: capture the six beats
-      and count pixels above 120 luminance. A drop is a regression.
-
-`wd audit` from `~/.webdesigner`: `app/page.tsx` **100/100**. `HelixHero.tsx`
-**85/100** — it flagged `transition-[opacity,transform]` on the beat copy.
-Those two properties are the GPU path; leaving them.
-
-Full-page luminance at 1600×900, high tier, tubular 120
-(`above % · max` is the `above` series):
-
-`3.01 · 4.57 · 5.02 · 5.79 · 6.42 · 4.31`
-
-Beat 00 is up on the old baseline (2.49 → 3.01). Beats 02–close are down.
-The close drop (8.93 → 4.31) is the dark ground plus the family pull-back
-— more empty void in the frame, not a dimmer specimen. Do not re-light the
-ground to chase the old close number.
-
----
-
-## Every change ships green
+Ship green, every time:
 
 ```bash
 npx tsc --noEmit && npx eslint . && npm run test:fixtures && npx next build
 ```
 
-All four, every time. Re-run after this work: `tsc --noEmit`, `eslint .`,
-`test:fixtures` (211 checks), `next build` (29/29 pages). All green.
-
 `react-hooks/immutability` will flag mutating the three.js scene inside
-`useFrame`. That is the entire React Three Fiber programming model and the rule
-cannot see it — disable it locally with a comment saying why, exactly as the
-existing code does. Do not restructure working scene code to satisfy a linter.
+`useFrame`. That is the React Three Fiber programming model and the rule cannot
+see it — disable it locally with a comment, as the existing code does.
 
 ---
 
-## Deploy
+## Then push
 
-Railway, not Vercel. `codeancestry.com` is served by Railway behind Cloudflare;
-check `x-railway-request-id` in the response headers if you doubt it.
-Auto-deploy from `main` works — a push is live in minutes with no dashboard
-step.
+```bash
+git push origin main
+```
 
-`vercel.json` and `.vercelignore` are committed leftovers from a different host
-and are actively misleading. Deleting them is safe and worth doing.
+Repo: <https://github.com/uset82/CodeAncestry.com> — **public, so never commit a
+real key.** Railway auto-deploys `main` to <https://codeancestry.com> within
+minutes; there is no dashboard step. Confirm with:
+
+```bash
+curl -sI https://codeancestry.com/ | grep x-railway
+```
+
+Then capture production and look at that too. Note that a browser will happily
+serve a cached page for a long time — hard-reload before judging.
+
+---
+
+## Do not redo, and do not undo
+
+- **The ground stays dark.** A light ground was tried and reverted: it turned
+  the closing frame bone and split the page along a hard vertical seam.
+- The canvas is full-bleed on purpose. Do not put it back in a column.
+- `keylit` measures `|dir.y| = 1.0000` exactly, so its `frameAxis: 'x'` is
+  mandatory — `'y'` produces a NaN frame.
+- Zero post-processing. The reference bundle has none either.
+- Never put `requestAnimationFrame` in the scroll path. It has broken this
+  codebase three times.
+- `html { scroll-behavior: smooth }` makes `scrollTo` asynchronous — sampling
+  before it settles returns identical, plausible, wrong readings.
+- If you add per-vertex radius variation to the tube, rungs will float off it:
+  they are positioned in JS with no knowledge of the shader noise. That is this
+  same bug in another costume.
+- Two agents edit these files at once. Check `git status` and mtimes before you
+  start; commit as soon as you are green.
