@@ -262,9 +262,19 @@ export function startTaperWidth(generation: number): number {
   return generation === 0 ? TUBE_END_TAPER : TUBE_CHILD_START;
 }
 
-/** Keep rungs off the needle zone. Children need a longer inset. */
-export function rungInset(generation: number): number {
-  return startTaperWidth(generation) + 0.02;
+/**
+ * Keep rungs off the needle zone at each end — measured separately, because
+ * the two ends are not the same. Only the start needs the wide window: a child
+ * travels along its own axis for `TUBE_CHILD_START` before it blooms. The tail
+ * only has to clear the 0.035 end taper.
+ *
+ * Applying the start width to both ends left the last rung of every child at
+ * t = 0.864, so 0.47 to 0.63 world units of backbone carried no rung at all —
+ * the ladder stopping well before the rails do, at the exact terminus this
+ * work set out to fix.
+ */
+export function rungInset(generation: number): { start: number; end: number } {
+  return { start: startTaperWidth(generation) + 0.02, end: TUBE_END_TAPER + 0.02 };
 }
 
 export function smoothstep(edge0: number, edge1: number, x: number): number {

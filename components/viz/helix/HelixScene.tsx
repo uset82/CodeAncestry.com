@@ -293,7 +293,8 @@ function Rungs({ state, materials }: Pick<Props, 'state' | 'materials'>) {
         const basis = strandBasis(spec);
         return Array.from({ length: RUNGS_PER_STRAND }, (_, i) => {
           const inset = rungInset(spec.generation);
-          const t = inset + ((i + 0.5) / RUNGS_PER_STRAND) * (1 - 2 * inset);
+          const t =
+            inset.start + ((i + 0.5) / RUNGS_PER_STRAND) * (1 - inset.start - inset.end);
           return { spec, t, direction: rungDirection(spec, basis, t) };
         });
       }),
