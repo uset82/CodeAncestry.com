@@ -3,12 +3,15 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { DecisionConsole } from '@/components/registry/DecisionConsole';
 import { ProvenanceViewer } from '@/components/registry/ProvenanceViewer';
+import { JsonLd } from '@/components/seo/JsonLd';
 import { EvidenceChipRow } from '@/components/ui/EvidenceChip';
 import { FitnessVector } from '@/components/ui/FitnessVector';
 import { StatRail } from '@/components/ui/Panel';
 import { StateBadge } from '@/components/ui/StateBadge';
 import { getMutationRecord, type DecisionView } from '@/lib/registry/mutation';
 import { getProvenanceForMutation } from '@/lib/registry/provenance';
+import { mutationJsonLd } from '@/lib/seo/jsonld';
+import { pageMeta } from '@/lib/seo/metadata';
 
 /**
  * The mutation record, read as a variant interpretation report.
@@ -31,10 +34,11 @@ export async function generateMetadata({
   const record = getMutationRecord(decodeURIComponent(accession));
   if (!record) return { title: 'Mutation not found' };
 
-  return {
+  return pageMeta({
     title: `${record.shortId} ${record.title} — ${record.accession}`,
     description: `${record.summary} State: ${record.stateLabel}. Adopted by ${record.adopted.length}, declined by ${record.rejected.length}.`,
-  };
+    path: `/mutation/${record.accession}`,
+  });
 }
 
 export default async function MutationPage({
@@ -58,6 +62,7 @@ export default async function MutationPage({
 
   return (
     <div className="shell py-10 md:py-14">
+      <JsonLd data={mutationJsonLd(record)} />
       {/* ============================================================== identity */}
       <header>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">

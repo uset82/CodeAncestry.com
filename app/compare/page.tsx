@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ComparisonMatrix } from '@/components/registry/ComparisonMatrix';
 import { AccessionBadge } from '@/components/ui/AccessionBadge';
 import { getComparison, listCompareOptions } from '@/lib/registry/compare';
+import { pageMeta } from '@/lib/seo/metadata';
 
 /**
  * The two-genome comparative view.
@@ -15,11 +16,12 @@ import { getComparison, listCompareOptions } from '@/lib/registry/compare';
  * diverged, and unique to either side.
  */
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: 'Compare genomes',
   description:
     'Side-by-side capability comparison between two project genomes: what is shared, what diverged, and what is unique to each. Compared by capability rather than by file, so projects in different languages can still be recognised as carrying the same gene.',
-};
+  path: '/compare',
+});
 
 export default async function ComparePage({
   searchParams,

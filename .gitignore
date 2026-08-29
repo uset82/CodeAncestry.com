@@ -34,6 +34,12 @@ yarn-error.log*
 .env*.local
 .env.production
 
+# WebDesigner runtime (junction to ~/.webdesigner/.antigravity)
+.antigravity/
+artifact_manifest.json
+task_intent.json
+stack_selection.json
+
 # vercel
 .vercel
 
@@ -46,3 +52,6 @@ coverage/
 # bundle analysis
 .next/analyze/
 analyze/
+
+.vercel
+.env*

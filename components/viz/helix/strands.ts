@@ -23,6 +23,10 @@ export type StrandSpec = {
   origin?: boolean;
 };
 
+/* Every child starts exactly on its parent's `end`. Generation 1 used to start
+   near it but not on it — offsets of up to 0.235 world units, which read as a
+   gap at the one junction the camera looks straight at. Generations 2 and 3
+   already followed this rule; now all of them do. */
 export const STRANDS: StrandSpec[] = [
   {
     id: 'keylit',
@@ -38,7 +42,7 @@ export const STRANDS: StrandSpec[] = [
     id: 'kids',
     label: 'KEYLIT Kids',
     generation: 1,
-    start: new Vector3(-0.1, -0.1, 0.1),
+    start: new Vector3(0, -0.2, 0),
     end: new Vector3(-3.1, -3.6, -0.5),
     turns: 2.1,
     radius: 0.38,
@@ -49,7 +53,7 @@ export const STRANDS: StrandSpec[] = [
     id: 'studio',
     label: 'KEYLIT Studio',
     generation: 1,
-    start: new Vector3(0.05, -0.15, -0.1),
+    start: new Vector3(0, -0.2, 0),
     end: new Vector3(0.5, -3.9, 1.1),
     turns: 2.1,
     radius: 0.38,
@@ -60,7 +64,7 @@ export const STRANDS: StrandSpec[] = [
     id: 'accessible',
     label: 'KEYLIT Accessibility',
     generation: 1,
-    start: new Vector3(0.1, -0.05, 0.15),
+    start: new Vector3(0, -0.2, 0),
     end: new Vector3(3.2, -3.4, -0.7),
     turns: 2.1,
     radius: 0.38,
@@ -234,11 +238,59 @@ export function sampleBackbone(
   return points;
 }
 
+const GROW_WIDTH = 0.08;
+
+/** Smoothstep the generation counter so a strand extends instead of popping. */
+export function strandEased(generations: number, generation: number): number {
+  const reveal = Math.min(1, Math.max(0, generations - generation));
+  return reveal * reveal * (3 - 2 * reveal);
+}
+
+/**
+ * How far past this slot the growth front has travelled. 0 = still ahead of
+ * the tip, 1 = the tip has moved on and this detail should be fully on.
+ */
+export function growthAlong(eased: number, t: number, width = GROW_WIDTH): number {
+  return Math.min(1, Math.max(0, (eased - t) / width));
+}
+
+/** Centre-line position at parameter t. Writes into `target` — no allocation. */
+export function axisPointAtInto(
+  spec: StrandSpec,
+  t: number,
+  flatten: number,
+  target: Vector3,
+): Vector3 {
+  target.lerpVectors(spec.start, spec.end, t);
+  target.z *= 1 - flatten * 0.85;
+  return target;
+}
+
 /** Centre-line position at parameter t, where the rungs and loci sit. */
 export function axisPointAt(spec: StrandSpec, t: number, flatten: number): Vector3 {
-  const point = new Vector3().lerpVectors(spec.start, spec.end, t);
-  point.z *= 1 - flatten * 0.85;
-  return point;
+  return axisPointAtInto(spec, t, flatten, new Vector3());
+}
+
+/**
+ * One point on a backbone (phase 0 or π). Used by pulses so they follow the
+ * live flatten value instead of a curve baked at construction.
+ */
+export function backbonePointAtInto(
+  spec: StrandSpec,
+  basis: StrandBasis,
+  phase: number,
+  t: number,
+  flatten: number,
+  target: Vector3,
+): Vector3 {
+  const length = spec.start.distanceTo(spec.end);
+  const radius = spec.radius * (1 - flatten);
+  const angle = phase + t * spec.turns * Math.PI * 2;
+  target.copy(spec.start).addScaledVector(basis.dir, t * length);
+  target.addScaledVector(basis.u, Math.cos(angle) * radius);
+  target.addScaledVector(basis.v, Math.sin(angle) * radius);
+  target.z *= 1 - flatten * 0.85;
+  return target;
 }
 
 export type StrandBasis = {

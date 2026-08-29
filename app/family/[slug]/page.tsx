@@ -1,11 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { PangenomeHeatmap } from '@/components/registry/PangenomeHeatmap';
+import { JsonLd } from '@/components/seo/JsonLd';
+import { StatRail } from '@/components/ui/Panel';
+import { CodeTree } from '@/components/viz/tree/CodeTree';
 import { getPangenomeMatrix } from '@/lib/registry/pangenome';
 import { getFamilyTree, listFamilies } from '@/lib/registry/tree';
-import { PangenomeHeatmap } from '@/components/registry/PangenomeHeatmap';
-import { CodeTree } from '@/components/viz/tree/CodeTree';
-import { StatRail } from '@/components/ui/Panel';
+import { familyJsonLd } from '@/lib/seo/jsonld';
+import { pageMeta } from '@/lib/seo/metadata';
 
 /** The hero mutation's upstream offer — the pulse the CodeTree animates. */
 const PULSE_EDGE_ID = 'e-kidses-keylit-m882';
@@ -23,10 +26,12 @@ export async function generateMetadata({
   const family = getFamilyTree(slug);
   if (!family) return { title: 'Family not found' };
 
-  return {
+  const description = `${family.stats.projects} projects across ${family.generations} generations, ${family.stats.genes} capabilities, ${family.stats.mutations} recorded mutations. The ${family.name} family lineage.`;
+  return pageMeta({
     title: `${family.name} CodeTree`,
-    description: `${family.stats.projects} projects across ${family.generations} generations, ${family.stats.genes} capabilities, ${family.stats.mutations} recorded mutations. The ${family.name} family lineage.`,
-  };
+    description,
+    path: `/family/${family.slug}`,
+  });
 }
 
 export default async function FamilyPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -40,6 +45,13 @@ export default async function FamilyPage({ params }: { params: Promise<{ slug: s
 
   return (
     <div className="shell-wide py-10 md:py-14">
+      <JsonLd
+        data={familyJsonLd({
+          slug: family.slug,
+          name: family.name,
+          description: `${family.stats.projects} projects across ${family.generations} generations, ${family.stats.genes} capabilities, ${family.stats.mutations} recorded mutations.`,
+        })}
+      />
       <header className="max-w-[820px]">
         <p className="text-cyan font-mono text-micro uppercase">Family CodeTree</p>
         <h1 className="text-headline mt-3 text-balance">

@@ -27,7 +27,7 @@ matters most and that forks cannot express.
 
 ## Getting started
 
-Requires Node 20.9 or newer.
+Requires Node 22.
 
 ```bash
 npm install
@@ -127,3 +127,78 @@ Three.js via React Three Fiber, and the OpenRouter Agent SDK.
 ## Licence
 
 Not yet licensed for reuse. All rights reserved for now.
+
+## Trademark review — unresolved
+
+Owning `codeancestry.com` does not create trademark rights. Two open questions
+must be cleared by counsel before company-wide visual branding, merchandise, or
+a fundraise:
+
+1. A separate 2026 project already used the name “CodeAncestry”.
+2. Ancestry is an existing brand with published trademark-usage guidelines.
+
+Likelihood of confusion depends on goods, services, geography and the marks as
+a whole. This is risk management, not a finding that the name cannot be used.
+Keep shipping the prototype; commission US / EU / international clearance
+before spending serious money on the brand.
+
+## Shipping
+
+The site is live at [codeancestry.vercel.app](https://codeancestry.vercel.app)
+while Cloudflare still serves the apex. Production target:
+`https://codeancestry.com` (apex). `www` 308s onto the apex in `next.config.ts`.
+The footer subdomains (`app`, `api`, `docs`, `registry`, `research`, `lab`)
+are reserved on the Vercel project: once they CNAME they redirect to the
+surfaces that already exist.
+
+```bash
+npm run verify
+npm run build
+```
+
+CI (`.github/workflows/ci.yml`) runs the same checks — typecheck, lint, fixture
+validation, production build — on every pull request and on `main`.
+
+### Vercel
+
+1. Log in at [vercel.com](https://vercel.com) and import `uset82/CodeAncestry.com`.
+2. Framework: Next.js. Install `npm ci`, build `npm run build`.
+3. Add `OPENROUTER_API_KEY` under Production and Preview.
+4. Production branch: `main`. Preview deployments on every other branch.
+5. Attach `codeancestry.com` and `www.codeancestry.com` as domains. Set the
+   apex as primary so Vercel issues the certificate.
+
+### Cloudflare DNS
+
+Nameservers stay on Cloudflare (`chuck` / `maria`). Do not switch them to
+Vercel. Point the zone at Vercel (SSL is automatic once the names resolve).
+Grey-cloud (DNS only) until the certificate issues.
+
+Vercel Domain Connect can write the apex and `www` records if you are logged
+into both dashboards:
+
+- [Apply apex](https://vercel.com/api/v9/projects/prj_ICLa5N68qjCoExdSDfJEnZB8G3LK/domains/codeancestry.com/domain-connect/apply?teamId=team_F2XdJiHAo9QGzkRmj1bmlljL)
+- [Apply www](https://vercel.com/api/v9/projects/prj_ICLa5N68qjCoExdSDfJEnZB8G3LK/domains/www.codeancestry.com/domain-connect/apply?teamId=team_F2XdJiHAo9QGzkRmj1bmlljL)
+
+Or add these records by hand (project `uset82s-projects/codeancestry`):
+
+| Name | Type | Target | Proxy |
+| --- | --- | --- | --- |
+| `@` | A | `76.76.21.21` | DNS only |
+| `www` | CNAME | `6abee19d85cd4e53.vercel-dns-017.com` | DNS only |
+| `app` | CNAME | `6abee19d85cd4e53.vercel-dns-017.com` | DNS only |
+| `api` | CNAME | `6abee19d85cd4e53.vercel-dns-017.com` | DNS only |
+| `docs` | CNAME | `6abee19d85cd4e53.vercel-dns-017.com` | DNS only |
+| `registry` | CNAME | `6abee19d85cd4e53.vercel-dns-017.com` | DNS only |
+| `research` | CNAME | `6abee19d85cd4e53.vercel-dns-017.com` | DNS only |
+| `lab` | CNAME | `6abee19d85cd4e53.vercel-dns-017.com` | DNS only |
+
+After they resolve: `npx vercel domains verify codeancestry.com`. Apex + `www`
+are the live site. The six subdomains are placeholders so the names cannot be
+registered out from under the project before those services exist.
+
+### After go-live
+
+Smoke the production URL on a real phone, then Chrome, Safari, Firefox and
+iOS Safari: homepage helix (and the reduced-motion fallback), Explore, one
+genome, one gene, the CodeTree, Docs, Research, Privacy and Terms.

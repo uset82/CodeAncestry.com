@@ -5,9 +5,9 @@ import { ButtonLink } from '@/components/ui/Button';
 /**
  * Not found.
  *
- * Nightglass rule for empty states: say what is missing, why it matters, and
- * what to do next. An accession that resolves to nothing is a real answer in a
- * registry — it means no record carries that identifier.
+ * Empty-state rule: say what is missing, why it matters, and what to do next.
+ * An accession that resolves to nothing is a real answer in a registry — it
+ * means no record carries that identifier.
  */
 export default function NotFound() {
   return (

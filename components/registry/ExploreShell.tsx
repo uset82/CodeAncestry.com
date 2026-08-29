@@ -307,7 +307,10 @@ export function ExploreShell({
               onClearQuery={() => setQuery('')}
             />
           ) : (
-            <div className="mt-8 flex flex-col gap-12">
+            <div
+              key={activeType}
+              className="motion-safe:animate-[rise_0.45s_var(--ease-out-quint)_both] mt-8 flex flex-col gap-12"
+            >
               {shownTypes.map((type) => {
                 const hits = byType[type];
                 if (hits.length === 0) return null;

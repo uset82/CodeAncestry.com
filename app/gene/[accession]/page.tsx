@@ -2,10 +2,13 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { AlleleLineage } from '@/components/registry/AlleleLineage';
+import { JsonLd } from '@/components/seo/JsonLd';
 import { EvidenceChipRow } from '@/components/ui/EvidenceChip';
 import { StatRail } from '@/components/ui/Panel';
 import { getGeneRecord } from '@/lib/registry/gene';
 import { INHERITANCE_META } from '@/lib/schema/vocabulary';
+import { geneJsonLd } from '@/lib/seo/jsonld';
+import { pageMeta } from '@/lib/seo/metadata';
 
 /**
  * The capability gene record.
@@ -28,10 +31,11 @@ export async function generateMetadata({
   const record = getGeneRecord(decodeURIComponent(accession));
   if (!record) return { title: 'Gene not found' };
 
-  return {
+  return pageMeta({
     title: `${record.name} — ${record.accession}`,
     description: `Capability gene ${record.accession}: ${record.description} Carried by ${record.stats.carriers} project genomes across ${record.stats.alleles} alleles.`,
-  };
+    path: `/gene/${record.accession}`,
+  });
 }
 
 export default async function GenePage({
@@ -48,6 +52,7 @@ export default async function GenePage({
 
   return (
     <div className="shell py-10 md:py-14">
+      <JsonLd data={geneJsonLd(record)} />
       {/* ============================================================== identity */}
       <header>
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">

@@ -1,14 +1,16 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { BLAST_EXAMPLES } from '@/lib/registry/search';
 import { BlastConsole } from '@/components/registry/BlastConsole';
+import { BLAST_EXAMPLES } from '@/lib/registry/search';
+import { pageMeta } from '@/lib/seo/metadata';
 import { runCodeBlast } from './actions';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: 'CodeBLAST',
   description:
     'Paste an implementation and find the capabilities in the registry that do the same job, with a breakdown of which fingerprint facets produced the alignment.',
-};
+  path: '/blast',
+});
 
 export default function BlastPage() {
   return (

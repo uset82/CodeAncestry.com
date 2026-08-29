@@ -2,9 +2,12 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { TelemetryControl } from '@/components/registry/TelemetryControl';
+import { JsonLd } from '@/components/seo/JsonLd';
 import { StatRail } from '@/components/ui/Panel';
 import { cn } from '@/lib/cn';
 import { getAgentRecord } from '@/lib/registry/agent';
+import { agentJsonLd } from '@/lib/seo/jsonld';
+import { pageMeta } from '@/lib/seo/metadata';
 
 /**
  * The Agent DNA record.
@@ -33,10 +36,11 @@ export async function generateMetadata({
   const record = getAgentRecord(decodeURIComponent(accession));
   if (!record) return { title: 'Agent not found' };
 
-  return {
+  return pageMeta({
     title: `${record.displayName} — ${record.accession}`,
     description: `Agent DNA ${record.accession}: ${record.identity.providerLabel}, ${record.identity.verificationLabel.toLowerCase()} identity, ${record.capabilities.length} capabilities, ${record.authored.length} mutations authored. No model weights and no private reasoning are recorded.`,
-  };
+    path: `/agent/${record.accession}`,
+  });
 }
 
 export default async function AgentPage({
@@ -54,6 +58,7 @@ export default async function AgentPage({
 
   return (
     <div className="shell py-10 md:py-14">
+      <JsonLd data={agentJsonLd(record)} />
       {/* ============================================================== identity */}
       <header>
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">

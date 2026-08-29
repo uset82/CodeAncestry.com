@@ -2,7 +2,7 @@
 
 import { Html } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import {
   CatmullRomCurve3,
   Color,
@@ -11,56 +11,97 @@ import {
   TubeGeometry,
   Vector3,
   type BufferGeometry,
+  type Group,
   type InstancedMesh,
   type Mesh,
+  type MeshStandardMaterial,
 } from 'three';
 import {
   LOCUS_LABELS,
   STRANDS,
   STRANDS_BY_ID,
   UPSTREAM_PATH,
-  axisPointAt,
+  axisPointAtInto,
+  backbonePointAtInto,
+  growthAlong,
   rungDirection,
   sampleBackbone,
   strandBasis,
+  strandEased,
 } from './strands';
 import type { BeatState } from './beats';
+import {
+  climaxEmissive,
+  depthMaterialOf,
+  patchGrowingMaterial,
+  syncOrganic,
+  tickClimax,
+  tickOrganic,
+} from './organic';
+import {
+  HELIX,
+  StudioRig,
+  backboneMaterial,
+  createHelixMaterials,
+  disposeHelixMaterials,
+  type HelixMaterials,
+} from './studio';
 
-/* --------------------------------------------------------------- constants */
-
-const ACID = new Color('#b7ff39');
-const CYAN = new Color('#63e7ff');
-const VIOLET = new Color('#a985ff');
-const DIM = new Color('#1d2735');
-
-const RUNGS_PER_STRAND = 9;
+const RUNGS_PER_STRAND = 24;
 const UPSTREAM_PULSES = 3;
 
-type Quality = { tubular: number; radial: number; sphere: number };
+type Quality = { tubular: number; radial: number; radius: number; sphere: number };
 
 const QUALITY: Record<'low' | 'high', Quality> = {
-  low: { tubular: 40, radial: 3, sphere: 8 },
-  high: { tubular: 96, radial: 6, sphere: 14 },
+  low: { tubular: 48, radial: 5, radius: 0.034, sphere: 10 },
+  high: { tubular: 120, radial: 8, radius: 0.04, sphere: 16 },
 };
 
 type Props = {
   state: React.RefObject<BeatState>;
   tier: 'low' | 'high';
+  materials: HelixMaterials;
+  pointer: React.RefObject<{ x: number; y: number }>;
 };
+
+type StrandGeometry = {
+  spec: (typeof STRANDS)[number];
+  origin: boolean;
+  geometries: [BufferGeometry, BufferGeometry];
+  curve: CatmullRomCurve3;
+  material: MeshStandardMaterial;
+};
+
+function OrganicTicker({
+  materials,
+  pointer,
+  drift,
+  state,
+}: {
+  materials: HelixMaterials;
+  pointer: React.RefObject<{ x: number; y: number }>;
+  drift: number;
+  state: React.RefObject<BeatState>;
+}) {
+  useFrame(({ clock }) => {
+    const time = clock.elapsedTime;
+    const current = state.current;
+    const climax = current
+      ? Math.max(current.upstream, Math.max(0, (current.progress - 0.62) / 0.38))
+      : 0;
+
+    tickOrganic(materials.backboneOrigin, time, drift, pointer.current);
+    tickOrganic(materials.backboneMutated, time, drift, pointer.current);
+    tickOrganic(materials.backboneDescendant, time, drift, pointer.current);
+    tickClimax(materials, climax);
+  });
+
+  return null;
+}
 
 /* ------------------------------------------------------------- backbones */
 
-type StrandGeometry = {
-  id: string;
-  generation: number;
-  origin: boolean;
-  geometries: [BufferGeometry, BufferGeometry];
-  /** Full index count, for the drawRange growth reveal. */
-  indexCount: number;
-  curve: CatmullRomCurve3;
-};
-
-function Backbones({ state, tier }: Props) {
+function Backbones({ state, tier, materials, pointer }: Props) {
   const quality = QUALITY[tier];
 
   const strands = useMemo<StrandGeometry[]>(
@@ -73,43 +114,63 @@ function Backbones({ state, tier }: Props) {
             'catmullrom',
             0.5,
           );
-          return new TubeGeometry(curve, quality.tubular, 0.028, quality.radial, false);
+          return new TubeGeometry(curve, quality.tubular, quality.radius, quality.radial, false);
         };
 
-        const a = build(0);
-        const b = build(Math.PI);
+        const role = backboneMaterial(materials, spec.generation, spec.origin ?? false);
+        const material = role.clone();
+        patchGrowingMaterial(
+          material,
+          spec.id,
+          spec.generation === 0 ? HELIX.acid : spec.origin ? HELIX.violet : HELIX.cyan,
+        );
 
         return {
-          id: spec.id,
-          generation: spec.generation,
+          spec,
           origin: spec.origin ?? false,
-          geometries: [a, b] as [BufferGeometry, BufferGeometry],
-          indexCount: a.index?.count ?? 0,
+          geometries: [build(0), build(Math.PI)] as [BufferGeometry, BufferGeometry],
           curve: new CatmullRomCurve3(
             sampleBackbone(spec, 0, Math.min(24, quality.tubular), 0),
             false,
           ),
+          material,
         };
       }),
-    [quality],
+    [quality, materials],
   );
+
+  useEffect(() => {
+    return () => {
+      strands.forEach((strand) => {
+        strand.geometries[0].dispose();
+        strand.geometries[1].dispose();
+        strand.material.userData.depthMaterial?.dispose?.();
+        strand.material.dispose();
+      });
+    };
+  }, [strands]);
 
   const group = useRef<Mesh[]>([]);
 
-  useFrame(() => {
+  useFrame(({ clock }) => {
     const current = state.current;
     if (!current) return;
+    const time = clock.elapsedTime;
+
+    const climax = Math.max(current.upstream, Math.max(0, (current.progress - 0.62) / 0.38));
 
     strands.forEach((strand, i) => {
-      // Each generation reveals as the beat counter passes it.
-      const reveal = Math.min(1, Math.max(0, current.generations - strand.generation));
-      const eased = reveal * reveal * (3 - 2 * reveal);
-
+      const eased = strandEased(current.generations, strand.spec.generation);
+      tickOrganic(strand.material, time, tier === 'high' ? 1 : 0, pointer.current);
+      strand.material.emissiveIntensity = climaxEmissive(
+        strand.spec.generation,
+        strand.origin,
+        climax,
+      );
       for (let side = 0; side < 2; side += 1) {
         const mesh = group.current[i * 2 + side];
         if (!mesh) continue;
-        mesh.visible = eased > 0.01;
-        mesh.geometry.setDrawRange(0, Math.ceil(strand.indexCount * eased));
+        mesh.visible = eased > 0.012;
       }
     });
   });
@@ -119,29 +180,89 @@ function Backbones({ state, tier }: Props) {
       {strands.map((strand, i) =>
         strand.geometries.map((geometry, side) => (
           <mesh
-            key={`${strand.id}-${side}`}
+            key={`${strand.spec.id}-${side}`}
             ref={(node) => {
               if (node) group.current[i * 2 + side] = node;
             }}
             geometry={geometry}
-          >
-            <meshBasicMaterial
-              color={strand.generation === 0 ? ACID : strand.origin ? VIOLET : CYAN}
-              transparent
-              opacity={side === 0 ? 0.62 : 0.26}
-              toneMapped={false}
-            />
-          </mesh>
+            material={strand.material}
+            customDepthMaterial={depthMaterialOf(strand.material)}
+            castShadow
+            onBeforeRender={() => {
+              const current = state.current;
+              if (!current) return;
+              syncOrganic(strand.material, {
+                grow: strandEased(current.generations, strand.spec.generation),
+                flatten: current.flatten,
+                start: strand.spec.start,
+                end: strand.spec.end,
+              });
+            }}
+          />
         )),
       )}
+      <GrowingTips strands={strands} state={state} materials={materials} />
     </>
+  );
+}
+
+function GrowingTips({
+  strands,
+  state,
+  materials,
+}: {
+  strands: StrandGeometry[];
+  state: React.RefObject<BeatState>;
+  materials: HelixMaterials;
+}) {
+  const mesh = useRef<InstancedMesh>(null);
+  const scratch = useMemo(
+    () => ({
+      matrix: new Matrix4(),
+      position: new Vector3(),
+      axis: new Vector3(),
+      quaternion: new Quaternion(),
+      scale: new Vector3(),
+    }),
+    [],
+  );
+
+  useFrame(() => {
+    const node = mesh.current;
+    const current = state.current;
+    if (!node || !current) return;
+    const { matrix, position, axis, quaternion, scale } = scratch;
+
+    strands.forEach((strand, i) => {
+      const eased = strandEased(current.generations, strand.spec.generation);
+      const t = Math.min(0.999, Math.max(0, eased));
+      strand.curve.getPoint(t, position);
+      axisPointAtInto(strand.spec, t, current.flatten, axis);
+      position.lerp(axis, current.flatten);
+      const growing = eased > 0.03 && eased < 0.985;
+      scale.setScalar(growing ? 0.068 : eased > 0.03 ? 0.028 : 0);
+      matrix.compose(position, quaternion, scale);
+      node.setMatrixAt(i, matrix);
+    });
+
+    node.instanceMatrix.needsUpdate = true;
+  });
+
+  return (
+    <instancedMesh
+      ref={mesh}
+      args={[undefined, undefined, strands.length]}
+      frustumCulled={false}
+      material={materials.locus}
+    >
+      <sphereGeometry args={[1, 12, 12]} />
+    </instancedMesh>
   );
 }
 
 /* ----------------------------------------------------------------- rungs */
 
-/** Base pairs: short bars spanning the helix diameter, one per turn segment. */
-function Rungs({ state }: Pick<Props, 'state'>) {
+function Rungs({ state, materials }: Pick<Props, 'state' | 'materials'>) {
   const mesh = useRef<InstancedMesh>(null);
   const total = STRANDS.length * RUNGS_PER_STRAND;
 
@@ -176,17 +297,16 @@ function Rungs({ state }: Pick<Props, 'state'>) {
     const time = clock.elapsedTime;
 
     slots.forEach((slot, i) => {
-      const reveal = Math.min(1, Math.max(0, current.generations - slot.spec.generation));
+      const eased = strandEased(current.generations, slot.spec.generation);
+      const front = growthAlong(eased, slot.t);
       const { matrix, position, quaternion, scale, up } = scratch;
 
-      position.copy(axisPointAt(slot.spec, slot.t, current.flatten));
-      // The bar's own Y axis becomes the radial direction of the helix.
+      axisPointAtInto(slot.spec, slot.t, current.flatten, position);
       quaternion.setFromUnitVectors(up, slot.direction);
 
-      // Rungs breathe gently while idle, then hold still once flattened.
       const breathe = 1 + Math.sin(time * 1.1 + i * 0.7) * 0.06 * (1 - current.flatten);
-      const span = slot.spec.radius * 2 * (1 - current.flatten) * breathe;
-      scale.set(1, span, 1).multiplyScalar(reveal);
+      const span = slot.spec.radius * 2 * (1 - current.flatten * 0.4) * breathe;
+      scale.set(1, span * front, 1);
 
       matrix.compose(position, quaternion, scale);
       node.setMatrixAt(i, matrix);
@@ -196,16 +316,21 @@ function Rungs({ state }: Pick<Props, 'state'>) {
   });
 
   return (
-    <instancedMesh ref={mesh} args={[undefined, undefined, total]} frustumCulled={false}>
-      <cylinderGeometry args={[0.009, 0.009, 1, 4]} />
-      <meshBasicMaterial color={DIM} transparent opacity={0.95} toneMapped={false} />
+    <instancedMesh
+      ref={mesh}
+      args={[undefined, undefined, total]}
+      frustumCulled={false}
+      material={materials.rung}
+      castShadow
+    >
+      <cylinderGeometry args={[0.02, 0.02, 1, 8]} />
     </instancedMesh>
   );
 }
 
 /* ------------------------------------------------------------------ loci */
 
-function Loci({ state, tier }: Props) {
+function Loci({ state, tier, materials }: Props) {
   const mesh = useRef<InstancedMesh>(null);
   const quality = QUALITY[tier];
 
@@ -213,18 +338,26 @@ function Loci({ state, tier }: Props) {
     () =>
       STRANDS.flatMap((spec) => {
         const basis = strandBasis(spec);
-        return Array.from({ length: spec.loci }, (_, i) => {
+        const genes = Array.from({ length: spec.loci }, (_, i) => {
           const t = (i + 0.5) / spec.loci;
           return {
             spec,
             t,
             direction: rungDirection(spec, basis, t),
-            /** The locus that carries the discovered mutation. */
             mutated: (spec.origin ?? false) && i === spec.loci - 2,
-            // Deterministic phase offset so the pulse is not synchronised.
             seed: (i * 2.399963 + spec.generation * 0.7) % (Math.PI * 2),
+            kind: 'gene' as const,
           };
         });
+        const junctions = ([0, 1] as const).map((t) => ({
+          spec,
+          t,
+          direction: rungDirection(spec, basis, t),
+          mutated: false,
+          seed: t * 4.1 + spec.generation,
+          kind: 'junction' as const,
+        }));
+        return [...junctions, ...genes];
       }),
     [],
   );
@@ -248,28 +381,29 @@ function Loci({ state, tier }: Props) {
     const time = clock.elapsedTime;
 
     slots.forEach((slot, i) => {
-      const reveal = Math.min(1, Math.max(0, current.generations - slot.spec.generation));
+      const eased = strandEased(current.generations, slot.spec.generation);
+      const front = growthAlong(eased, slot.t);
       const { matrix, position, quaternion, scale, color } = scratch;
 
-      // Loci ride on the backbone itself, the way genes sit on a chromosome.
-      position
-        .copy(axisPointAt(slot.spec, slot.t, current.flatten))
-        .addScaledVector(slot.direction, slot.spec.radius * (1 - current.flatten));
+      axisPointAtInto(slot.spec, slot.t, current.flatten, position);
+      if (slot.kind === 'gene') {
+        position.addScaledVector(slot.direction, slot.spec.radius * (1 - current.flatten));
+      }
 
-      const pulse = 1 + Math.sin(time * 2 + slot.seed) * 0.16;
-      const emphasis = slot.mutated ? 1.7 + current.upstream * 0.6 : 1;
-      const size = 0.055 * pulse * emphasis * reveal;
+      const pulse = 1 + Math.sin(time * 2 + slot.seed) * (slot.kind === 'junction' ? 0.06 : 0.16);
+      const emphasis = slot.mutated ? 1.7 + current.upstream * 0.6 : slot.kind === 'junction' ? 1.35 : 1;
+      const size = (slot.kind === 'junction' ? 0.072 : 0.055) * pulse * emphasis * front;
       scale.setScalar(size);
 
       matrix.compose(position, quaternion, scale);
       node.setMatrixAt(i, matrix);
 
       if (slot.mutated) {
-        color.copy(VIOLET);
+        color.copy(HELIX.violet);
       } else if (slot.spec.generation === 0) {
-        color.copy(ACID).lerp(CYAN, 0.25);
+        color.copy(HELIX.acid).lerp(HELIX.cyan, slot.kind === 'junction' ? 0.08 : 0.22);
       } else {
-        color.copy(CYAN).lerp(DIM, 0.45 - current.inheritance * 0.4);
+        color.copy(HELIX.cyan).lerp(HELIX.dim, 0.42 - current.inheritance * 0.36);
       }
       node.setColorAt(i, color);
     });
@@ -278,23 +412,20 @@ function Loci({ state, tier }: Props) {
     if (node.instanceColor) node.instanceColor.needsUpdate = true;
   });
 
-  const total = slots.length;
-
   return (
-    <instancedMesh ref={mesh} args={[undefined, undefined, total]} frustumCulled={false}>
+    <instancedMesh
+      ref={mesh}
+      args={[undefined, undefined, slots.length]}
+      frustumCulled={false}
+      material={materials.locus}
+    >
       <sphereGeometry args={[1, quality.sphere, quality.sphere]} />
-      <meshBasicMaterial toneMapped={false} />
     </instancedMesh>
   );
 }
 
 /* --------------------------------------------------------- locus labels */
 
-/**
- * Semantic labels anchored to the loci, rendered as real DOM so they stay crisp,
- * selectable and reachable by keyboard. Hovering or focusing one reveals the
- * capability name and where it originated.
- */
 function LocusLabels({ state }: Pick<Props, 'state'>) {
   const anchors = useMemo(
     () =>
@@ -309,6 +440,9 @@ function LocusLabels({ state }: Pick<Props, 'state'>) {
   );
 
   const groups = useRef<(HTMLDivElement | null)[]>([]);
+  const frames = useRef<(Group | null)[]>([]);
+  const lastOpacity = useRef<number[]>([]);
+  const scratch = useMemo(() => new Vector3(), []);
 
   useFrame(() => {
     const current = state.current;
@@ -316,11 +450,19 @@ function LocusLabels({ state }: Pick<Props, 'state'>) {
 
     anchors.forEach((anchor, i) => {
       const node = groups.current[i];
+      const frame = frames.current[i];
+      if (frame) {
+        axisPointAtInto(anchor.spec, anchor.t, current.flatten, scratch);
+        scratch.addScaledVector(anchor.direction, anchor.spec.radius * 1.9 * (1 - current.flatten));
+        frame.position.copy(scratch);
+      }
       if (!node) return;
 
-      const reveal = Math.min(1, Math.max(0, current.generations - anchor.spec.generation));
-      // Labels arrive after their strand has drawn itself in.
-      const opacity = Math.max(0, reveal * 2 - 1);
+      const eased = strandEased(current.generations, anchor.spec.generation);
+      const front = growthAlong(eased, anchor.t);
+      const opacity = front > 0.55 ? Math.min(1, (front - 0.55) / 0.45) : 0;
+      if (lastOpacity.current[i] === opacity) return;
+      lastOpacity.current[i] = opacity;
       node.style.opacity = String(opacity);
       node.style.visibility = opacity < 0.02 ? 'hidden' : 'visible';
     });
@@ -331,17 +473,16 @@ function LocusLabels({ state }: Pick<Props, 'state'>) {
       {anchors.map((anchor, i) => (
         <group
           key={`${anchor.label.strand}-${anchor.label.index}`}
-          position={axisPointAt(anchor.spec, anchor.t, 0).addScaledVector(
-            anchor.direction,
-            anchor.spec.radius * 1.9,
-          )}
+          ref={(node) => {
+            frames.current[i] = node;
+          }}
         >
           <Html center zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
             <div
               ref={(node) => {
                 groups.current[i] = node;
               }}
-              className="group/locus relative w-max -translate-y-1/2 opacity-0 transition-opacity duration-300"
+              className="group/locus relative w-max -translate-y-1/2 opacity-0"
             >
               <button
                 type="button"
@@ -371,41 +512,39 @@ function LocusLabels({ state }: Pick<Props, 'state'>) {
 
 /* --------------------------------------------------------------- pulses */
 
-/**
- * Semantic motion: a travelling dot means information was transmitted. Cyan
- * moves down the tree (inheritance), violet moves up it (a descendant offering
- * something back to its ancestors).
- */
-function Pulses({ state, tier }: Props) {
+function Pulses({ state, tier, materials }: Props) {
   const down = useRef<InstancedMesh>(null);
   const up = useRef<InstancedMesh>(null);
   const quality = QUALITY[tier];
 
-  const downCurves = useMemo(
+  const downSlots = useMemo(
     () =>
-      STRANDS.filter((spec) => spec.generation > 0).map(
-        (spec) =>
-          new CatmullRomCurve3(
-            sampleBackbone(spec, 0, tier === 'low' ? 16 : 32, 0.35),
-            false,
-          ),
-      ),
-    [tier],
+      STRANDS.filter((spec) => spec.generation > 0).map((spec) => ({
+        spec,
+        basis: strandBasis(spec),
+      })),
+    [],
   );
 
-  const upCurve = useMemo(() => {
-    const points: Vector3[] = [];
-    for (const id of UPSTREAM_PATH) {
-      const spec = STRANDS.find((s) => s.id === id);
-      if (!spec) continue;
-      // Walk each strand from its end back toward its start.
-      points.push(spec.end.clone(), spec.start.clone());
-    }
-    return new CatmullRomCurve3(points, false);
-  }, []);
+  const upSlots = useMemo(
+    () =>
+      UPSTREAM_PATH.map((id) => {
+        const spec = STRANDS.find((entry) => entry.id === id);
+        if (!spec) return null;
+        return { spec, basis: strandBasis(spec) };
+      }).filter((entry): entry is { spec: (typeof STRANDS)[number]; basis: ReturnType<typeof strandBasis> } =>
+        Boolean(entry),
+      ),
+    [],
+  );
 
   const scratch = useMemo(
-    () => ({ matrix: new Matrix4(), position: new Vector3(), quaternion: new Quaternion(), scale: new Vector3() }),
+    () => ({
+      matrix: new Matrix4(),
+      position: new Vector3(),
+      quaternion: new Quaternion(),
+      scale: new Vector3(),
+    }),
     [],
   );
 
@@ -417,12 +556,12 @@ function Pulses({ state, tier }: Props) {
 
     const downNode = down.current;
     if (downNode) {
-      downCurves.forEach((curve, i) => {
+      downSlots.forEach((slot, i) => {
         const t = (time * 0.34 + i * 0.21) % 1;
-        curve.getPointAt(t, position);
-        // Fade in at both ends so pulses do not pop.
+        backbonePointAtInto(slot.spec, slot.basis, 0, t, current.flatten, position);
         const edge = Math.min(1, Math.min(t, 1 - t) * 7);
-        scale.setScalar(0.036 * edge * current.inheritance);
+        const grown = growthAlong(strandEased(current.generations, slot.spec.generation), t);
+        scale.setScalar(0.036 * edge * current.inheritance * grown);
         matrix.compose(position, quaternion, scale);
         downNode.setMatrixAt(i, matrix);
       });
@@ -430,10 +569,15 @@ function Pulses({ state, tier }: Props) {
     }
 
     const upNode = up.current;
-    if (upNode) {
+    if (upNode && upSlots.length > 0) {
       for (let i = 0; i < UPSTREAM_PULSES; i += 1) {
         const t = (time * 0.2 + i / UPSTREAM_PULSES) % 1;
-        upCurve.getPointAt(t, position);
+        const scaled = (1 - t) * upSlots.length;
+        const index = Math.min(upSlots.length - 1, Math.floor(scaled));
+        const local = scaled - index;
+        const slot = upSlots[index];
+        if (!slot) continue;
+        axisPointAtInto(slot.spec, local, current.flatten, position);
         const edge = Math.min(1, Math.min(t, 1 - t) * 5);
         scale.setScalar(0.062 * edge * current.upstream);
         matrix.compose(position, quaternion, scale);
@@ -447,16 +591,20 @@ function Pulses({ state, tier }: Props) {
     <>
       <instancedMesh
         ref={down}
-        args={[undefined, undefined, Math.max(1, downCurves.length)]}
+        args={[undefined, undefined, Math.max(1, downSlots.length)]}
         frustumCulled={false}
+        material={materials.pulseDown}
       >
         <sphereGeometry args={[1, quality.sphere, quality.sphere]} />
-        <meshBasicMaterial color={CYAN} toneMapped={false} />
       </instancedMesh>
 
-      <instancedMesh ref={up} args={[undefined, undefined, UPSTREAM_PULSES]} frustumCulled={false}>
+      <instancedMesh
+        ref={up}
+        args={[undefined, undefined, UPSTREAM_PULSES]}
+        frustumCulled={false}
+        material={materials.pulseUp}
+      >
         <sphereGeometry args={[1, quality.sphere, quality.sphere]} />
-        <meshBasicMaterial color={VIOLET} toneMapped={false} />
       </instancedMesh>
     </>
   );
@@ -464,22 +612,38 @@ function Pulses({ state, tier }: Props) {
 
 /* --------------------------------------------------------------- camera */
 
-/** Descends through the generations as the reader scrolls. */
-function CameraRig({ state }: { state: React.RefObject<BeatState> }) {
+function CameraRig({
+  state,
+  pointer,
+}: {
+  state: React.RefObject<BeatState>;
+  pointer: React.RefObject<{ x: number; y: number }>;
+}) {
   const { camera } = useThree();
   const target = useMemo(() => new Vector3(0, 1.4, 0), []);
   const desired = useMemo(() => new Vector3(), []);
   const lookAt = useMemo(() => new Vector3(), []);
 
+  useEffect(() => {
+    const handlePointerMove = (event: PointerEvent) => {
+      pointer.current.x = (event.clientX / window.innerWidth) * 2 - 1;
+      pointer.current.y = -((event.clientY / window.innerHeight) * 2 - 1);
+    };
+
+    window.addEventListener('pointermove', handlePointerMove, { passive: true });
+    return () => window.removeEventListener('pointermove', handlePointerMove);
+  }, [pointer]);
+
   useFrame((_, delta) => {
     const current = state.current;
     if (!current) return;
     const p = current.progress;
+    const orbit = 1 - current.flatten;
 
     desired.set(
-      Math.sin(p * Math.PI * 0.6) * 1.2,
-      2.2 - p * 6.4,
-      8.4 + p * 5.6 + current.flatten * 2.2,
+      Math.sin(p * Math.PI * 0.6) * 1.2 + pointer.current.x * 0.48 * orbit,
+      2.2 - p * 6.4 + pointer.current.y * 0.24 * orbit,
+      8.4 - current.flatten * 1.15,
     );
     lookAt.set(-p * 0.9, 1.6 - p * 6.2, 0);
 
@@ -494,15 +658,27 @@ function CameraRig({ state }: { state: React.RefObject<BeatState> }) {
 
 /* --------------------------------------------------------------- export */
 
-export function HelixScene({ state, tier }: Props) {
+export function HelixScene({ state, tier }: Omit<Props, 'materials' | 'pointer'>) {
+  const materials = useMemo(() => createHelixMaterials(), []);
+  const pointer = useRef({ x: 0, y: 0 });
+  const shadows = tier === 'high';
+
+  useEffect(() => () => disposeHelixMaterials(materials), [materials]);
+
   return (
     <>
-      <CameraRig state={state} />
-      <Backbones state={state} tier={tier} />
-      <Rungs state={state} />
-      <Loci state={state} tier={tier} />
-      <Pulses state={state} tier={tier} />
-      {/* Labels are DOM overlays; skipping them on low tier keeps mobile cheap. */}
+      <StudioRig state={state} shadows={shadows} />
+      <OrganicTicker
+        materials={materials}
+        pointer={pointer}
+        drift={tier === 'high' ? 1 : 0}
+        state={state}
+      />
+      <CameraRig state={state} pointer={pointer} />
+      <Backbones state={state} tier={tier} materials={materials} pointer={pointer} />
+      <Rungs state={state} materials={materials} />
+      <Loci state={state} tier={tier} materials={materials} pointer={pointer} />
+      <Pulses state={state} tier={tier} materials={materials} pointer={pointer} />
       {tier === 'high' && <LocusLabels state={state} />}
     </>
   );

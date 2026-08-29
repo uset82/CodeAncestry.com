@@ -135,16 +135,20 @@ export function CodeTree({
           {(layout === 'tidy' || layout === 'radial') && (
             // Keyed so switching layouts starts from a fitted viewport rather
             // than leaving the reader panned into empty space.
-            <TreeCanvas
+            <div
               key={layout}
-              family={family}
-              mode={layout}
-              zoom={zoom}
-              selected={selected}
-              onSelect={setSelected}
-              pulseEdgeId={pulseEdgeId}
-              animate={animate}
-            />
+              className="motion-safe:animate-[rise_0.45s_var(--ease-out-quint)_both]"
+            >
+              <TreeCanvas
+                family={family}
+                mode={layout}
+                zoom={zoom}
+                selected={selected}
+                onSelect={setSelected}
+                pulseEdgeId={pulseEdgeId}
+                animate={animate}
+              />
+            </div>
           )}
 
           {layout === 'force' && (

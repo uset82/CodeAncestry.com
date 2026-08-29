@@ -1,27 +1,33 @@
 import type { Metadata } from 'next';
-import { DocSection, ReadingShell } from '@/components/registry/RegistryShell';
+import { DocsArticle } from '@/components/docs/DocsShell';
+import { SpecTable } from '@/components/docs/SpecTable';
+import { DocSection } from '@/components/registry/RegistryShell';
+import { FITNESS_AXIS_META, FITNESS_AXES } from '@/lib/schema/vocabulary';
+import { pageMeta } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: 'Language and ethics',
   description:
     'Genetics is used here as an information-system model, not as a metaphor for human worth. The vocabulary rules that follow from that.',
-};
+  path: '/docs/language',
+});
 
-const VOCABULARY = [
-  { avoid: 'Superior / inferior gene', use: 'Higher-scoring allele under environment X' },
-  { avoid: 'Purity', use: 'Contribution share' },
-  { avoid: 'Bloodline', use: 'Lineage' },
-  { avoid: 'Dominant', use: 'Most adopted' },
-  { avoid: 'Fitness score', use: 'Fitness vector, per axis, per environment' },
-  { avoid: 'Breeding / selection pressure', use: 'Adoption policy' },
+const MANDATED = [
+  { use: 'Lineage', avoid: 'Bloodline' },
+  { use: 'Variant / allele', avoid: 'Dominant / recessive' },
+  { use: 'Capability', avoid: 'Superior / inferior gene' },
+  { use: 'Fitness under environment X', avoid: 'Fitness score, breeding, selection pressure' },
+  { use: 'Contribution share', avoid: 'Purity' },
+  { use: 'Most adopted', avoid: 'Dominant' },
+  { use: 'Adoption policy', avoid: 'Breeding / selection pressure' },
 ];
 
 export default function LanguagePage() {
   return (
-    <ReadingShell
-      eyebrow="Documentation · Language"
+    <DocsArticle
+      eyebrow="Documentation · Practice"
       title="Genetics as a model, not a verdict"
-      lede="The first rule: use genetics as an information-system model, never as a metaphor for human worth."
+      lede="The first rule: use genetics as an information-system model, never as a metaphor for human worth. Use lineage, variant, capability, fitness under environment X. Never bloodline, purity, dominant, superior genes."
     >
       <DocSection heading="Why this page exists">
         <p>
@@ -36,29 +42,22 @@ export default function LanguagePage() {
         </p>
       </DocSection>
 
-      <DocSection heading="Vocabulary">
-        <div className="border-line overflow-x-auto rounded-lg border">
-          <table className="w-full text-left text-[14px]">
-            <thead className="bg-panel-2 border-line border-b">
-              <tr>
-                <th scope="col" className="label text-muted px-4 py-3">
-                  Do not use
-                </th>
-                <th scope="col" className="label text-muted px-4 py-3">
-                  Use instead
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {VOCABULARY.map((row) => (
-                <tr key={row.avoid} className="border-line border-b last:border-0">
-                  <td className="text-rose px-4 py-3 align-top line-through">{row.avoid}</td>
-                  <td className="text-text-soft px-4 py-3 align-top">{row.use}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <DocSection heading="Mandated vocabulary">
+        <p>
+          This table is a rule, not a suggestion. Copy on this site, in the protocol, and in any
+          paper that cites the protocol is expected to stay on the right-hand column.
+        </p>
+        <SpecTable
+          caption="Forbidden genetic metaphors and the terms that replace them"
+          columns={[
+            { key: 'avoid', label: 'Do not use' },
+            { key: 'use', label: 'Use instead' },
+          ]}
+          rows={MANDATED.map((row) => ({
+            avoid: row.avoid,
+            use: row.use,
+          }))}
+        />
       </DocSection>
 
       <DocSection heading="Fitness is never one number">
@@ -69,10 +68,23 @@ export default function LanguagePage() {
           hobbyist.
         </p>
         <p>
-          Fitness is therefore stored and displayed as a vector across correctness, security,
-          performance, compatibility, maintainability and user outcome — measured in a stated
-          environment. Any aggregate is a policy-specific view, never the canonical truth.
+          Fitness is therefore stored and displayed as a vector across {FITNESS_AXES.length} axes,
+          measured in a stated environment. Any aggregate is a policy-specific view, never the
+          canonical truth.
         </p>
+        <SpecTable
+          caption="Fitness axes. There is no seventh combined score."
+          columns={[
+            { key: 'symbol', label: 'Axis', mono: true },
+            { key: 'label', label: 'Name' },
+            { key: 'description', label: 'What it measures' },
+          ]}
+          rows={FITNESS_AXES.map((axis) => ({
+            symbol: FITNESS_AXIS_META[axis].symbol,
+            label: FITNESS_AXIS_META[axis].label,
+            description: FITNESS_AXIS_META[axis].description,
+          }))}
+        />
       </DocSection>
 
       <DocSection heading="Compatibility is not permission">
@@ -99,6 +111,6 @@ export default function LanguagePage() {
           visualisation has a keyboard-navigable, screen-readable equivalent.
         </p>
       </DocSection>
-    </ReadingShell>
+    </DocsArticle>
   );
 }

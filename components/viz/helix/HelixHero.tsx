@@ -1,6 +1,9 @@
 'use client';
 
 import { Canvas } from '@react-three/fiber';
+import { useGSAP } from '@gsap/react';
+import { gsap } from 'gsap';
+import { ACESFilmicToneMapping, PCFSoftShadowMap, SRGBColorSpace } from 'three';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
@@ -11,14 +14,31 @@ import { ButtonLink } from '@/components/ui/Button';
 import { BEATS, beatStateAt, type BeatState } from './beats';
 import { HeroFallback } from './HeroFallback';
 
+gsap.registerPlugin(useGSAP);
+
 const HelixScene = dynamic(() => import('./HelixScene').then((m) => m.HelixScene), {
   ssr: false,
 });
 
 /** The eyebrow, headline and calls to action, shared by both hero variants. */
 function HeroCopy({ children }: { children?: React.ReactNode }) {
+  const copy = useRef<HTMLDivElement>(null);
+  const reducedMotion = useReducedMotion();
+
+  useGSAP(
+    () => {
+      if (reducedMotion || !copy.current) return;
+      gsap.fromTo(
+        copy.current.children,
+        { opacity: 0, y: 14 },
+        { opacity: 1, y: 0, duration: 0.65, stagger: 0.07, ease: 'power3.out' },
+      );
+    },
+    { scope: copy, dependencies: [reducedMotion] },
+  );
+
   return (
-    <div className="max-w-[720px]">
+    <div ref={copy} className="max-w-[720px]">
       <p className="text-acid mb-5 flex items-center gap-3 font-mono text-micro uppercase">
         <span
           aria-hidden="true"
@@ -208,37 +228,42 @@ function AnimatedHero({ tier }: { tier: 'low' | 'high' }) {
       className="relative -mt-[74px] h-[560vh]"
     >
       <div className="sticky top-0 flex h-screen flex-col overflow-hidden">
-        {/* Offset right of the copy column on wide screens; dimmed and centred
-            on narrow ones, where the copy needs the whole width. */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 opacity-45 lg:translate-x-[14%] lg:opacity-100"
-        >
+        <div className="shell-wide relative flex flex-1 flex-col justify-center pt-20 pb-16 lg:grid lg:grid-cols-[minmax(0,34rem)_minmax(0,1fr)] lg:items-center lg:gap-8">
           <div
-            className="absolute top-1/2 left-1/2 size-[min(900px,90vw)] -translate-1/2 rounded-full opacity-70 blur-3xl"
-            style={{
-              background:
-                'radial-gradient(circle, rgb(99 231 255 / 0.1), rgb(183 255 57 / 0.05) 45%, transparent 68%)',
-            }}
-          />
-          <Canvas
-            dpr={tier === 'low' ? [1, 1.4] : [1, 1.9]}
-            camera={{ position: [0, 2.2, 8.4], fov: 42, near: 0.1, far: 100 }}
-            gl={{ antialias: tier === 'high', alpha: true, powerPreference: 'high-performance' }}
-            style={{ position: 'absolute', inset: 0 }}
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 opacity-40 lg:relative lg:inset-auto lg:order-2 lg:h-full lg:min-h-[min(78vh,700px)] lg:opacity-100"
           >
-            <HelixScene state={state} tier={tier} />
-          </Canvas>
-        </div>
+            <div
+              className="absolute top-1/2 left-1/2 size-[min(900px,90vw)] -translate-1/2 rounded-full opacity-70 blur-3xl"
+              style={{
+                background:
+                  'radial-gradient(circle, rgb(99 231 255 / 0.1), rgb(183 255 57 / 0.05) 45%, transparent 68%)',
+              }}
+            />
+            <Canvas
+              shadows={
+                tier === 'high' ? { type: PCFSoftShadowMap, enabled: true } : false
+              }
+              dpr={tier === 'low' ? [1, 1.4] : [1, 1.9]}
+              camera={{ position: [0, 2.2, 8.4], fov: 42, near: 0.1, far: 100 }}
+              gl={{
+                antialias: tier === 'high',
+                alpha: true,
+                powerPreference: 'high-performance',
+                toneMapping: ACESFilmicToneMapping,
+                outputColorSpace: SRGBColorSpace,
+              }}
+              onCreated={({ gl }) => {
+                gl.toneMappingExposure = 1.16;
+              }}
+              style={{ position: 'absolute', inset: 0 }}
+            >
+              <HelixScene state={state} tier={tier} />
+            </Canvas>
+          </div>
 
-        {/* Keeps the copy legible over the brightest part of the helix. */}
-        <div
-          aria-hidden="true"
-          className="from-void via-void/70 lg:via-void/20 pointer-events-none absolute inset-0 bg-gradient-to-r to-transparent"
-        />
-
-        <div className="shell-wide relative flex flex-1 flex-col justify-center pt-20 pb-24">
-          <HeroCopy>
+          <div className="relative z-10 lg:order-1">
+            <HeroCopy>
             {/* All five beats stay in the DOM; the active one is emphasised. */}
             <div className="relative mt-8 min-h-[188px]">
               {BEATS.map((beat, i) => (
@@ -257,9 +282,10 @@ function AnimatedHero({ tier }: { tier: 'low' | 'high' }) {
               ))}
             </div>
           </HeroCopy>
+          </div>
         </div>
 
-        <div className="shell-wide relative pb-8">
+        <div className="shell-wide relative z-10 pb-8">
           <div className="flex items-center justify-between gap-6">
             <ol className="flex items-center gap-2" aria-label="Hero progress">
               {BEATS.map((beat, i) => (

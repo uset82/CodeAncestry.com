@@ -323,6 +323,11 @@ function Edge({
         stroke={style.stroke}
         strokeWidth={style.width}
         strokeDasharray={frozen ? '3 3' : style.dash}
+        className={
+          !frozen && style.dash
+            ? 'motion-safe:animate-[dash_1.6s_linear_infinite]'
+            : undefined
+        }
         strokeLinecap="round"
         opacity={frozen ? 0.45 : style.opacity}
         markerEnd={`url(#${style.marker === 'ca-arrow' ? 'tree-arrow' : 'tree-arrow-open'})`}

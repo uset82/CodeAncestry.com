@@ -4,12 +4,15 @@ import { notFound } from 'next/navigation';
 import { CodePaintingStrip } from '@/components/registry/CodePaintingStrip';
 import { ExportPanel } from '@/components/registry/ExportPanel';
 import { ProvenanceViewer } from '@/components/registry/ProvenanceViewer';
+import { JsonLd } from '@/components/seo/JsonLd';
 import { StatRail } from '@/components/ui/Panel';
 import { GenomeBrowser } from '@/components/viz/genome/GenomeBrowser';
 import { getGenomeBrowserModel } from '@/lib/registry/genome';
 import { getDataPackage } from '@/lib/registry/pack';
 import { getProvenanceForGenome } from '@/lib/registry/provenance';
 import { EVIDENCE_TIER_META } from '@/lib/schema/vocabulary';
+import { genomeJsonLd } from '@/lib/seo/jsonld';
+import { pageMeta } from '@/lib/seo/metadata';
 
 /**
  * The Project Genome Browser page — the signature registry screen.
@@ -39,10 +42,11 @@ export async function generateMetadata({
   if (!model) return { title: 'Genome not found' };
 
   const { genome, stats } = model;
-  return {
+  return pageMeta({
     title: `${genome.name} — ${genome.accession}`,
     description: `Genome browser for ${genome.name}: generation ${stats.generation}, ${stats.genes} capabilities, ${stats.mutations} mutations, ${stats.verifiedReleases} verified releases. ${genome.tagline}`,
-  };
+    path: `/project/${genome.accession}`,
+  });
 }
 
 export default async function ProjectPage({
@@ -62,6 +66,7 @@ export default async function ProjectPage({
 
   return (
     <div className="shell-wide py-10 md:py-14">
+      <JsonLd data={genomeJsonLd(genome)} />
       {/* ============================================================== header */}
       <header>
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">

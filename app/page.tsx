@@ -5,6 +5,7 @@ import { JoinSection } from '@/components/marketing/JoinSection';
 import { MeaningLayer } from '@/components/marketing/MeaningLayer';
 import { PropagationStrip } from '@/components/marketing/PropagationStrip';
 import { TrustLadder } from '@/components/marketing/TrustLadder';
+import { Reveal } from '@/components/motion/Reveal';
 import { HelixHero } from '@/components/viz/helix/HelixHero';
 
 /**
@@ -17,13 +18,27 @@ export default function HomePage() {
   return (
     <>
       <HelixHero />
-      <ConceptCards />
-      <MeaningLayer />
-      <CodePaintingTeaser />
-      <PropagationStrip />
-      <TrustLadder />
-      <Endgame />
-      <JoinSection />
+      <Reveal>
+        <ConceptCards />
+      </Reveal>
+      <Reveal>
+        <MeaningLayer />
+      </Reveal>
+      <Reveal>
+        <CodePaintingTeaser />
+      </Reveal>
+      <Reveal>
+        <PropagationStrip />
+      </Reveal>
+      <Reveal>
+        <TrustLadder />
+      </Reveal>
+      <Reveal>
+        <Endgame />
+      </Reveal>
+      <Reveal>
+        <JoinSection />
+      </Reveal>
     </>
   );
 }

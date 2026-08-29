@@ -1,151 +1,104 @@
 import type { Metadata } from 'next';
-import { CodeBlock, DocSection, ReadingShell } from '@/components/registry/RegistryShell';
+import { DocsArticle } from '@/components/docs/DocsShell';
+import { CodeBlock, DocSection } from '@/components/registry/RegistryShell';
+import { getAgentExample, getGeneExample, getGenomeExample, pretty } from '@/lib/docs/examples';
+import { featuresToJsonl, genomeToFeatures, mutationToCavcf } from '@/lib/docs/formats';
+import { getHeroMutation, getRootGenome } from '@/lib/registry';
+import { pageMeta } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: 'File formats',
   description:
-    'genome.json, gene.json and agent-dna.json — the portable records a repository carries.',
-};
+    'genome.json, gene.json, agent-dna.json, mutation.cavcf and features.jsonl — the portable records a repository carries.',
+  path: '/docs/formats',
+});
 
 export default function FormatsPage() {
+  const genome = getRootGenome();
+  const mutation = getHeroMutation();
+  const features = genomeToFeatures(genome);
+  const featurePreview = featuresToJsonl(features.slice(0, 3));
+
   return (
-    <ReadingShell
-      eyebrow="Documentation · Formats"
+    <DocsArticle
+      eyebrow="Documentation · Reference"
       title="Portable records"
-      lede="Bioinformatics never forces everything into one file. FASTA carries sequence, GFF carries features, VCF carries variants. The same separation applies here."
+      lede="Bioinformatics never forces everything into one file. FASTA carries sequence, GFF carries features, VCF carries variants. The same separation applies here. Examples below are abridged seeded records — the field names are the live schema, not an older draft."
     >
       <DocSection heading="genome.json" id="genome">
         <p>
           Lives in the repository. Describes what the project is composed of at one commit, and who
-          it descends from.
+          it descends from. Identity is <code>id</code>, not <code>genome_id</code>. The source
+          digest is <code>treeDigest</code>. A gene reference points at <code>gene</code> and{' '}
+          <code>allele</code> accessions.
         </p>
-        <CodeBlock>{`{
-  "$schema": "https://codeancestry.com/schemas/genome/v0.1.json",
-  "genome_id": "CAGENOME:01JKEYLIT7H2",
-  "project_id": "CAPROJ:01JKEYLIT000",
-  "name": "KEYLIT",
-  "generation": 0,
-
-  "source": {
-    "provider": "github",
-    "repository": "uset82/keylit",
-    "commit": "82c134bd1f…",
-    "digest": "sha256:…"
-  },
-
-  "parents": [],
-
-  "genes": [
-    {
-      "id": "CAGENE:MIDI-SCHEDULING",
-      "allele": "CAALLELE:MIDI-SCHEDULING:3",
-      "expression": "active",
-      "inheritance": "native",
-      "confidence": 0.98,
-      "anchors": [
-        { "path": "src/midi/input.ts", "symbol": "MidiInputManager" }
-      ]
-    }
-  ],
-
-  "attestations": [
-    { "type": "slsa-provenance", "digest": "sha256:…" }
-  ]
-}`}</CodeBlock>
+        <CodeBlock>{pretty(getGenomeExample())}</CodeBlock>
         <p>
-          A child declares what it inherited rather than silently copying it, which is the whole
-          difference between a fork and a recorded descent.
+          A child declares what it inherited rather than silently copying it. That is the whole
+          difference between a fork and a recorded descent. {genome.name} is generation{' '}
+          {genome.generation} and has {genome.parents.length} parents; its children name it
+          explicitly.
         </p>
-        <CodeBlock>{`"parents": [
-  {
-    "project": "CAPROJ:01JKEYLIT000",
-    "relationship": "child",
-    "bornFromCommit": "82c134bd1f…"
-  }
-],
-"genes": [
-  { "id": "CAGENE:MIDI-SCHEDULING", "inheritance": "inherited",
-    "origin": "CAPROJ:01JKEYLIT000" },
-  { "id": "CAGENE:GAMIFICATION",    "inheritance": "local",
-    "origin": "CAPROJ:01JKIDS00000" }
-]`}</CodeBlock>
       </DocSection>
 
       <DocSection heading="gene.json" id="gene">
         <p>
-          Describes semantics separately from implementation, so the same capability can be
-          recognised across languages and package boundaries.
+          Describes semantics separately from implementation. Ontology uses a dotted{' '}
+          <code>term</code>, not a free-form <code>class</code>. Alleles carry their own digest,
+          language, anchors and interfaces.
         </p>
-        <CodeBlock>{`{
-  "id": "CAGENE:MIDI-SCHEDULING",
-  "name": "Adaptive MIDI Buffer",
-  "ontology": { "class": "input.midi.latency-management" },
-
-  "alleles": [
-    {
-      "id": "CAALLELE:MIDI-SCHEDULING:3",
-      "digest": "sha256:…",
-      "parents": ["CAALLELE:MIDI-SCHEDULING:2"],
-      "implementation": { "language": "typescript" },
-      "interfaces": {
-        "inputs":  ["midi-event"],
-        "outputs": ["scheduled-note-event"]
-      }
-    }
-  ],
-
-  "origin": {
-    "project": "CAPROJ:01JKEYLIT000",
-    "firstObservedCommit": "27ad90…"
-  },
-
-  "license": { "spdx": "MIT" },
-  "confidence": { "semanticBoundary": 0.94, "origin": 1.0 }
-}`}</CodeBlock>
+        <CodeBlock>{pretty(getGeneExample())}</CodeBlock>
       </DocSection>
 
       <DocSection heading="agent-dna.json" id="agent">
         <p>
           Deliberately contains portable, consented information — never model weights, hidden
           reasoning or private memory. It records what an agent <em>did, asserted, tested and
-          shared</em>, not everything it thought.
+          shared</em>, not everything it thought. Identity is <code>id</code>; the provider lives
+          on <code>identity.provider</code>.
         </p>
-        <CodeBlock>{`{
-  "agent_id": "CAAGENT:KEYLIT:7",
-  "genome_id": "CAGENOME:01JKEYLIT7H2",
-
-  "runtime": { "provider": "external",
-               "model_identity_policy": "record-when-disclosed" },
-
-  "skills": ["analyze_genome", "propose_mutation", "compare_relative"],
-  "tools":  ["mcp://codeancestry/registry", "mcp://codeancestry/sandbox"],
-
-  "inheritance_policy": {
-    "accept_direct_code": false,
-    "accept_proposals": true,
-    "trusted_relations": ["PARENT", "CHILD", "SIBLING"],
-    "require_attestation": true
-  },
-
-  "memory": {
-    "store_chain_of_thought": false,
-    "public_decision_records": ["CAMEM:191", "CAMEM:207"]
-  },
-
-  "telemetry": { "capturePrompts": false, "captureToolMetadata": true }
-}`}</CodeBlock>
+        <CodeBlock>{pretty(getAgentExample())}</CodeBlock>
         <p>
           Telemetry defaults to metadata only. Full prompt and completion capture is technically
-          possible and stays opt-in.
+          possible and stays opt-in. <code>trust.privateReasoningStored</code> is typed as
+          literally <code>false</code>, so the schema itself forbids storing it.
         </p>
+      </DocSection>
+
+      <DocSection heading="mutation.cavcf" id="cavcf">
+        <p>
+          A VCF-inspired variant call. The reference and alternate are content digests, not source
+          text — the format must not become a vehicle for embedding proprietary code. Columns
+          follow the VCF convention: <code>CHROM POS ID REF ALT QUAL FILTER INFO</code>.{' '}
+          <code>CHROM</code> is the gene; <code>POS</code> is the reference allele.
+        </p>
+        <p>
+          Generated from {mutation.id} ({mutation.shortId}), the mutation this site exists to
+          explain.
+        </p>
+        <CodeBlock>{mutationToCavcf(mutation)}</CodeBlock>
+      </DocSection>
+
+      <DocSection heading="features.jsonl" id="features">
+        <p>
+          GFF-inspired locus records. One JSON object per line maps a source path and range onto a
+          gene, an allele, an inheritance mode and the evidence that supports the annotation.
+          {` `}
+          {genome.name} currently yields {features.length} feature lines from its genome anchors.
+          Three of them:
+        </p>
+        <CodeBlock>{featurePreview}</CodeBlock>
       </DocSection>
 
       <DocSection heading="Validation">
         <p>
-          Schemas are JSON Schema 2020-12. Identifiers are content-addressed where possible, so a
-          lineage record survives a repository being renamed or moved.
+          Schemas are JSON Schema Draft 2020-12, served from{' '}
+          <code>/schemas/&lt;name&gt;/v0.1.json</code>. Identifiers are content-addressed where
+          possible, so a lineage record survives a repository being renamed or moved. The NCBI-style
+          export package on each project page bundles these files with evidence, attestations and a
+          README.
         </p>
       </DocSection>
-    </ReadingShell>
+    </DocsArticle>
   );
 }

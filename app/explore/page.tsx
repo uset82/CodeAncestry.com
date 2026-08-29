@@ -1,12 +1,14 @@
 import type { Metadata } from 'next';
-import { getExplorePayload, getOntologyTree } from '@/lib/registry/search';
 import { ExploreShell } from '@/components/registry/ExploreShell';
+import { getExplorePayload, getOntologyTree } from '@/lib/registry/search';
+import { pageMeta } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: 'Explore the registry',
   description:
     'Search project genomes, capability genes, mutations and agent DNA as separate record types, each with its own evidence and confidence.',
-};
+  path: '/explore',
+});
 
 export default function ExplorePage() {
   // The seeded registry is small enough to hand to the client whole, which keeps

@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
 import { DocSection, ReadingShell } from '@/components/registry/RegistryShell';
+import { pageMeta } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: 'Terms',
   description: 'The status of this site, what the demonstration data is, and what is not being claimed.',
-};
+  path: '/terms',
+});
 
 export default function TermsPage() {
   return (
@@ -34,10 +36,18 @@ export default function TermsPage() {
 
       <DocSection heading="Names and marks">
         <p>
-          Registering a domain does not by itself create trademark rights, and the names of the
-          genomics resources referenced in the research — NCBI, Ensembl, UCSC, UniProt, Gene
-          Ontology, Nextstrain, 23andMe, DeepMind — belong to their respective owners. They are
-          cited here as design precedents. No affiliation or endorsement is implied.
+          Registering <span className="font-mono text-[13px]">codeancestry.com</span> does not by
+          itself create trademark rights. Two questions remain open and must be cleared before
+          company-wide branding, merchandise or a fundraise: a separate 2026 project already used
+          the name “CodeAncestry”, and Ancestry is an existing brand with published trademark
+          guidelines. Neither fact decides infringement on its own. They are why professional
+          clearance is still required.
+        </p>
+        <p>
+          The names of the genomics resources referenced in the research — NCBI, Ensembl, UCSC,
+          UniProt, Gene Ontology, Nextstrain, 23andMe, DeepMind — belong to their respective
+          owners. They are cited here as design precedents. No affiliation or endorsement is
+          implied.
         </p>
       </DocSection>
 
@@ -55,6 +65,7 @@ export default function TermsPage() {
           The site is provided as-is, without warranty of any kind, and may change or disappear
           without notice.
         </p>
+        <p className="text-faint mt-6 font-mono text-[12px]">Updated 28 August 2026 · stub</p>
       </DocSection>
     </ReadingShell>
   );

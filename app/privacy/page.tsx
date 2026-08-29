@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
 import { DocSection, ReadingShell } from '@/components/registry/RegistryShell';
+import { pageMeta } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: 'Privacy',
   description: 'What this concept site collects, which is very little, and what a future product would commit to.',
-};
+  path: '/privacy',
+});
 
 export default function PrivacyPage() {
   return (
@@ -20,8 +22,8 @@ export default function PrivacyPage() {
         </p>
         <p>
           The waitlist form does not post anywhere — the confirmation it shows says so explicitly.
-          The assistant panel is the one exception: messages you type there are sent to a model
-          provider to generate a reply, and are not stored by this site.
+          The assistant panel is the one exception: messages you type there are sent to OpenRouter
+          to generate a reply, and are not stored by this site.
         </p>
       </DocSection>
 
@@ -67,6 +69,7 @@ export default function PrivacyPage() {
           This is a concept, not a company, and there is no data controller to write to yet. When
           that changes, this page changes with it.
         </p>
+        <p className="text-faint mt-6 font-mono text-[12px]">Updated 28 August 2026 · stub</p>
       </DocSection>
     </ReadingShell>
   );

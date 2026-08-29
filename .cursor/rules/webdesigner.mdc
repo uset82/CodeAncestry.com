@@ -1,0 +1,31 @@
+---
+description: Use WebDesigner skills, MCP tools, and the 6-stage pipeline for frontend and 3D work
+globs: "**/*.{tsx,jsx,css,html}"
+alwaysApply: false
+---
+
+# WebDesigner is the design authority
+
+When changing UI, layout, motion, or WebGL on this site, follow the WebDesigner production pipeline from [uset82/webdesigner](https://github.com/uset82/webdesigner) — not generic Tailwind-card aesthetics.
+
+## Pipeline
+
+1. Aesthetic intake — subject-grounded tokens, 4–6 named hex values, two type roles, one signature element
+2. Elevation — `smooth-shadow-*` stacks and `smooth-shadow-ring-*` hairlines; no double borders
+3. Motion — Friction 2D / GSAP / Three.js only when the subject needs it; `prefers-reduced-motion` always
+4. Construction — colors, type, and spacing from tokens only
+5. Anti-slop audit — `wd audit <file>`
+6. Browser QA — desktop and mobile
+
+## Skills to load
+
+Personal skills (junctions to `~/.webdesigner/skills/`): `frontend-design`, `frontend-skill`, `webdesigner-design-system`, `shadow-plugin`, `gsap-animation`, `friction-vector`, `threeui`, `img2threejs`, `ui-skills`, `animation-quality-gate`.
+
+## MCP / CLI
+
+- MCP server `webdesigner`: `wd_intake_project`, `wd_get_best_model`, `wd_add_artifact`, `wd_get_status`, `wd_save_code_file`
+- CLI: `wd pipeline "<prompt>"` and `wd audit <file>`
+
+## This product
+
+CodeAncestry is a scientific lineage registry, not a SaaS marketing kit. Ground materials in instruments of genomics (NCBI records, UCSC tracks, accession plates, a procedural helix). The helix is the signature. Do not invent a second visual system beside the semantic tokens in `app/globals.css`.
