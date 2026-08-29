@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "project": "codeancestry",
+  "defaultBranch": "main",
+  "worktreeRoot": ".",
+  "shared": {
+    "owner": "claude",
+    "reason": "Cross-cutting config touched by almost every task. One owner prevents a conflict on every merge, and these files decide how the whole team builds.",
+    "paths": [
+      "package.json",
+      "package-lock.json",
+      "next.config.ts",
+      "tsconfig.json",
+      "eslint.config.mjs",
+      ".github/workflows/**",
+      ".gitignore",
+      "agents.manifest.json"
+    ]
+  },
+  "agents": {
+    "claude": {
+      "role": "architect",
+      "branch": "main",
+      "owns": [
+        "taskplan.md",
+        "HANDOFF.md",
+        "docs/**",
+        "research/**"
+      ],
+      "title": "Claude — design & product lead",
+      "color": "orange",
+      "icon": "◈",
+      "worktree": "."
+    },
+    "cursor": {
+      "role": "builder",
+      "branch": "main",
+      "owns": [
+        "app/**",
+        "components/**",
+        "lib/**",
+        "data/**",
+        "scripts/**"
+      ],
+      "title": "Cursor — primary engineering & integration",
+      "color": "cyan",
+      "icon": "▶",
+      "worktree": "."
+    },
+    "grok": {
+      "role": "builder",
+      "branch": "main",
+      "owns": [
+        "prototypes/**"
+      ],
+      "title": "Grok — bounded prototypes, integrated by Cursor",
+      "color": "violet",
+      "icon": "◉",
+      "worktree": "."
+    },
+    "antigravity": {
+      "role": "builder",
+      "branch": "main",
+      "owns": [
+        "public/**"
+      ],
+      "title": "Antigravity — assets (lane provisional, confirm with Carlos)",
+      "color": "purple",
+      "icon": "○",
+      "worktree": "."
+    }
+  },
+  "everyoneMayWrite": [
+    "claims/${agent}.md",
+    ".captures/**"
+  ],
+  "checks": {
+    "verify": "npm run verify",
+    "staleAfterHours": 12
+  }
+}
