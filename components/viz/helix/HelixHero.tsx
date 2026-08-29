@@ -244,18 +244,9 @@ function AnimatedHero({ tier }: { tier: 'low' | 'high' }) {
       className="hero-dawn relative -mt-[74px] h-[560vh]"
     >
       <div className="sticky top-0 flex h-screen flex-col overflow-hidden">
-        {/* The aperture.
-            Lifted out of the centred `shell-wide` container so it can bleed off
-            the right and vertical edges of the viewport. Once the scene owns an
-            opaque, lightening ground, a canvas boxed inside the content column
-            would read as a pale rectangle pasted onto a dark page — the same
-            failure as the grey shadow quad. Running it to three edges makes it
-            a window instead: a dark room with a lit world visible through it.
-
-            No CSS glow behind it either. A blurred gradient orb sitting *behind*
-            a transparent canvas cannot light anything in it; the atmosphere
-            belongs to the scene, where it can wrap the specimen. `StudioRig`
-            owns the background and the fog. */}
+        {/* Full-bleed canvas. The void is #07090d in CSS, the GL clear and
+            the scene background — if any one of those is bone, the close beat
+            reads as a cream slab down the right side of the page. */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0"
@@ -266,24 +257,23 @@ function AnimatedHero({ tier }: { tier: 'low' | 'high' }) {
             camera={{ position: [0, 2.2, 8.4], fov: 42, near: 0.1, far: 100 }}
             gl={{
               antialias: tier === 'high',
-              alpha: true,
+              alpha: false,
               powerPreference: 'high-performance',
               toneMapping: ACESFilmicToneMapping,
               outputColorSpace: SRGBColorSpace,
             }}
             onCreated={({ gl }) => {
               gl.toneMappingExposure = 1.16;
+              gl.setClearColor('#07090d', 1);
             }}
-            style={{ position: 'absolute', inset: 0 }}
+            style={{ position: 'absolute', inset: 0, background: '#07090d' }}
           >
             <HelixScene state={state} tier={tier} />
           </Canvas>
         </div>
 
         {/* Narrow screens have no second column, so the copy sits on top of the
-            aperture. As the scene lights up, that would put body text on bone;
-            this veil deepens with the same `--daylight` to hold it back. Never
-            shown on `lg`, where the two do not overlap. */}
+            canvas. The veil holds the type over the specimen. Unused on `lg`. */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0"

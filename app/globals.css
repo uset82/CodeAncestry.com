@@ -50,14 +50,8 @@
   --color-rose-dim: #c4425c;
 
   /* --- daylight ------------------------------------------------------- */
-  /* The specimen's world dawns as the family grows: by the closing beat the
-     helix stands on a warm lit ground instead of fading into fog. That ground
-     lives in the WebGL scene (`studio.tsx` owns the colour), not here — the
-     page only warms slightly alongside it. See `hero-dawn` below for why.
-
-     Warm bone rather than a neutral white: against pure white the specimen's
-     own highlights stop reading as material and start reading as clipping. */
-  --color-dawn-ground: #e7e3d8;
+  /* Lighting intensity only. The ground is #07090d at every beat — a bone
+     token here is how the close frame became a cream slab. */
 
   /* --- radii ---------------------------------------------------------- */
   --radius-xs: 6px;
@@ -295,13 +289,10 @@
      under 1.3:1 across most of the middle. No ordering of the two ramps avoids
      it, because the ink has to pass through the ground to get to the far side.
 
-     So the dawn happens where the payoff is: inside the canvas, where lighting
-     a warm ground is what finally gives the specimen something to reflect. The
-     page warms from the void toward charcoal, enough to feel the change, never
-     enough to threaten the copy — a dark room with a lit window in it. */
+   Lighting rises on the specimen. The page and the canvas stay on the void. */
   --color-line: color-mix(in oklab, #202937, #2a2c22 var(--mix));
 
-  background-color: color-mix(in oklab, #07090d, #0f110b var(--mix));
+  background-color: #07090d;
 }
 
 @utility hairline {

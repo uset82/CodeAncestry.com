@@ -151,17 +151,17 @@ export { backboneMaterial };
  */
 function SpecimenEnvironment() {
   return (
-    <Environment resolution={256}>
+    <Environment resolution={256} background={false}>
       {/* Key: a wide soft ceiling panel, the long highlight down each strand. */}
       <Lightformer
         form="rect"
-        intensity={3.4}
-        color="#fffdf6"
+        intensity={2.6}
+        color="#c5d4dc"
         position={[0, 7, -3]}
         rotation={[Math.PI / 2, 0, 0]}
         scale={[14, 9, 1]}
       />
-      {/* Cold rim from behind-left: separates the strands from the ground. */}
+      {/* Cold rim from behind-left: separates the strands from the void. */}
       <Lightformer
         form="rect"
         intensity={1.3}
@@ -170,11 +170,12 @@ function SpecimenEnvironment() {
         rotation={[0, Math.PI / 2, 0]}
         scale={[9, 10, 1]}
       />
-      {/* The dawn itself, low and warm on the right, where the family ends. */}
+      {/* Fill from the family side. Kept cool — a warm panel here is what
+          painted the close beat cream. */}
       <Lightformer
         form="rect"
-        intensity={2.1}
-        color="#ffe6bd"
+        intensity={1.4}
+        color="#3aa9c4"
         position={[6, -5, 2]}
         rotation={[0, -Math.PI / 2, 0]}
         scale={[9, 12, 1]}
@@ -184,24 +185,15 @@ function SpecimenEnvironment() {
 }
 
 /**
- * Background and fog, both driven by `daylight()`.
- *
- * The fog colour has to track the background exactly or the horizon tears —
- * distant strands fade toward one colour while the empty canvas behind them is
- * another. Density drops as the world lights up: fog is what buried the closing
- * frame, and a lit scene should not be hazier than an unlit one.
+ * Background and fog stay on the void. `daylight()` only thins the fog and
+ * lifts environment intensity — it must not move the ground colour.
  */
-const NIGHT_GROUND = new Color('#07090d');
-/* Not bone. A light ground made the specimen read as material, but it turned
-   the closing frame white and cut the page in half along the canvas edge. The
-   ground stays in the dark and warms by a few percent; what actually lights the
-   specimen is the environment and the key, which keep rising. */
-const DAWN_GROUND = new Color('#12140e');
+const VOID = new Color('#07090d');
 
 function GroundRig({ state }: { state: React.RefObject<BeatState> }) {
   const { scene } = useThree();
-  const fog = useMemo(() => new FogExp2(NIGHT_GROUND.getHex(), 0.022), []);
-  const ground = useMemo(() => NIGHT_GROUND.clone(), []);
+  const fog = useMemo(() => new FogExp2(VOID.getHex(), 0.022), []);
+  const ground = useMemo(() => VOID.clone(), []);
 
   useLayoutEffect(() => {
     /* eslint-disable react-hooks/immutability -- `scene` comes from useThree(),
@@ -222,15 +214,15 @@ function GroundRig({ state }: { state: React.RefObject<BeatState> }) {
     if (!current) return;
     const day = daylight(current.progress);
 
-    ground.copy(NIGHT_GROUND).lerp(DAWN_GROUND, day);
-    fog.color.copy(ground);
+    ground.copy(VOID);
+    fog.color.copy(VOID);
     /* eslint-disable react-hooks/immutability -- driving a three.js scene by
        mutating it every frame is what `useFrame` is for; the rule sees a value
        that came from `useMemo`/`useThree` and cannot tell that the whole point
        of these objects is to be written to. Both are torn down in the layout
        effect above. */
     fog.density = 0.022 - day * 0.0125;
-    scene.environmentIntensity = 0.34 + day * 1.05;
+    scene.environmentIntensity = 0.34 + day * 0.32;
     /* eslint-enable react-hooks/immutability */
   });
 
@@ -268,12 +260,10 @@ export function StudioRig({
        world with a brighter lamp in it: it fills the shadow side. Its ground
        colour has to follow the actual ground or the bounce is a lie. */
     if (sky.current) {
-      sky.current.intensity = 0.7 + day * 1.3;
-      sky.current.groundColor.copy(NIGHT_GROUND).lerp(DAWN_GROUND, day);
+      sky.current.intensity = 0.7 + day * 0.45;
+      sky.current.groundColor.copy(VOID);
     }
-    /* The cold rim earns its keep against a dark ground and only muddies a
-       light one, so it retreats as the dawn arrives. */
-    if (rim.current) rim.current.intensity = 0.7 - day * 0.42;
+    if (rim.current) rim.current.intensity = 0.7 - day * 0.18;
   });
 
   return (

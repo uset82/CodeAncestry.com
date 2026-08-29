@@ -71,9 +71,9 @@ Commits `c720f36` through `067fbfb`. Verified on rendered frames unless noted.
 - Branch junctions are bridged by a node of radius 0.217, covering the
   0.41-unit needle zone where parent and child both taper to a point.
 - The canvas is full-bleed; the copy sits on a gradient, not a panel.
-- **The ground is dark and stays dark.** A light ground was tried and reverted —
-  it turned the closing frame bone and split the page along a hard seam. Do not
-  bring it back.
+- **The ground is `#07090d` at every beat.** A bone token (`#e7e3d8`) and a
+  warm Lightformer (`#ffe6bd`) turned the closing frame into a cream slab
+  down the right side. Do not bring either back.
 - Fonts: Instrument Serif (display), Newsreader (reading), IBM Plex Mono
   (technical). Inter is gone and stays gone.
 

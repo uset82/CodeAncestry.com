@@ -585,11 +585,8 @@ function LocusLabels({ state }: Pick<Props, 'state'>) {
             >
               <button
                 type="button"
-                /* Opaque, not a translucent blurred chip. These labels sit on
-                   top of a scene whose ground now travels from near-black to
-                   bone, and a 70%-void plate reading against both is not a
-                   contrast anyone can guarantee. A solid plate is legible over
-                   whatever is behind it. */
+                /* Opaque void plate. The scene stays dark; a translucent chip
+                   disappeared into the tubes. */
                 className={`hover:border-current focus-visible:border-current bg-void inline-flex items-center gap-1.5 rounded-xs border px-1.5 py-[3px] font-mono text-[9px] tracking-[0.14em] uppercase ${
                   anchor.label.mutated
                     ? 'border-violet/50 text-violet'
