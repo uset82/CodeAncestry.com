@@ -22,7 +22,7 @@
  */
 
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -39,7 +39,11 @@ const RAW = process.argv[2] ?? '/';
 const targetUrl = new URL(RAW, ORIGIN);
 const PATHNAME = targetUrl.pathname;
 const OUT = process.argv[3] ?? '.captures';
-const PORT = 9222;
+/* Port 0 lets the OS pick a free one; Chrome writes it to DevToolsActivePort
+   inside the profile. A fixed 9222 meant a second run attached to a stale
+   browser from a first run and hung forever, which has already cost a debugging
+   session. */
+const PROFILE = mkdtempSync(join(tmpdir(), 'capture-'));
 const WIDTH = Number(process.env.CAPTURE_WIDTH ?? 1600);
 const HEIGHT = Number(process.env.CAPTURE_HEIGHT ?? 900);
 const REDUCED = process.env.CAPTURE_REDUCED_MOTION === '1';
@@ -65,8 +69,8 @@ const chrome = spawn(
   chromePath,
   [
     '--headless=new',
-    `--remote-debugging-port=${PORT}`,
-    `--user-data-dir=${mkdtempSync(join(tmpdir(), 'capture-'))}`,
+    '--remote-debugging-port=0',
+    `--user-data-dir=${PROFILE}`,
     `--window-size=${WIDTH},${HEIGHT}`,
     '--hide-scrollbars',
     /* Software WebGL. Without these three there is no GL context at all in
@@ -83,11 +87,25 @@ const chrome = spawn(
   { stdio: 'ignore' },
 );
 
+let port;
+for (let i = 0; i < 60 && !port; i += 1) {
+  await sleep(300);
+  try {
+    port = parseInt(readFileSync(join(PROFILE, 'DevToolsActivePort'), 'utf8'), 10) || 0;
+  } catch {
+    /* Chrome has not written it yet */
+  }
+}
+if (!port) {
+  chrome.kill();
+  throw new Error('Chrome never reported a debugging port');
+}
+
 let target;
 for (let i = 0; i < 60 && !target?.webSocketDebuggerUrl; i += 1) {
-  await sleep(400);
+  await sleep(300);
   try {
-    const list = await fetch(`http://127.0.0.1:${PORT}/json/list`).then((r) => r.json());
+    const list = await fetch(`http://127.0.0.1:${port}/json/list`).then((r) => r.json());
     target = list.find((t) => t.type === 'page');
   } catch {
     /* not up yet */

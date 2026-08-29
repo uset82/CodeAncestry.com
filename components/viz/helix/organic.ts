@@ -140,7 +140,11 @@ function patchColorShaders(shader: OrganicShader) {
           ladder share one frontier — object-space position made them disagree. */
        float endTaper = smoothstep(0.0, uStartTaper, vPath) * (1.0 - smoothstep(0.965, 1.0, vPath));
        float cover = helixCoverage(axisPoint, uGrow, uSeed, vPath);
-       float growTaper = mix(0.55, 1.0, smoothstep(0.0, 0.10, cover));
+       /* Must reach 0 exactly where the fragment stage discards, or the cut
+          slices a tube that is still wide open and the terminus becomes a
+          ring again — the defect the taper exists to prevent. A floor of
+          0.55 left every growing tip 55% wide at the moment it was cut. */
+       float growTaper = smoothstep(0.0, 0.05, cover);
        transformed = axisPoint + (transformed - axisPoint) * min(endTaper, growTaper);
 
        transformed = mix(transformed, axisPoint, uFlatten * 0.42);`
@@ -201,7 +205,11 @@ function patchDepthShaders(shader: OrganicShader) {
        vAxis = axisPoint;
        float endTaper = smoothstep(0.0, uStartTaper, vPath) * (1.0 - smoothstep(0.965, 1.0, vPath));
        float cover = helixCoverage(axisPoint, uGrow, uSeed, vPath);
-       float growTaper = mix(0.55, 1.0, smoothstep(0.0, 0.10, cover));
+       /* Must reach 0 exactly where the fragment stage discards, or the cut
+          slices a tube that is still wide open and the terminus becomes a
+          ring again — the defect the taper exists to prevent. A floor of
+          0.55 left every growing tip 55% wide at the moment it was cut. */
+       float growTaper = smoothstep(0.0, 0.05, cover);
        transformed = axisPoint + (transformed - axisPoint) * min(endTaper, growTaper);
        transformed = mix(transformed, axisPoint, uFlatten * 0.42);`,
     );
