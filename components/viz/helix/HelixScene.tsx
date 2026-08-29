@@ -47,6 +47,11 @@ import {
   type HelixMaterials,
 } from './studio';
 
+/* Scratch for the per-mesh axis sync below. Safe to share: onBeforeRender runs
+   synchronously and the values are consumed before the next call. */
+const AXIS_A = new Vector3();
+const AXIS_B = new Vector3();
+
 const RUNGS_PER_STRAND = 24;
 const UPSTREAM_PULSES = 3;
 
@@ -191,11 +196,20 @@ function Backbones({ state, tier, materials, pointer }: Props) {
             onBeforeRender={() => {
               const current = state.current;
               if (!current) return;
+              /* The axis handed to the shader has to be the SAME axis every
+                 other element collapses onto. `axisPointAtInto` additionally
+                 squashes depth by `1 - flatten * 0.85`; passing the raw
+                 start/end here meant the tubes collapsed toward a line at full
+                 Z while the rungs, loci and labels collapsed toward a line at
+                 z * 0.388 — so the dots visibly came off their strands on the
+                 closing beat. */
+              axisPointAtInto(strand.spec, 0, current.flatten, AXIS_A);
+              axisPointAtInto(strand.spec, 1, current.flatten, AXIS_B);
               syncOrganic(strand.material, {
                 grow: strandEased(current.generations, strand.spec.generation),
                 flatten: current.flatten,
-                start: strand.spec.start,
-                end: strand.spec.end,
+                start: AXIS_A,
+                end: AXIS_B,
               });
             }}
           />
@@ -392,7 +406,12 @@ function Loci({ state, tier, materials }: Props) {
 
       const pulse = 1 + Math.sin(time * 2 + slot.seed) * (slot.kind === 'junction' ? 0.06 : 0.16);
       const emphasis = slot.mutated ? 1.7 + current.upstream * 0.6 : slot.kind === 'junction' ? 1.35 : 1;
-      const size = (slot.kind === 'junction' ? 0.072 : 0.055) * pulse * emphasis * front;
+      /* Loci grow as the helix flattens. The closing beat collapses the
+         structure toward a line, which sheds visual mass exactly where the
+         story peaks; the nodes carrying that mass have to compensate. */
+      const bulk = 1 + current.flatten * 0.5;
+      const size =
+        (slot.kind === 'junction' ? 0.072 : 0.055) * pulse * emphasis * front * bulk;
       scale.setScalar(size);
 
       matrix.compose(position, quaternion, scale);

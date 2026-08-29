@@ -218,12 +218,13 @@ export function StudioRig({
         decay={2}
       />
       <pointLight position={[-4.4, -6.6, 0.5]} color="#a985ff" intensity={1.8} distance={8} decay={2} />
-      {shadows && (
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -10.7, 0]} receiveShadow>
-          <planeGeometry args={[36, 36]} />
-          <meshStandardMaterial color="#07090d" roughness={1} metalness={0} />
-        </mesh>
-      )}
+      {/* No ground plane. A 36x36 receiver used to sit at y = -10.7, but a
+          roughness-1 up-facing quad integrates the whole RoomEnvironment IBL at
+          environmentIntensity 0.55, plus the hemisphere light, lifted again by
+          ACES at exposure 1.08 — so it read as a grey slab, and the camera
+          descending to y = -4.2 brought it into frame as a rectangle floating
+          in the void. The strands shadow each other, which is what actually
+          sells the depth; nothing here needs a floor to catch them. */}
     </>
   );
 }

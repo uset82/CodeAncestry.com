@@ -73,6 +73,7 @@ function patchColorShaders(shader: OrganicShader) {
        uniform float uTime;
        uniform float uFlatten;
        uniform float uDrift;
+       uniform float uGrow;
        uniform vec2 uPointer;
        uniform vec3 uStart;
        uniform vec3 uEnd;
@@ -93,6 +94,25 @@ function patchColorShaders(shader: OrganicShader) {
        transformed.x += uPointer.x * vPath * 0.16 * live;
        transformed.y += uPointer.y * vPath * 0.07 * live;
        vec3 axisPoint = mix(uStart, uEnd, vPath);
+
+       /* Close the tube by pulling its offset from the axis to zero at both
+          ends and at the growth front.
+
+          TubeGeometry never emits end caps, so every terminus was an open ring
+          with the unlit interior showing through — the "cut chain". A point has
+          no hole, so tapering the offset caps it with no extra geometry, and a
+          child now converges exactly onto its parent's end point instead of
+          crossing it on a circle of radius 0.38.
+
+          The growth taper matters just as much: the fragment discard below cuts
+          a flat cross-section, so without this the advancing tip was itself a
+          sliced ring. Collapsing the geometry as it approaches uGrow means the
+          tip arrives as a point and the discard only removes what is already
+          degenerate. */
+       float endTaper = smoothstep(0.0, 0.035, vPath) * (1.0 - smoothstep(0.965, 1.0, vPath));
+       float growTaper = 1.0 - smoothstep(uGrow - 0.045, uGrow, vPath);
+       transformed = axisPoint + (transformed - axisPoint) * min(endTaper, growTaper);
+
        transformed = mix(transformed, axisPoint, uFlatten * 0.42);`
     );
 
@@ -121,16 +141,29 @@ function patchColorShaders(shader: OrganicShader) {
 }
 
 function patchDepthShaders(shader: OrganicShader) {
+  /* The depth pass has to deform exactly like the colour pass, or the shadow is
+     cast by a shape that is not on screen — an untapered tube with a full-radius
+     ring at each end. Flatten and taper are reproduced here; the noise drift is
+     deliberately not, since it is sub-millimetre and shadows do not resolve it. */
   shader.vertexShader = shader.vertexShader
     .replace(
       '#include <common>',
       `#include <common>
+       uniform float uFlatten;
+       uniform float uGrow;
+       uniform vec3 uStart;
+       uniform vec3 uEnd;
        varying float vPath;`,
     )
     .replace(
       '#include <begin_vertex>',
       `#include <begin_vertex>
-       vPath = uv.x;`,
+       vPath = uv.x;
+       vec3 axisPoint = mix(uStart, uEnd, vPath);
+       float endTaper = smoothstep(0.0, 0.035, vPath) * (1.0 - smoothstep(0.965, 1.0, vPath));
+       float growTaper = 1.0 - smoothstep(uGrow - 0.045, uGrow, vPath);
+       transformed = axisPoint + (transformed - axisPoint) * min(endTaper, growTaper);
+       transformed = mix(transformed, axisPoint, uFlatten * 0.42);`,
     );
 
   shader.fragmentShader = shader.fragmentShader
@@ -162,6 +195,9 @@ export function patchGrowingMaterial(material: MeshStandardMaterial, role: strin
   depth.onBeforeCompile = (shader) => {
     const next = shader as unknown as OrganicShader;
     next.uniforms.uGrow = { value: 1 };
+    next.uniforms.uFlatten = { value: 0 };
+    next.uniforms.uStart = { value: new Vector3() };
+    next.uniforms.uEnd = { value: new Vector3() };
     patchDepthShaders(next);
     depth.userData.shader = next;
   };
@@ -195,7 +231,12 @@ export function syncOrganic(
     (shader.uniforms.uEnd?.value as Vector3 | undefined)?.copy(values.end);
   }
   const depth = depthMaterialOf(material)?.userData.shader as OrganicShader | undefined;
-  if (depth) writeUniform(depth, 'uGrow', values.grow);
+  if (depth) {
+    writeUniform(depth, 'uGrow', values.grow);
+    writeUniform(depth, 'uFlatten', values.flatten);
+    (depth.uniforms.uStart?.value as Vector3 | undefined)?.copy(values.start);
+    (depth.uniforms.uEnd?.value as Vector3 | undefined)?.copy(values.end);
+  }
 }
 
 export function climaxEmissive(generation: number, origin: boolean, climax: number): number {

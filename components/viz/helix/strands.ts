@@ -251,7 +251,12 @@ export function strandEased(generations: number, generation: number): number {
  * the tip, 1 = the tip has moved on and this detail should be fully on.
  */
 export function growthAlong(eased: number, t: number, width = GROW_WIDTH): number {
-  return Math.min(1, Math.max(0, (eased - t) / width));
+  /* The front has to travel slightly PAST the end of the strand, or nothing at
+     t = 1 ever reaches full size: `(1 - 1) / width` is 0, so every strand's
+     final junction node was scaled to zero on every frame, and the last rung
+     (t = 0.979) sat permanently at 26 % of its length — the chain visibly
+     thinned out right where it was already being cut. */
+  return Math.min(1, Math.max(0, (eased * (1 + width) - t) / width));
 }
 
 /** Centre-line position at parameter t. Writes into `target` — no allocation. */
