@@ -56,3 +56,6 @@ analyze/
 
 .vercel
 .env*
+
+# Local screenshot captures from scripts/capture.mjs
+.captures/
