@@ -63,6 +63,7 @@ function injectGrowUniforms(shader: OrganicShader, tip: Color) {
   shader.uniforms.uPointer = { value: new Vector2() };
   shader.uniforms.uStart = { value: new Vector3() };
   shader.uniforms.uEnd = { value: new Vector3() };
+  shader.uniforms.uStartTaper = { value: 0.035 };
 }
 
 function patchColorShaders(shader: OrganicShader) {
@@ -77,6 +78,7 @@ function patchColorShaders(shader: OrganicShader) {
        uniform vec2 uPointer;
        uniform vec3 uStart;
        uniform vec3 uEnd;
+       uniform float uStartTaper;
        varying float vPath;
        ${FBM}`,
     )
@@ -102,14 +104,15 @@ function patchColorShaders(shader: OrganicShader) {
           with the unlit interior showing through — the "cut chain". A point has
           no hole, so tapering the offset caps it with no extra geometry, and a
           child now converges exactly onto its parent's end point instead of
-          crossing it on a circle of radius 0.38.
+          crossing it on a circle of radius 0.38. Children use a longer
+          start window so they travel along their own axis before blooming.
 
           The growth taper matters just as much: the fragment discard below cuts
           a flat cross-section, so without this the advancing tip was itself a
           sliced ring. Collapsing the geometry as it approaches uGrow means the
           tip arrives as a point and the discard only removes what is already
           degenerate. */
-       float endTaper = smoothstep(0.0, 0.035, vPath) * (1.0 - smoothstep(0.965, 1.0, vPath));
+       float endTaper = smoothstep(0.0, uStartTaper, vPath) * (1.0 - smoothstep(0.965, 1.0, vPath));
        float growTaper = 1.0 - smoothstep(uGrow - 0.045, uGrow, vPath);
        transformed = axisPoint + (transformed - axisPoint) * min(endTaper, growTaper);
 
@@ -153,6 +156,7 @@ function patchDepthShaders(shader: OrganicShader) {
        uniform float uGrow;
        uniform vec3 uStart;
        uniform vec3 uEnd;
+       uniform float uStartTaper;
        varying float vPath;`,
     )
     .replace(
@@ -160,7 +164,7 @@ function patchDepthShaders(shader: OrganicShader) {
       `#include <begin_vertex>
        vPath = uv.x;
        vec3 axisPoint = mix(uStart, uEnd, vPath);
-       float endTaper = smoothstep(0.0, 0.035, vPath) * (1.0 - smoothstep(0.965, 1.0, vPath));
+       float endTaper = smoothstep(0.0, uStartTaper, vPath) * (1.0 - smoothstep(0.965, 1.0, vPath));
        float growTaper = 1.0 - smoothstep(uGrow - 0.045, uGrow, vPath);
        transformed = axisPoint + (transformed - axisPoint) * min(endTaper, growTaper);
        transformed = mix(transformed, axisPoint, uFlatten * 0.42);`,
@@ -198,6 +202,7 @@ export function patchGrowingMaterial(material: MeshStandardMaterial, role: strin
     next.uniforms.uFlatten = { value: 0 };
     next.uniforms.uStart = { value: new Vector3() };
     next.uniforms.uEnd = { value: new Vector3() };
+    next.uniforms.uStartTaper = { value: 0.035 };
     patchDepthShaders(next);
     depth.userData.shader = next;
   };
@@ -221,12 +226,14 @@ export function syncOrganic(
     flatten: number;
     start: Vector3;
     end: Vector3;
+    startTaper: number;
   },
 ) {
   const shader = material.userData.shader as OrganicShader | undefined;
   if (shader) {
     writeUniform(shader, 'uGrow', values.grow);
     writeUniform(shader, 'uFlatten', values.flatten);
+    writeUniform(shader, 'uStartTaper', values.startTaper);
     (shader.uniforms.uStart?.value as Vector3 | undefined)?.copy(values.start);
     (shader.uniforms.uEnd?.value as Vector3 | undefined)?.copy(values.end);
   }
@@ -234,6 +241,7 @@ export function syncOrganic(
   if (depth) {
     writeUniform(depth, 'uGrow', values.grow);
     writeUniform(depth, 'uFlatten', values.flatten);
+    writeUniform(depth, 'uStartTaper', values.startTaper);
     (depth.uniforms.uStart?.value as Vector3 | undefined)?.copy(values.start);
     (depth.uniforms.uEnd?.value as Vector3 | undefined)?.copy(values.end);
   }

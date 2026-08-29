@@ -21,6 +21,13 @@ export type StrandSpec = {
   parentB?: string;
   /** The one strand that authors the upstream mutation. */
   origin?: boolean;
+  /**
+   * World axis used to seed the helix frame. Locked per strand so a 0.001
+   * nudge of `end` cannot flip the coil 90° — `studio` sat at |dir.y| = 0.9506,
+   * one ten-thousandth over a 0.95 threshold, and used +X while its two
+   * siblings used +Y.
+   */
+  frameAxis: 'x' | 'y';
 };
 
 /* Every child starts exactly on its parent's `end`. Generation 1 used to start
@@ -37,6 +44,7 @@ export const STRANDS: StrandSpec[] = [
     turns: 2.4,
     radius: 0.46,
     loci: 6,
+    frameAxis: 'x',
   },
   {
     id: 'kids',
@@ -48,6 +56,7 @@ export const STRANDS: StrandSpec[] = [
     radius: 0.38,
     loci: 5,
     parent: 'keylit',
+    frameAxis: 'y',
   },
   {
     id: 'studio',
@@ -59,6 +68,7 @@ export const STRANDS: StrandSpec[] = [
     radius: 0.38,
     loci: 5,
     parent: 'keylit',
+    frameAxis: 'y',
   },
   {
     id: 'accessible',
@@ -70,6 +80,7 @@ export const STRANDS: StrandSpec[] = [
     radius: 0.38,
     loci: 5,
     parent: 'keylit',
+    frameAxis: 'y',
   },
   {
     id: 'kidsEs',
@@ -82,6 +93,7 @@ export const STRANDS: StrandSpec[] = [
     loci: 4,
     parent: 'kids',
     origin: true,
+    frameAxis: 'y',
   },
   {
     id: 'classroom',
@@ -93,6 +105,7 @@ export const STRANDS: StrandSpec[] = [
     radius: 0.32,
     loci: 4,
     parent: 'kids',
+    frameAxis: 'y',
   },
   {
     id: 'producer',
@@ -104,6 +117,7 @@ export const STRANDS: StrandSpec[] = [
     radius: 0.32,
     loci: 4,
     parent: 'studio',
+    frameAxis: 'y',
   },
   {
     id: 'tutor',
@@ -116,6 +130,7 @@ export const STRANDS: StrandSpec[] = [
     loci: 3,
     parent: 'kidsEs',
     parentB: 'producer',
+    frameAxis: 'y',
   },
 ];
 
@@ -215,10 +230,7 @@ export function sampleBackbone(
   const axis = new Vector3().subVectors(spec.end, spec.start);
   const length = axis.length();
   const dir = axis.clone().normalize();
-
-  const reference = Math.abs(dir.y) > 0.95 ? new Vector3(1, 0, 0) : new Vector3(0, 1, 0);
-  const u = new Vector3().crossVectors(dir, reference).normalize();
-  const v = new Vector3().crossVectors(dir, u).normalize();
+  const { u, v } = helixFrame(dir, spec.frameAxis);
 
   const radius = spec.radius * (1 - flatten);
   const points: Vector3[] = [];
@@ -239,6 +251,37 @@ export function sampleBackbone(
 }
 
 const GROW_WIDTH = 0.08;
+
+/** Must match the GLSL `endTaper` / `growTaper` windows in `organic.ts`. */
+export const TUBE_END_TAPER = 0.035;
+/** Children stay on their own axis for this first fraction, then bloom. */
+export const TUBE_CHILD_START = 0.1;
+export const TUBE_GROW_TAPER = 0.045;
+
+export function startTaperWidth(generation: number): number {
+  return generation === 0 ? TUBE_END_TAPER : TUBE_CHILD_START;
+}
+
+/** Keep rungs off the needle zone. Children need a longer inset. */
+export function rungInset(generation: number): number {
+  return startTaperWidth(generation) + 0.02;
+}
+
+export function smoothstep(edge0: number, edge1: number, x: number): number {
+  if (edge0 === edge1) return x < edge0 ? 0 : 1;
+  const t = Math.min(1, Math.max(0, (x - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
+}
+
+/**
+ * How much of the tube's radius remains at parameter `t`. Same profile the
+ * vertex shader uses: collapse to a point at both ends and at the growth front.
+ */
+export function pathTaper(t: number, grow = 1, startWidth = TUBE_END_TAPER): number {
+  const end = smoothstep(0, startWidth, t) * (1 - smoothstep(1 - TUBE_END_TAPER, 1, t));
+  const front = 1 - smoothstep(grow - TUBE_GROW_TAPER, grow, t);
+  return Math.min(end, front);
+}
 
 /** Smoothstep the generation counter so a strand extends instead of popping. */
 export function strandEased(generations: number, generation: number): number {
@@ -306,12 +349,17 @@ export type StrandBasis = {
   v: Vector3;
 };
 
+function helixFrame(dir: Vector3, frameAxis: StrandSpec['frameAxis']): Pick<StrandBasis, 'u' | 'v'> {
+  const reference = frameAxis === 'x' ? new Vector3(1, 0, 0) : new Vector3(0, 1, 0);
+  const u = new Vector3().crossVectors(dir, reference).normalize();
+  const v = new Vector3().crossVectors(dir, u).normalize();
+  return { u, v };
+}
+
 /** Orthonormal frame for a strand, shared by the rung and locus placement. */
 export function strandBasis(spec: StrandSpec): StrandBasis {
   const dir = new Vector3().subVectors(spec.end, spec.start).normalize();
-  const reference = Math.abs(dir.y) > 0.95 ? new Vector3(1, 0, 0) : new Vector3(0, 1, 0);
-  const u = new Vector3().crossVectors(dir, reference).normalize();
-  const v = new Vector3().crossVectors(dir, u).normalize();
+  const { u, v } = helixFrame(dir, spec.frameAxis);
   return { dir, u, v };
 }
 

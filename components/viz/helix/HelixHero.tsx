@@ -28,11 +28,15 @@ function HeroCopy({ children }: { children?: React.ReactNode }) {
   useGSAP(
     () => {
       if (reducedMotion || !copy.current) return;
-      gsap.fromTo(
-        copy.current.children,
-        { opacity: 0, y: 14 },
-        { opacity: 1, y: 0, duration: 0.65, stagger: 0.07, ease: 'power3.out' },
-      );
+      const node = copy.current;
+      const id = requestAnimationFrame(() => {
+        gsap.fromTo(
+          node.children,
+          { opacity: 0, y: 14 },
+          { opacity: 1, y: 0, duration: 0.65, stagger: 0.07, ease: 'power3.out' },
+        );
+      });
+      return () => cancelAnimationFrame(id);
     },
     { scope: copy, dependencies: [reducedMotion] },
   );
@@ -153,7 +157,11 @@ function BeatBody({ index, headline, outlined, body }: (typeof BEATS)[number]) {
  */
 function StaticHero() {
   return (
-    <section aria-labelledby="hero-title" className="border-line relative -mt-[74px] border-b">
+    <section
+      aria-labelledby="hero-title"
+      data-hero="static"
+      className="border-line relative -mt-[74px] border-b"
+    >
       <div
         aria-hidden="true"
         className="pointer-events-none absolute top-0 right-0 hidden h-full w-[46%] place-items-center opacity-90 lg:grid"
@@ -222,6 +230,7 @@ function AnimatedHero({ tier }: { tier: 'low' | 'high' }) {
     <section
       ref={track}
       aria-labelledby="hero-title"
+      data-hero="animated"
       /* Five beats of scroll runway, plus one viewport for the closing frame.
          Pulled under the 74px sticky header so the pinned frame is full-height
          from the first paint. */
@@ -294,6 +303,7 @@ function AnimatedHero({ tier }: { tier: 'low' | 'high' }) {
                     className={cn(
                       'block h-[3px] rounded-full transition-all duration-500',
                       i <= active ? 'bg-acid w-9' : 'bg-line w-5',
+                      i === active && i === BEATS.length - 1 && 'shadow-[0_0_14px_var(--color-acid)]',
                     )}
                   >
                     <span className="sr-only">

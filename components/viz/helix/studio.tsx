@@ -12,7 +12,7 @@ import {
   type PointLight,
 } from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import type { BeatState } from './beats';
+import { climaxAmount, type BeatState } from './beats';
 import { patchGrowingMaterial } from './organic';
 
 /** Token-locked specimen palette. Same hexes as `app/globals.css`. */
@@ -183,7 +183,7 @@ export function StudioRig({
   useFrame(() => {
     const current = state.current;
     if (!current) return;
-    const climax = Math.max(current.upstream, Math.max(0, (current.progress - 0.62) / 0.38));
+    const climax = climaxAmount(current);
     if (key.current) key.current.intensity = 1.55 + climax * 1.35;
     if (acid.current) acid.current.intensity = 2.4 + climax * 4.4;
   });
@@ -222,7 +222,7 @@ export function StudioRig({
           roughness-1 up-facing quad integrates the whole RoomEnvironment IBL at
           environmentIntensity 0.55, plus the hemisphere light, lifted again by
           ACES at exposure 1.08 — so it read as a grey slab, and the camera
-          descending to y = -4.2 brought it into frame as a rectangle floating
+          descending through the last beat brought it into frame as a rectangle floating
           in the void. The strands shadow each other, which is what actually
           sells the depth; nothing here needs a floor to catch them. */}
     </>

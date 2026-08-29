@@ -117,3 +117,30 @@ export function beatStateAt(progress: number) {
 }
 
 export type BeatState = ReturnType<typeof beatStateAt>;
+
+const LAST_BEAT_AT = BEATS[BEATS.length - 1]!.at;
+
+/**
+ * Camera follows the five beats, then holds. Progress after the last beat is
+ * a written hold, not more descent — that extra dive is what used to dim the
+ * closing frame (more fog, more empty canvas).
+ */
+export function cameraProgress(progress: number): number {
+  return Math.min(Math.max(0, progress), LAST_BEAT_AT);
+}
+
+/** 0 until the last beat, 1 at the end of the runway. */
+export function holdProgress(progress: number): number {
+  if (progress <= LAST_BEAT_AT) return 0;
+  return Math.min(1, (progress - LAST_BEAT_AT) / (1 - LAST_BEAT_AT));
+}
+
+/**
+ * How hard the specimen is lit. Rises with the upstream pulse, then a little
+ * more on the written hold so the closing frame — not the mutation beat —
+ * is the brightest.
+ */
+export function climaxAmount(state: { progress: number; upstream: number }): number {
+  const rise = Math.max(0, (state.progress - 0.62) / 0.38);
+  return Math.max(state.upstream, rise) + holdProgress(state.progress) * 0.32;
+}

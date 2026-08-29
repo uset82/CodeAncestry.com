@@ -24,12 +24,15 @@ import {
   axisPointAtInto,
   backbonePointAtInto,
   growthAlong,
+  pathTaper,
   rungDirection,
+  rungInset,
+  startTaperWidth,
   sampleBackbone,
   strandBasis,
   strandEased,
 } from './strands';
-import type { BeatState } from './beats';
+import { cameraProgress, climaxAmount, holdProgress, type BeatState } from './beats';
 import {
   climaxEmissive,
   depthMaterialOf,
@@ -59,7 +62,7 @@ type Quality = { tubular: number; radial: number; radius: number; sphere: number
 
 const QUALITY: Record<'low' | 'high', Quality> = {
   low: { tubular: 48, radial: 5, radius: 0.034, sphere: 10 },
-  high: { tubular: 120, radial: 8, radius: 0.04, sphere: 16 },
+  high: { tubular: 96, radial: 8, radius: 0.04, sphere: 12 },
 };
 
 type Props = {
@@ -91,9 +94,7 @@ function OrganicTicker({
   useFrame(({ clock }) => {
     const time = clock.elapsedTime;
     const current = state.current;
-    const climax = current
-      ? Math.max(current.upstream, Math.max(0, (current.progress - 0.62) / 0.38))
-      : 0;
+    const climax = current ? climaxAmount(current) : 0;
 
     tickOrganic(materials.backboneOrigin, time, drift, pointer.current);
     tickOrganic(materials.backboneMutated, time, drift, pointer.current);
@@ -162,7 +163,7 @@ function Backbones({ state, tier, materials, pointer }: Props) {
     if (!current) return;
     const time = clock.elapsedTime;
 
-    const climax = Math.max(current.upstream, Math.max(0, (current.progress - 0.62) / 0.38));
+    const climax = climaxAmount(current);
 
     strands.forEach((strand, i) => {
       const eased = strandEased(current.generations, strand.spec.generation);
@@ -210,6 +211,7 @@ function Backbones({ state, tier, materials, pointer }: Props) {
                 flatten: current.flatten,
                 start: AXIS_A,
                 end: AXIS_B,
+                startTaper: startTaperWidth(strand.spec.generation),
               });
             }}
           />
@@ -252,9 +254,14 @@ function GrowingTips({
       const t = Math.min(0.999, Math.max(0, eased));
       strand.curve.getPoint(t, position);
       axisPointAtInto(strand.spec, t, current.flatten, axis);
-      position.lerp(axis, current.flatten);
+      /* Follow the tube as it tapers onto the axis, then as flatten collapses
+         the whole strand. Otherwise the tip sits on the full-radius helix
+         while the backbone has already closed to a point. */
+      const taper = pathTaper(t, eased, startTaperWidth(strand.spec.generation));
+      position.lerp(axis, 1 - taper * (1 - current.flatten));
       const growing = eased > 0.03 && eased < 0.985;
-      scale.setScalar(growing ? 0.068 : eased > 0.03 ? 0.028 : 0);
+      const settled = eased >= 0.985 ? 0.046 : 0;
+      scale.setScalar(growing ? 0.068 : settled);
       matrix.compose(position, quaternion, scale);
       node.setMatrixAt(i, matrix);
     });
@@ -285,7 +292,8 @@ function Rungs({ state, materials }: Pick<Props, 'state' | 'materials'>) {
       STRANDS.flatMap((spec) => {
         const basis = strandBasis(spec);
         return Array.from({ length: RUNGS_PER_STRAND }, (_, i) => {
-          const t = (i + 0.5) / RUNGS_PER_STRAND;
+          const inset = rungInset(spec.generation);
+          const t = inset + ((i + 0.5) / RUNGS_PER_STRAND) * (1 - 2 * inset);
           return { spec, t, direction: rungDirection(spec, basis, t) };
         });
       }),
@@ -320,7 +328,10 @@ function Rungs({ state, materials }: Pick<Props, 'state' | 'materials'>) {
 
       const breathe = 1 + Math.sin(time * 1.1 + i * 0.7) * 0.06 * (1 - current.flatten);
       const span = slot.spec.radius * 2 * (1 - current.flatten * 0.4) * breathe;
-      scale.set(1, span * front, 1);
+      /* Same end / growth profile as the tube. A full-width rung on a
+         needle-thin backbone is the floating dash at every terminus. */
+      const taper = pathTaper(slot.t, eased, startTaperWidth(slot.spec.generation));
+      scale.set(1, span * front * taper, 1);
 
       matrix.compose(position, quaternion, scale);
       node.setMatrixAt(i, matrix);
@@ -405,7 +416,14 @@ function Loci({ state, tier, materials }: Props) {
       }
 
       const pulse = 1 + Math.sin(time * 2 + slot.seed) * (slot.kind === 'junction' ? 0.06 : 0.16);
-      const emphasis = slot.mutated ? 1.7 + current.upstream * 0.6 : slot.kind === 'junction' ? 1.35 : 1;
+      const terminal = slot.kind === 'junction' && slot.t === 1;
+      const emphasis = slot.mutated
+        ? 1.7 + current.upstream * 0.6
+        : terminal
+          ? 1.7
+          : slot.kind === 'junction'
+            ? 1.25
+            : 1;
       /* Loci grow as the helix flattens. The closing beat collapses the
          structure toward a line, which sheds visual mass exactly where the
          story peaks; the nodes carrying that mass have to compensate. */
@@ -424,6 +442,7 @@ function Loci({ state, tier, materials }: Props) {
       } else {
         color.copy(HELIX.cyan).lerp(HELIX.dim, 0.42 - current.inheritance * 0.36);
       }
+      if (terminal) color.lerp(HELIX.acid, 0.28);
       node.setColorAt(i, color);
     });
 
@@ -656,15 +675,16 @@ function CameraRig({
   useFrame((_, delta) => {
     const current = state.current;
     if (!current) return;
-    const p = current.progress;
+    const story = cameraProgress(current.progress);
+    const hold = holdProgress(current.progress);
     const orbit = 1 - current.flatten;
 
     desired.set(
-      Math.sin(p * Math.PI * 0.6) * 1.2 + pointer.current.x * 0.48 * orbit,
-      2.2 - p * 6.4 + pointer.current.y * 0.24 * orbit,
-      8.4 - current.flatten * 1.15,
+      Math.sin(story * Math.PI * 0.6) * 1.2 + pointer.current.x * 0.48 * orbit,
+      2.2 - story * 6.4 + pointer.current.y * 0.24 * orbit,
+      8.4 - current.flatten * 1.15 - hold * 0.85,
     );
-    lookAt.set(-p * 0.9, 1.6 - p * 6.2, 0);
+    lookAt.set(-story * 0.9, 1.6 - story * 6.2 + hold * 0.22, 0);
 
     const lerp = Math.min(1, delta * 3.2);
     camera.position.lerp(desired, lerp);
