@@ -19,7 +19,8 @@ export const TRACE_ACTION_COPY: Record<TraceActionId, string> = {
   PATCH: 'Would apply replacement M-94013. Demo only — the successor is labelled, not written.',
   QUARANTINE: 'Would freeze M-94012 propagation. Demo only — AXIS Quarantine is the labelled hold.',
   'SIMULATE FIX': 'Would replay generation 118 → 119 on a sandbox descendant. Demo only.',
-  'WARN DESCENDANTS': 'Would notify the 3,842 inheritors. Demo only — no messages are sent.',
+  'WARN DESCENDANTS':
+    'Would notify the 3,842 inheritors. Demo only — no messages are sent. The fan-out is Lineage Health.',
   'TRACE SIBLING MUTATIONS': 'Would walk other writes on NAV-G288. Demo only.',
 };
 
@@ -77,6 +78,7 @@ export const TRACE_STEPS = [
     kind: 'DESCENDANTS',
     title: '3,842 descendants',
     detail: 'Inherited the write. Impact is a count, not a colour.',
+    href: '#health',
   },
   {
     id: 'confirmed',

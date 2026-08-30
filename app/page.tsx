@@ -1,11 +1,11 @@
 import { AgentSection } from '@/components/marketing/AgentSection';
-import { BeatScaffold } from '@/components/marketing/BeatScaffold';
 import { CodeBlastSection } from '@/components/marketing/CodeBlastSection';
 import { CodeTreeSection } from '@/components/marketing/CodeTreeSection';
 import { Endgame } from '@/components/marketing/Endgame';
 import { EvolutionSection } from '@/components/marketing/EvolutionSection';
 import { GenesSection } from '@/components/marketing/GenesSection';
 import { GenomeSection } from '@/components/marketing/GenomeSection';
+import { HealthSection } from '@/components/marketing/HealthSection';
 import { JoinSection } from '@/components/marketing/JoinSection';
 import { MachineSection } from '@/components/marketing/MachineSection';
 import { MutationSection } from '@/components/marketing/MutationSection';
@@ -67,13 +67,9 @@ export default function HomePage() {
         <Endgame />
       </Reveal>
       <TraceSection />
-      <BeatScaffold
-        beat={10}
-        id="health"
-        index="14"
-        title="Lineage Health"
-        arrives="Arrives in Phase 10"
-      />
+      <Reveal>
+        <HealthSection />
+      </Reveal>
       <Reveal>
         <JoinSection />
       </Reveal>

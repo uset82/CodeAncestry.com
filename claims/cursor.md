@@ -1,26 +1,25 @@
-# Cursor — Phase 9 landed
+# Cursor — Phase 10 landed
 
-Trace Failure is the homepage’s highest-priority demo. The helix already alarms and inverts pulses; the plate is the state machine.
+Lineage Health is the fan-out of M-94012. The helix already recovers; the plate names the inheritors.
 
 ## Already on main
 
-- `dc40868` — Phase 8: AX-2041 capability-column machine genome.
+- `0270743` — Phase 9: Trace Failure rewind state machine.
 
-## Phase 9
+## Phase 10
 
-- Homepage 13 `TraceSection` (`#trace` beat 8, `#trace-rewind` beat 9).
-- Trigger: Unexpected navigation behavior detected. Button TRACE FAILURE. Reset returns to armed.
-- Rewind chain: behavior → NAV-G288 → M-94012 → gen 119 → A-918 → A-771 → 3,842 descendants → confirmed → generation 118.
-- Recovery actions are labelled demo states. None write.
-- Reduced motion skips the rise and keeps the stepped list. No `scrollY` reverse on the helix. No rAF on the scroll path.
-- Header: Trace → `/#trace` (retarget `/trace` when that route exists).
+- Homepage 14 `HealthSection` (`#health`, beat 10): One mutation. Thousands of descendants.
+- `LineageHealth` is a 2D readout of `recovery` / `upstream` — inherited warning fan-out, then replacement from generation 118. Marks ! / ▣ / ✓. No robot mesh.
+- Sample: AXIS Mutant, Agent Build, Verified, Quarantine + 3,838 remainder = 3,842. KEYLIT is not the demo.
+- Connected both ways: Trace descendants → `#health`; Health → `#trace`.
 
 ## Verified
 
 - `tsc`, eslint, `check-beats` green.
-- Browser: trigger scrolls to rewind; QUARANTINE shows demo copy; reset returns to alarm and clears the action.
-- Contrast `.captures/phase9-r1/`: 12 beats, 265 blocks, **0 fails**, `helixFramesDelta: 0`. Beat 8 is the alarm plate; beat 9 is the rewind chain.
+- Browser: default inherited warning; Replacement retargets every row; Open the trace lands on `#trace`; Trace 3,842 link returns to `#health`.
+- Desktop + 390px: plate readable.
+- Contrast `.captures/phase10-r1/`: 12 beats, 287 blocks, **0 fails**, `helixFramesDelta: 0`. Beat 10 is Lineage Health; helix is the recovery pose.
 
 ## Not started
 
-- Phase 10 Lineage Health.
+- Phase 11 KEYLIT origin story.
