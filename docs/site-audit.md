@@ -40,11 +40,11 @@ There is **no** `public/` asset tree. Fonts come from `next/font/google`. The on
 | Claim | Evidence |
 | --- | --- |
 | Production host | `https://codeancestry.com/` returns `200`, `Server: cloudflare`, `x-railway-request-id`, `x-railway-edge: osl1` |
-| README shipping section | Still describes **Vercel** as the live product and lists Vercel A/CNAME records |
+| README shipping section | Live URL is [https://codeancestry.com/](https://codeancestry.com/). Railway behind Cloudflare. |
 | Repo artifacts | No `vercel.json`, no `Dockerfile`, no `railway.toml` |
 | CI | `.github/workflows/ci.yml` — typecheck, lint, fixtures, `next build` on Node 22 |
 
-**Fact:** production is Cloudflare → Railway. README is stale. Do not point DNS at Vercel.
+**Fact:** production is Cloudflare → Railway at [https://codeancestry.com/](https://codeancestry.com/). Do not point DNS at another host.
 
 Local convention: `npx next dev -p 3100` (`scripts/capture.mjs` defaults to that origin). `package.json` `dev` script still says `next dev` (port 3000).
 

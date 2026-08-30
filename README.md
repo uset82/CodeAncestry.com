@@ -5,8 +5,8 @@ records what a project can *do*, where each capability came from, who decided to
 adopt it, and which capabilities travelled sideways between unrelated projects.
 
 This repository is the website at
-[codeancestry.com](https://codeancestry.com): a working concept driven by
-seeded fixtures, not live repository ingestion. Every screen says so.
+[https://codeancestry.com/](https://codeancestry.com/): a working concept
+driven by seeded fixtures, not live repository ingestion. Every screen says so.
 
 ## The model in one screen
 
@@ -154,13 +154,9 @@ before spending serious money on the brand.
 
 ## Shipping
 
-The live product is [codeancestry.com](https://codeancestry.com) (apex).
-`www` 308s onto the apex in `next.config.ts`.
-[codeancestry.vercel.app](https://codeancestry.vercel.app) is only Vercel's
-default alias for the same deployment — not the public URL.
-The footer subdomains (`app`, `api`, `docs`, `registry`, `research`, `lab`)
-are reserved on the Vercel project: once they CNAME they redirect to the
-surfaces that already exist.
+The live product is [https://codeancestry.com/](https://codeancestry.com/).
+`www` 308s onto the apex in `next.config.ts`. Railway auto-deploys `main`
+behind Cloudflare. There is no other public URL.
 
 ```bash
 npm run verify
@@ -170,47 +166,11 @@ npm run build
 CI (`.github/workflows/ci.yml`) runs the same checks — typecheck, lint, fixture
 validation, production build — on every pull request and on `main`.
 
-### Vercel
-
-1. Log in at [vercel.com](https://vercel.com) and import `uset82/CodeAncestry.com`.
-2. Framework: Next.js. Install `npm ci`, build `npm run build`.
-3. Add `OPENROUTER_API_KEY` under Production and Preview.
-4. Production branch: `main`. Preview deployments on every other branch.
-5. Attach `codeancestry.com` and `www.codeancestry.com` as domains. Set the
-   apex as primary so Vercel issues the certificate.
-
-### Cloudflare DNS
-
-Nameservers stay on Cloudflare (`chuck` / `maria`). Do not switch them to
-Vercel. Point the zone at Vercel (SSL is automatic once the names resolve).
-Grey-cloud (DNS only) until the certificate issues.
-
-Vercel Domain Connect can write the apex and `www` records if you are logged
-into both dashboards:
-
-- [Apply apex](https://vercel.com/api/v9/projects/prj_ICLa5N68qjCoExdSDfJEnZB8G3LK/domains/codeancestry.com/domain-connect/apply?teamId=team_F2XdJiHAo9QGzkRmj1bmlljL)
-- [Apply www](https://vercel.com/api/v9/projects/prj_ICLa5N68qjCoExdSDfJEnZB8G3LK/domains/www.codeancestry.com/domain-connect/apply?teamId=team_F2XdJiHAo9QGzkRmj1bmlljL)
-
-Or add these records by hand (project `uset82s-projects/codeancestry`):
-
-| Name | Type | Target | Proxy |
-| --- | --- | --- | --- |
-| `@` | A | `76.76.21.21` | DNS only |
-| `www` | CNAME | `6abee19d85cd4e53.vercel-dns-017.com` | DNS only |
-| `app` | CNAME | `6abee19d85cd4e53.vercel-dns-017.com` | DNS only |
-| `api` | CNAME | `6abee19d85cd4e53.vercel-dns-017.com` | DNS only |
-| `docs` | CNAME | `6abee19d85cd4e53.vercel-dns-017.com` | DNS only |
-| `registry` | CNAME | `6abee19d85cd4e53.vercel-dns-017.com` | DNS only |
-| `research` | CNAME | `6abee19d85cd4e53.vercel-dns-017.com` | DNS only |
-| `lab` | CNAME | `6abee19d85cd4e53.vercel-dns-017.com` | DNS only |
-
-After they resolve: `npx vercel domains verify codeancestry.com`. Apex + `www`
-are the live site. The six subdomains are placeholders so the names cannot be
-registered out from under the project before those services exist.
+Nameservers stay on Cloudflare. Do not point the zone at another host.
 
 ### Production smoke
 
-Smoke [codeancestry.com](https://codeancestry.com) on a real phone, then
-Chrome, Safari, Firefox and iOS Safari: homepage helix (and the
+Smoke [https://codeancestry.com/](https://codeancestry.com/) on a real phone,
+then Chrome, Safari, Firefox and iOS Safari: homepage helix (and the
 reduced-motion fallback), Explore, one genome, one gene, the CodeTree, Docs,
 Research, Privacy and Terms.

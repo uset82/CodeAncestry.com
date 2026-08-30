@@ -103,7 +103,7 @@ Acceptance: the team understands the current implementation before modifying it.
 - [x] Audit responsive behavior — hamburger `<lg`; helix/copy overlap at mid width; low tier `<900` / coarse pointer; reduced-motion fallback.
 - [x] Audit performance — `next build` pass; helix dynamically imported; unused `@react-three/postprocessing`; Three.js Clock / PCFSoftShadowMap deprecation warnings.
 - [x] Document preserve/refactor/remove/rebuild — `docs/site-audit.md`.
-- [x] Verify production build — `npx next build` pass; `npm run verify` pass (tsc, eslint, 211 fixture checks). Production `codeancestry.com` is Cloudflare → Railway (`x-railway-request-id`), not Vercel.
+- [x] Verify production build — `npx next build` pass; `npm run verify` pass (tsc, eslint, 211 fixture checks). Production is [https://codeancestry.com/](https://codeancestry.com/) (Cloudflare → Railway).
 
 ---
 
@@ -458,7 +458,7 @@ Verified 2026-08-30 after the join-verb pass.
 - No rAF on the helix scroll path. Zero post-processing.
 - KEYLIT fixtures remain valid. New demos go in `data/demo/`.
 - Do not migrate to Needle or another framework.
-- Do not treat vercel.app as production.
+- Production is [https://codeancestry.com/](https://codeancestry.com/) only.
 
 ---
 
@@ -469,23 +469,54 @@ Verified 2026-08-30 after the join-verb pass.
 Phases 0–14 verified on the live site 2026-08-30. Checkboxes marked with
 evidence. Open work is instrument craft, not a new phase number.
 
+**The live CPU sweep is complete and verified.** Its Phases 0–3 were this
+session; Phase 4 is Cursor’s `ed11f44`, plus the `Rungs` re-attachment landed
+this pass (position is now `rungCenterInto`, the midpoint of the two live
+rails — not the collapsed axis). Phase 5 instrumentation and tuning shipped,
+Phase 6 documentation landed. It adds no geometry — the motion is a re-sweep
+of the existing pre-allocated ring stack — so D2 was never at risk.
+
 ### COMPLETED TASKS
 
 Join verb aligned: `connectCta` → `/#waitlist`, one label on header / hero /
 close / form. Thesis kept. Honesty list kept. Phases 3–14 walked and ticked.
 
+Sweep: `sweep.ts` allocation-free re-sweep; `check-sweep-parity.ts` grown from
+3 assertions to 10 (added rails, radial, rings, midpoint, motion, parser);
+`?sweepStats=1` HUD with EMA + p95; the two ad-hoc tuning branches replaced by
+one clamped knob table; DNA tuning set — `speed` 0.34 → **1.1**, `wobble`
+0.03 → **0.015**, `radiusWave1/2` 0.13/0.09 → **0.05/0.03**, `lean` 0.13 →
+**0.14**, `lump` exposed at **0**.
+
 ### VERIFICATION PERFORMED
 
-`tsc`, `eslint .`, `test:fixtures` 211/0, `check-beats` 12/0, `next build`
-29 pages. Desktop 1440×900 canvas + animated hero. Mobile 390×844 hamburger.
-`?helix=none` static, no canvas. Header Connect Repository → `#waitlist` top
-64. Form: “Noted locally”, no POST. No OAuth URL. Internal routes 200.
+Join-verb pass (Cursor, `b1e1424`): `tsc`, `eslint .`, `test:fixtures` 211/0,
+`check-beats` 12/0, `next build` 29 pages. Desktop 1440×900 canvas + animated
+hero. Mobile 390×844 hamburger. `?helix=none` static, no canvas. Header
+Connect Repository → `#waitlist` top 64. Form: “Noted locally”, no POST. No
+OAuth URL. Internal routes 200.
+
+Sweep pass (this pass): `tsc` 0, `eslint components/viz/helix scripts` 0,
+`test:sweep` 10 checks green — rail diameter 2.5e-7 (the Phase 4 invariant),
+rung centre bit-identical to the rail midpoint, collapsed 2.5e-7, motion 0.424
+world units/s on the slowest strand (0.2 floor, which the old `speed 0.34`
+fails at 0.157), parser 43 cases.
+
+Full capture `?helix=high`: **12 beats, 286 blocks, 0 fails, `missingSide: []`**
+— the beats 7–8 starvation seen earlier in the session does not reproduce.
+Revert proven, not assumed: `?sweep=0` reads `sweepMs 0 · p95 0 · n 0 · verts 0`.
 
 ### FILES CHANGED
 
-`lib/site.ts`, `JoinSection.tsx`, `Waitlist.tsx`, `CloseCtas.tsx`,
-`HelixHero.tsx`, `docs/content-architecture.md`, `taskplan.md`,
+Join-verb pass: `lib/site.ts`, `JoinSection.tsx`, `Waitlist.tsx`,
+`CloseCtas.tsx`, `HelixHero.tsx`, `docs/content-architecture.md`,
 `app/page.tsx`, `claims/cursor.md`.
+
+Sweep pass: `components/viz/helix/sweep.ts`, `HelixScene.tsx`, `HelixStage.tsx`,
+`scripts/check-sweep-parity.ts`, `scripts/capture.mjs`, `HANDOFF.md`,
+`docs/interaction-spec.md`, `docs/design-system.md`.
+
+`components/viz/helix/organic.ts` **untouched by design** — see HANDOFF.
 
 ### DESIGN REVIEW
 
@@ -494,9 +525,14 @@ not used. The instrument stays Three + R3F.
 
 ### OPEN BLOCKERS
 
-None.
+**The sweep p95 is unmeasured in a real browser.** The HUD exists
+(`?helix=high&sweepStats=1`) but every number so far comes from swiftshader at
+about 2 fps, which can neither support nor refute the 1.5 ms budget. Not a
+blocker to shipping — it is the one number this session cannot produce.
 
 ### FIRST UNCHECKED TASK
 
-The next real instrument defect. Do not invent a Phase 15. Do not restart
-Phases 3–14.
+Read the sweep p95 in a real browser: `npm run dev` → `/?helix=high&sweepStats=1`
+→ hero → wait 3 s. Accept p95 < 1.5 ms. If it exceeds budget, drop
+`QUALITY.high.tubular` (120 → 96), **not the sweep**. Then the next real
+instrument defect. Do not invent a Phase 15. Do not restart Phases 3–14.
