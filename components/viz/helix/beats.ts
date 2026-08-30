@@ -32,12 +32,28 @@ export type Beat = {
 
 export type BeatSide = 'left' | 'right' | 'full';
 
-/** Camera aim offset. Copy on the left → lineage sits right (negative). */
+/** Camera aim offset at the capture frame (1600×900). Copy left → lineage right. */
 export const LOOK_X_EXTENT = 4.6;
 
+/** Capture aspect. Narrower frames must scale lookX or the specimen leaves the view. */
+const LOOK_X_REF_ASPECT = 1600 / 900;
+
+/**
+ * Horizontal aim used by the driver and the camera.
+ * At 1600×900 this is exactly `LOOK_X_EXTENT`. Below that, the same world
+ * offset walks the labels off the right edge — the mid-width collision Claude
+ * named is the specimen leaving the frame, not the type scale.
+ */
+export function lookXExtent(): number {
+  if (typeof window === 'undefined') return LOOK_X_EXTENT;
+  const aspect = window.innerWidth / Math.max(1, window.innerHeight);
+  return LOOK_X_EXTENT * Math.min(1, aspect / LOOK_X_REF_ASPECT);
+}
+
 export function lookXForSide(side: BeatSide): number {
-  if (side === 'left') return -LOOK_X_EXTENT;
-  if (side === 'right') return LOOK_X_EXTENT;
+  const extent = lookXExtent();
+  if (side === 'left') return -extent;
+  if (side === 'right') return extent;
   return 0;
 }
 

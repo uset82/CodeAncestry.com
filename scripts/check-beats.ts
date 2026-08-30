@@ -2,7 +2,7 @@
  * Prove `beatStateAt` returns every named scalar at each of the twelve anchors.
  * Run with `npx tsx scripts/check-beats.ts`.
  */
-import { BEATS, beatStateAt } from '../components/viz/helix/beats';
+import { BEATS, LOOK_X_EXTENT, beatStateAt, lookXExtent } from '../components/viz/helix/beats';
 
 const SCALARS = [
   'generations',
@@ -39,6 +39,11 @@ for (let i = 0; i < BEATS.length; i += 1) {
     console.error(`beat ${i} activeIndex ${state.activeIndex}`);
     failed += 1;
   }
+}
+
+if (lookXExtent() !== LOOK_X_EXTENT) {
+  console.error(`lookXExtent without a window must stay ${LOOK_X_EXTENT}, got ${lookXExtent()}`);
+  failed += 1;
 }
 
 const mid = beatStateAt(3, 0.5);

@@ -34,7 +34,7 @@ import {
   strandBasis,
   strandEased,
 } from './strands';
-import { climaxAmount, daylight, holdProgress, type BeatState } from './beats';
+import { climaxAmount, daylight, holdProgress, type BeatSide, type BeatState } from './beats';
 import {
   climaxEmissive,
   depthMaterialOf,
@@ -649,6 +649,15 @@ function Loci({ state, tier, materials }: Props) {
 
 /* --------------------------------------------------------- locus labels */
 
+/** True when a chip sits in the copy half. The specimen owns the other half. */
+function labelHitsReadingField(node: HTMLElement, side: BeatSide): boolean {
+  if (side === 'full') return false;
+  const rect = node.getBoundingClientRect();
+  if (rect.width < 2 || rect.height < 2) return false;
+  const mid = window.innerWidth * 0.5;
+  return side === 'left' ? rect.left < mid : rect.right > mid;
+}
+
 function LocusLabels({ state }: Pick<Props, 'state'>) {
   const anchors = useMemo(
     () =>
@@ -678,6 +687,10 @@ function LocusLabels({ state }: Pick<Props, 'state'>) {
         axisPointAtInto(anchor.spec, anchor.t, current.flatten, scratch);
         applyConvergeInto(anchor.spec, current.converge, scratch, anchor.t);
         scratch.addScaledVector(anchor.direction, anchor.spec.radius * 1.9 * (1 - current.flatten));
+        /* Keep the chip on the specimen side of the locus. */
+        if (current.flatten < 0.95 && current.lookX !== 0) {
+          scratch.x += Math.sign(-current.lookX) * anchor.spec.radius * 0.55;
+        }
         frame.position.copy(scratch);
       }
       if (!node) return;
@@ -687,8 +700,10 @@ function LocusLabels({ state }: Pick<Props, 'state'>) {
       const front = growthAlong(eased, anchor.t);
       /* geneFocus fades labels in; zoomOut fades them out so they do not stack. */
       const reveal = current.geneFocus * (1 - holdProgress(current) * 0.9);
-      const opacity =
+      let opacity =
         front > 0.55 ? Math.round(Math.min(1, (front - 0.55) / 0.45) * reveal * 100) / 100 : 0;
+      /* A chip in the reading field is a composition failure. Hide it. */
+      if (opacity > 0.02 && labelHitsReadingField(node, current.side)) opacity = 0;
       const mark = node.querySelector('[data-locus-mark]');
       if (mark) {
         mark.textContent = current.recovery > 0.45 && anchor.label.mutated ? '✓' : '';
@@ -737,7 +752,7 @@ function LocusLabels({ state }: Pick<Props, 'state'>) {
 
               <div className="border-line bg-void pointer-events-none absolute top-full left-0 mt-1.5 hidden w-max max-w-[220px] rounded-xs border p-2 group-hover/locus:block group-focus-within/locus:block">
                 <p className="text-text text-[12px] font-semibold">{anchor.label.gene}</p>
-                <p className="text-faint mt-0.5 text-[11px]">{anchor.label.origin}</p>
+                <p className="text-muted mt-0.5 text-[11px]">{anchor.label.origin}</p>
                 <p className="text-muted mt-1 font-mono text-[10px]">{anchor.label.accession}</p>
               </div>
             </div>
