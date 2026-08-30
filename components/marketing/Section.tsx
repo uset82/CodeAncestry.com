@@ -24,9 +24,11 @@ export function Section({
   bordered?: boolean;
 }) {
   if (beat !== undefined && beatSide === undefined) {
-    throw new Error(
-      `Section${id ? `#${id}` : ''} beat=${beat} has body copy on a 3D beat and must declare beatSide`,
-    );
+    const message = `Section${id ? `#${id}` : ''} beat=${beat} has body copy on a 3D beat and must declare beatSide`;
+    if (process.env.NODE_ENV !== 'production') {
+      throw new Error(message);
+    }
+    console.error(message);
   }
 
   return (

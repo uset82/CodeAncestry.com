@@ -78,6 +78,7 @@ export function SiteHeader() {
             className="hidden sm:inline-flex"
           >
             {connectCta.label}
+            <span className="text-faint ml-1.5 font-mono text-nano uppercase">{connectCta.hint}</span>
           </ButtonLink>
 
           <button
@@ -136,6 +137,9 @@ export function SiteHeader() {
                 onClick={() => setOpen(false)}
               >
                 {connectCta.label}
+                <span className="text-on-acid/70 ml-1.5 font-mono text-nano uppercase">
+                  {connectCta.hint}
+                </span>
               </ButtonLink>
             </li>
           </ul>

@@ -2,7 +2,6 @@
 
 import { useGSAP } from '@gsap/react';
 import { gsap } from 'gsap';
-import Link from 'next/link';
 import { useRef, useState } from 'react';
 import { useReducedMotion } from '@/lib/hooks/useReducedMotion';
 import { ButtonLink } from '@/components/ui/Button';
@@ -41,31 +40,41 @@ function HeroCopy({ children }: { children?: React.ReactNode }) {
       </p>
 
       <h1 id="hero-title" className="text-hero">
-        Every machine
+        What if software
         <br />
-        <span className="text-emphasis">has ancestors.</span>
+        <span className="text-emphasis">had DNA?</span>
       </h1>
+
+      <p className="text-title mt-5 max-w-[34ch] text-balance">
+        Humans have family trees.
+        <br />
+        Why shouldn&rsquo;t machines?
+      </p>
+
+      <p className="text-text-soft mt-4 max-w-[540px] leading-relaxed">
+        CodeAncestry creates a living genealogy for software, AI agents, and machines — tracking the
+        capabilities they inherit, the mutations they acquire, and the generations that shaped them.
+      </p>
+
+      <p className="text-title mt-4">Every machine has ancestors.</p>
 
       {children}
 
-      <div className="mt-7 flex flex-wrap items-center gap-3">
-        <ButtonLink href="/family/keylit" size="lg">
-          Open the CodeTree
+      <div className="mt-6 flex flex-wrap items-center gap-3">
+        <ButtonLink href="/lineage" size="lg">
+          Explore the Lineage
         </ButtonLink>
-        <ButtonLink href="/mutation/CAMUT:882" variant="secondary" size="lg">
-          Follow one mutation
+        <ButtonLink href="/#join" variant="secondary" size="lg">
+          Connect Repository
         </ButtonLink>
       </div>
 
+      <p className="text-muted mt-5 font-mono text-nano uppercase">
+        Git tracks code. CodeAncestry tracks evolution.
+      </p>
+
       <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2">
         <WhatAmILookingAt />
-        <p className="text-faint text-[13px]">
-          Seeded with a real eight-project family.{' '}
-          <Link href="/docs" className="text-muted hover:text-text underline decoration-dotted">
-            Read the protocol
-          </Link>
-          .
-        </p>
       </div>
     </div>
   );
@@ -188,9 +197,8 @@ function StaticHero() {
 
 /** Copy only. The canvas lives on `HelixStage`. Two sections, two beats. */
 function AnimatedHero() {
-  const project = BEATS[0];
   const genes = BEATS[1];
-  if (!project || !genes) return null;
+  if (!genes) return null;
 
   return (
     <div data-hero="animated">
@@ -201,17 +209,13 @@ function AnimatedHero() {
         className="relative min-h-screen"
       >
         <div className="shell-wide relative z-10 flex min-h-screen flex-col justify-center pt-24 pb-16">
-          <HeroCopy>
-            <div className="mt-8">
-              <BeatBody {...project} />
-            </div>
-          </HeroCopy>
+          <HeroCopy />
           <p className="text-faint mt-10 font-mono text-nano uppercase">
             Scroll to descend the lineage
           </p>
         </div>
         <div className="sr-only">
-          <h2>The KEYLIT lineage</h2>
+          <h2>The lineage</h2>
           <HeroFallback />
         </div>
       </section>

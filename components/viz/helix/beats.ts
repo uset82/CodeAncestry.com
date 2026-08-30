@@ -65,8 +65,8 @@ export const BEATS: Beat[] = [
   {
     id: 'project',
     index: '01',
-    headline: 'One project.',
-    body: 'A browser piano tutor. Four hundred commits, ten capabilities, no idea it was about to become a family.',
+    headline: 'Every machine has ancestors.',
+    body: 'CodeAncestry creates a living genealogy for software, AI agents, and machines — tracking the capabilities they inherit, the mutations they acquire, and the generations that shaped them.',
     ...ZERO_POSE,
     generations: 1,
     cameraMultiple: 0.45,
@@ -268,16 +268,17 @@ export function beatStateAt(index: number, t = 0) {
 
 export type BeatState = ReturnType<typeof beatStateAt>;
 
-function sideOf(el: HTMLElement, beat: number): BeatSide {
+function sideOf(el: HTMLElement, beat: number, previous?: BeatSide): BeatSide {
   const side = parseBeatSide(el.dataset.beatSide);
   if (side) return side;
-  /* Missing side is a contract bug. Do not invent left. Centre the specimen
-     so the overlap stays visible, and mark the document. */
+  /* Missing side is a contract bug. Inherit the previous section in
+     production so a marketing page never 500s; centre if there is no
+     previous, so the overlap stays visible. */
   if (typeof document !== 'undefined') {
     document.documentElement.dataset.helixSideMissing = String(beat);
   }
   console.error(`[helix] [data-beat="${beat}"] is missing data-beat-side`);
-  return 'full';
+  return previous ?? 'full';
 }
 
 function withSide(index: number, t: number, from: BeatSide, to: BeatSide): BeatState {
@@ -304,12 +305,20 @@ export function measureViewportBeat(): { state: BeatState; owns3d: boolean } {
 
   const intersecting = nodes.some((node) => node.rect.bottom > 0 && node.rect.top < viewH);
 
+  const lastDeclaredSide = (before: number): BeatSide | undefined => {
+    for (let j = before - 1; j >= 0; j -= 1) {
+      const declared = parseBeatSide(nodes[j]?.el.dataset.beatSide);
+      if (declared) return declared;
+    }
+    return undefined;
+  };
+
   const neighbour = (i: number) => {
     const node = nodes[i];
     const next = nodes[i + 1];
     if (!node) return { from: 'left' as BeatSide, to: 'left' as BeatSide };
-    const from = sideOf(node.el, node.beat);
-    return { from, to: next ? sideOf(next.el, next.beat) : from };
+    const from = sideOf(node.el, node.beat, lastDeclaredSide(i));
+    return { from, to: next ? sideOf(next.el, next.beat, from) : from };
   };
 
   for (let i = 0; i < nodes.length; i += 1) {
@@ -340,7 +349,7 @@ export function measureViewportBeat(): { state: BeatState; owns3d: boolean } {
     return { state: withSide(first.beat, 0, side, side), owns3d: intersecting };
   }
   if (lastNode) {
-    const side = sideOf(lastNode.el, lastNode.beat);
+    const side = sideOf(lastNode.el, lastNode.beat, lastDeclaredSide(nodes.length));
     return { state: withSide(lastNode.beat, 0, side, side), owns3d: intersecting };
   }
   return { state: beatStateAt(0, 0), owns3d: false };

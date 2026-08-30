@@ -41,14 +41,12 @@ export function HeroFallback() {
         aria-labelledby="hero-fallback-title hero-fallback-desc"
       >
         <title id="hero-fallback-title">
-          The KEYLIT lineage: one origin project and seven descendants across four generations
+          A software lineage: one origin project and seven descendants across four generations
         </title>
         <desc id="hero-fallback-desc">
-          KEYLIT is generation zero. Three children descend from it: KEYLIT Kids, KEYLIT Studio and
-          KEYLIT Accessibility. KEYLIT Kids has two children, KEYLIT Kids ES and KEYLIT Classroom.
-          KEYLIT Studio has one child, Music Producer. Junior Music Tutor is a hybrid of KEYLIT Kids
-          ES and Music Producer. A mutation discovered in KEYLIT Kids ES travels back up through
-          KEYLIT Kids to KEYLIT, shown as an upward arrow.
+          Generation zero sits at the top. Three children descend from it. Two of those have children
+          of their own. One later project is a hybrid of two grandparents. A mutation discovered in
+          a descendant travels back up to the origin, shown as an upward arrow.
         </desc>
 
         <defs>
@@ -165,7 +163,13 @@ export function HeroFallback() {
                 className="fill-muted font-mono"
                 fontSize="10"
               >
-                {spec.label}
+                {spec.generation === 0
+                  ? 'Origin'
+                  : spec.parentB
+                    ? 'Hybrid'
+                    : spec.origin
+                      ? 'Mutation'
+                      : `Gen ${spec.generation}`}
               </text>
             </g>
           );

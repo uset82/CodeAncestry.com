@@ -21,7 +21,6 @@ import {
   STRANDS,
   STRANDS_BY_ID,
   UPSTREAM_PATH,
-  applyConvergeInto,
   axisPointAtInto,
   backbonePointAtInto,
   GROW_WIDTH,
@@ -75,6 +74,93 @@ const FAMILY_HALF_HEIGHT = ((FAMILY_TOP - FAMILY_BOTTOM) * 1.06) / 2;
 const FAMILY_LOOK_LIFT = 0.8;
 /* FAMILY_LOOK_X is no longer a constant. CameraRig reads `state.lookX`,
    which lerps with data-beat-side: copy left → lineage right (negative). */
+
+/**
+ * converge = 1 re-poses each strand into a horizontal track. Tracks stack
+ * vertically in STRANDS order (loci 6/5/5/5/4/4/4/3), length ∝ gene count.
+ * Same nodes, a second layout — the genome-browser idiom, not a spindle.
+ */
+const CONVERGE_MAX_LOCI = Math.max(...STRANDS.map((spec) => spec.loci));
+const CONVERGE_PITCH = 1.24;
+const CONVERGE_STACK = CONVERGE_PITCH * Math.max(1, STRANDS.length - 1);
+const CONVERGE_TOP = FAMILY_Y + CONVERGE_STACK / 2;
+const CONVERGE_UNIT = (FAMILY_HALF_HEIGHT * 0.7) / CONVERGE_MAX_LOCI;
+const CONVERGE_ORIGIN_X = -2.1;
+const TICK_UP = new Vector3(0, 1, 0);
+
+function strandT(spec: (typeof STRANDS)[number], point: Vector3): number {
+  const dx = spec.end.x - spec.start.x;
+  const dy = spec.end.y - spec.start.y;
+  const dz = spec.end.z - spec.start.z;
+  const span = dx * dx + dy * dy + dz * dz;
+  if (span < 1e-8) return 0;
+  const t =
+    ((point.x - spec.start.x) * dx + (point.y - spec.start.y) * dy + (point.z - spec.start.z) * dz) /
+    span;
+  return Math.min(1, Math.max(0, t));
+}
+
+/**
+ * Flatten only mixes 42% toward the axis (growth shader, settled). Converge
+ * has to finish that mix or the tubes stay a spindle while the loci walk.
+ * Patched here so organic.ts stays untouched.
+ */
+function patchTrackConverge(material: MeshStandardMaterial) {
+  const rewrite = (shader: { uniforms: Record<string, { value: number }>; vertexShader: string }) => {
+    shader.uniforms.uConverge = { value: 0 };
+    shader.vertexShader = shader.vertexShader
+      .replace('uniform float uFlatten;', 'uniform float uFlatten;\n       uniform float uConverge;')
+      .replace(
+        'transformed = mix(transformed, axisPoint, uFlatten * 0.42);',
+        [
+          'transformed = mix(transformed, axisPoint, clamp(uFlatten * 0.42 + uConverge, 0.0, 1.0));',
+          'float trackAng = uv.y * 6.2831853;',
+          'transformed.y += sin(trackAng) * 0.07 * uConverge;',
+          'transformed.z += cos(trackAng) * 0.07 * uConverge;',
+        ].join('\n       '),
+      );
+  };
+
+  const previous = material.onBeforeCompile;
+  material.onBeforeCompile = (shader, renderer) => {
+    previous?.(shader, renderer);
+    rewrite(shader);
+  };
+  material.customProgramCacheKey = () => 'helix-track-converge';
+
+  const depth = material.userData.depthMaterial as MeshStandardMaterial | undefined;
+  if (!depth) return;
+  const previousDepth = depth.onBeforeCompile;
+  depth.onBeforeCompile = (shader, renderer) => {
+    previousDepth?.(shader, renderer);
+    rewrite(shader);
+  };
+  depth.customProgramCacheKey = () => 'helix-track-converge-depth';
+}
+
+function writeConverge(material: MeshStandardMaterial, converge: number) {
+  const color = material.userData.shader as { uniforms?: { uConverge?: { value: number } } } | undefined;
+  if (color?.uniforms?.uConverge) color.uniforms.uConverge.value = converge;
+  const depth = (material.userData.depthMaterial as { userData?: { shader?: { uniforms?: { uConverge?: { value: number } } } } } | undefined)
+    ?.userData?.shader;
+  if (depth?.uniforms?.uConverge) depth.uniforms.uConverge.value = converge;
+}
+
+function applyConvergeInto(
+  spec: (typeof STRANDS)[number],
+  converge: number,
+  target: Vector3,
+  t = strandT(spec, target),
+): Vector3 {
+  if (converge <= 0) return target;
+  const row = STRANDS.findIndex((entry) => entry.id === spec.id);
+  const poseX = CONVERGE_ORIGIN_X + t * spec.loci * CONVERGE_UNIT;
+  const poseY = CONVERGE_TOP - Math.max(0, row) * CONVERGE_PITCH;
+  target.x += (poseX - target.x) * converge;
+  target.y += (poseY - target.y) * converge;
+  target.z += (0 - target.z) * converge;
+  return target;
+}
 
 /** Centre of the strands the current generation count has revealed. */
 function liveFamilyY(generations: number): number {
@@ -170,6 +256,7 @@ function Backbones({ state, tier, materials, pointer }: Props) {
           spec.id,
           spec.generation === 0 ? HELIX.acid : spec.origin ? HELIX.violet : HELIX.cyan,
         );
+        patchTrackConverge(material);
 
         return {
           spec,
@@ -249,8 +336,9 @@ function Backbones({ state, tier, materials, pointer }: Props) {
                  closing beat. */
               axisPointAtInto(strand.spec, 0, current.flatten, AXIS_A);
               axisPointAtInto(strand.spec, 1, current.flatten, AXIS_B);
-              applyConvergeInto(strand.spec, current.converge, AXIS_A);
-              applyConvergeInto(strand.spec, current.converge, AXIS_B);
+              applyConvergeInto(strand.spec, current.converge, AXIS_A, 0);
+              applyConvergeInto(strand.spec, current.converge, AXIS_B, 1);
+              writeConverge(strand.material, current.converge);
               syncOrganic(strand.material, {
                 grow: strandEased(current.generations, strand.spec.generation),
                 flatten: current.flatten,
@@ -304,13 +392,13 @@ function GrowingTips({
       const t = Math.min(0.999, Math.max(0, eased));
       strand.curve.getPoint(t, position);
       axisPointAtInto(strand.spec, t, current.flatten, axis);
-      applyConvergeInto(strand.spec, current.converge, axis);
+      applyConvergeInto(strand.spec, current.converge, axis, t);
       /* Follow the tube as it tapers onto the axis, then as flatten collapses
          the whole strand. Otherwise the tip sits on the full-radius helix
          while the backbone has already closed to a point. */
       const taper = pathTaper(t, eased, startTaperWidth(strand.spec.generation));
       position.lerp(axis, 1 - taper * (1 - current.flatten));
-      applyConvergeInto(strand.spec, current.converge, position);
+      applyConvergeInto(strand.spec, current.converge, position, t);
       const growing = eased > 0.03 && eased < 0.985;
       const settled = eased >= 0.985 ? 0.046 : 0;
       scale.setScalar(growing ? 0.068 : settled);
@@ -360,6 +448,7 @@ function Rungs({ state, materials }: Pick<Props, 'state' | 'materials'>) {
       quaternion: new Quaternion(),
       scale: new Vector3(),
       up: new Vector3(0, 1, 0),
+      direction: new Vector3(),
     }),
     [],
   );
@@ -375,18 +464,19 @@ function Rungs({ state, materials }: Pick<Props, 'state' | 'materials'>) {
       const grow = strandEased(current.generations, slot.spec.generation);
       const eased = grow - growthJitterAt(grow);
       const front = growthAlong(eased, slot.t);
-      const { matrix, position, quaternion, scale, up } = scratch;
+      const { matrix, position, quaternion, scale, up, direction } = scratch;
 
       axisPointAtInto(slot.spec, slot.t, current.flatten, position);
-      applyConvergeInto(slot.spec, current.converge, position);
-      quaternion.setFromUnitVectors(up, slot.direction);
+      applyConvergeInto(slot.spec, current.converge, position, slot.t);
+      direction.copy(slot.direction).lerp(TICK_UP, current.converge).normalize();
+      quaternion.setFromUnitVectors(up, direction);
 
       const breathe = 1 + Math.sin(time * 1.1 + i * 0.7) * 0.06 * (1 - current.flatten);
       const span = slot.spec.radius * 2 * (1 - current.flatten * 0.4) * breathe;
       /* Same end / growth profile as the tube. A full-width rung on a
          needle-thin backbone is the floating dash at every terminus. */
       const taper = pathTaper(slot.t, eased, startTaperWidth(slot.spec.generation));
-      scale.set(1, span * front * taper, 1);
+      scale.set(1, span * front * taper * (1 - current.converge * 0.82), 1);
 
       matrix.compose(position, quaternion, scale);
       node.setMatrixAt(i, matrix);
@@ -470,7 +560,7 @@ function Loci({ state, tier, materials }: Props) {
       const { matrix, position, quaternion, scale, color, alarm } = scratch;
 
       axisPointAtInto(slot.spec, slot.t, current.flatten, position);
-      applyConvergeInto(slot.spec, current.converge, position);
+      applyConvergeInto(slot.spec, current.converge, position, slot.t);
       if (slot.kind === 'gene') {
         position.addScaledVector(slot.direction, slot.spec.radius * (1 - current.flatten));
       }
@@ -586,7 +676,7 @@ function LocusLabels({ state }: Pick<Props, 'state'>) {
       const frame = frames.current[i];
       if (frame) {
         axisPointAtInto(anchor.spec, anchor.t, current.flatten, scratch);
-        applyConvergeInto(anchor.spec, current.converge, scratch);
+        applyConvergeInto(anchor.spec, current.converge, scratch, anchor.t);
         scratch.addScaledVector(anchor.direction, anchor.spec.radius * 1.9 * (1 - current.flatten));
         frame.position.copy(scratch);
       }
@@ -708,7 +798,7 @@ function Pulses({ state, tier, materials }: Props) {
         const raw = (time * 0.34 + i * 0.21) % 1;
         const t = raw + (1 - 2 * raw) * current.rewind;
         backbonePointAtInto(slot.spec, slot.basis, 0, t, current.flatten, position);
-        applyConvergeInto(slot.spec, current.converge, position);
+        applyConvergeInto(slot.spec, current.converge, position, t);
         const edge = Math.min(1, Math.min(t, 1 - t) * 7);
         const grow = strandEased(current.generations, slot.spec.generation);
         const grown = growthAlong(grow - growthJitterAt(grow), t);
@@ -731,7 +821,7 @@ function Pulses({ state, tier, materials }: Props) {
         const slot = upSlots[index];
         if (!slot) continue;
         axisPointAtInto(slot.spec, local, current.flatten, position);
-        applyConvergeInto(slot.spec, current.converge, position);
+        applyConvergeInto(slot.spec, current.converge, position, local);
         const edge = Math.min(1, Math.min(t, 1 - t) * 5);
         scale.setScalar(0.062 * edge * current.upstream);
         matrix.compose(position, quaternion, scale);

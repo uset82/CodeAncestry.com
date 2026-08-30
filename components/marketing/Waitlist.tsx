@@ -131,9 +131,11 @@ export function WaitlistForm() {
 
         <div className="flex flex-wrap items-center gap-4">
           <Button type="submit" size="lg" disabled={status === 'submitting'}>
-            {status === 'submitting' ? 'Adding…' : 'Join the alpha list'}
+            {status === 'submitting' ? 'Adding…' : 'Connect Repository'}
           </Button>
-          <p className="text-faint text-[13px]">No newsletter. One message when it opens.</p>
+          <p className="text-faint text-[13px]">
+            Alpha waitlist — you will be invited to connect a repository. No newsletter.
+          </p>
         </div>
       </div>
     </form>

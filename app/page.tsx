@@ -1,9 +1,11 @@
 import { BeatScaffold } from '@/components/marketing/BeatScaffold';
 import { CodePaintingTeaser } from '@/components/marketing/CodePaintingTeaser';
-import { ConceptCards } from '@/components/marketing/ConceptCards';
 import { Endgame } from '@/components/marketing/Endgame';
+import { GenesSection } from '@/components/marketing/GenesSection';
+import { GenomeSection } from '@/components/marketing/GenomeSection';
 import { JoinSection } from '@/components/marketing/JoinSection';
-import { MeaningLayer } from '@/components/marketing/MeaningLayer';
+import { PlatformSection } from '@/components/marketing/PlatformSection';
+import { ProblemSection } from '@/components/marketing/ProblemSection';
 import { PropagationStrip } from '@/components/marketing/PropagationStrip';
 import { TrustLadder } from '@/components/marketing/TrustLadder';
 import { Reveal } from '@/components/motion/Reveal';
@@ -20,10 +22,16 @@ export default function HomePage() {
     <HelixStage>
       <HelixHero />
       <Reveal>
-        <ConceptCards />
+        <ProblemSection />
       </Reveal>
       <Reveal>
-        <MeaningLayer />
+        <PlatformSection />
+      </Reveal>
+      <Reveal>
+        <GenomeSection />
+      </Reveal>
+      <Reveal>
+        <GenesSection />
       </Reveal>
       <Reveal>
         <CodePaintingTeaser />

@@ -13,16 +13,16 @@ export function JoinSection() {
   return (
     <Section id="join" beat={11} beatSide="left" className="min-h-screen">
       <div className="max-w-[560px]">
-        <Eyebrow index="06">Alpha</Eyebrow>
+        <Eyebrow index="17">Alpha</Eyebrow>
         <h2 className="text-headline mt-4 text-balance">
-          Generate your project&rsquo;s
+          Connect your
           <br />
-          <span className="text-emphasis">first genome.</span>
+          <span className="text-emphasis">repository.</span>
         </h2>
         <p className="text-text-soft mt-6 leading-relaxed">
-          The alpha reads a repository you already own, proposes its capability genes, and shows
-          you what it believes and why. You correct it. Nothing is published without you saying
-          so, and inference is never presented as fact.
+          The alpha reads a repository you already own, proposes its first genome — the capability
+          genes it believes are there — and shows you what it believes and why. You correct it.
+          Nothing is published without you saying so, and inference is never presented as fact.
         </p>
 
         <StatRail

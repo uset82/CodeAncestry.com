@@ -6,6 +6,7 @@ import { mutationM94012 } from './mutation-m94012';
 
 export { DEMO_KIND } from './kind';
 export type { DemoHonesty, DemoMeta } from './kind';
+export type { DemoGene } from './genes';
 export { agentA184, ax2041, axisRobot, demoGenes, mutationM94012 };
 
 export const homepageDemo = {
@@ -18,4 +19,9 @@ export const homepageDemo = {
 
 export function getDemoGene(id: string) {
   return demoGenes.find((gene) => gene.id === id);
+}
+
+/** Display form: DEMO:NAV-G288 → NAV-G288. The prefix is loader hygiene. */
+export function demoAccession(id: string) {
+  return id.replace(/^DEMO:/, '');
 }

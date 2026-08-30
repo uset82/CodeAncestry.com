@@ -31,9 +31,9 @@ export type HomepageSectionId = (typeof HOMEPAGE_SECTIONS)[number]['id'];
 export const HOMEPAGE_BEAT_STANDINS = [
   { beat: 0, id: 'hero', side: 'left', standIn: 'HelixHero upper' },
   { beat: 1, id: 'hero', side: 'left', standIn: 'HelixHero lower' },
-  { beat: 2, id: 'problem', side: 'left', standIn: 'ConceptCards' },
-  { beat: 3, id: 'platform', side: 'left', standIn: 'MeaningLayer' },
-  { beat: 4, id: 'codetree', side: 'left', standIn: 'CodePaintingTeaser' },
+  { beat: 2, id: 'problem', side: 'left', standIn: 'ProblemSection' },
+  { beat: 3, id: 'platform', side: 'left', standIn: 'PlatformSection' },
+  { beat: 4, id: 'genome', side: 'left', standIn: 'GenomeSection' },
   { beat: 5, id: 'agents', side: 'left', standIn: 'PropagationStrip' },
   { beat: 6, id: 'trust', side: 'left', standIn: 'TrustLadder' },
   { beat: 7, id: 'machine', side: 'left', standIn: 'Endgame' },

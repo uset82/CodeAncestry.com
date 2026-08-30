@@ -6,7 +6,7 @@ export const site = {
   url: 'https://codeancestry.com',
   tagline: 'Every machine has ancestors.',
   description:
-    'A living genealogy for software, AI agents and robots. Trace what a project inherited, what it mutated, what it learned, and which descendant made the family smarter.',
+    'A genealogy and provenance layer for software, AI agents, and machines. Git tracks code. CodeAncestry tracks evolution.',
   /* Reserved subdomains from the ecosystem map. Rendered in the footer so the
      shape of the platform is legible before the services exist. */
   subdomains: [
@@ -75,4 +75,5 @@ export const nav: readonly NavItem[] = [
 export const connectCta = {
   href: '/#join',
   label: 'Connect Repository',
+  hint: 'Alpha',
 } as const;
