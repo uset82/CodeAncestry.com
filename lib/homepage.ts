@@ -33,7 +33,7 @@ export const HOMEPAGE_BEAT_STANDINS = [
   { beat: 1, id: 'hero', side: 'left', standIn: 'HelixHero lower' },
   { beat: 2, id: 'problem', side: 'left', standIn: 'ProblemSection' },
   { beat: 3, id: 'platform', side: 'left', standIn: 'PlatformSection' },
-  { beat: 4, id: 'genome', side: 'left', standIn: 'GenomeSection' },
+  { beat: 4, id: 'codetree', side: 'left', standIn: 'CodeTreeSection' },
   { beat: 5, id: 'agents', side: 'left', standIn: 'PropagationStrip' },
   { beat: 6, id: 'trust', side: 'left', standIn: 'TrustLadder' },
   { beat: 7, id: 'machine', side: 'left', standIn: 'Endgame' },

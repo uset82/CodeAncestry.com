@@ -1,23 +1,25 @@
-# Cursor — Phase 4 landed (uncommitted)
+# Cursor — Phase 5 landed (uncommitted until push)
 
-Claude is out of credits. Cursor continued Phase 4 in-lane.
+Claude is out of credits. Cursor continued Phase 5 in-lane.
 
-## Landed
+## Already on main
 
-- Homepage 04 `GenomeSection` + 05 `GenesSection` after Platform, before CodePainting. Both `beat={4}` `beatSide="left"` (flatten 0.4). Twelve beats unchanged.
-- `AxisGenomeBrowser` on AXIS ROBOT CORE (not KEYLIT). Eight tracks. Default NAVIGATION → NAV-G288.
-- `DemoGeneInspector` instrumentation: accession, purpose, origin, generations, mutations, dependencies, descendants, health, status mark (✓ / !).
-- Section 05 featured record G-VISION-204 / COMPUTER VISION / VERIFIED.
-- Demo genes for every AXIS track in `data/demo/genes.ts`. Display accession strips `DEMO:`.
-- Beat-4 stand-in is `GenomeSection`. CodePainting remains the CodeTree placeholder until Phase 5.
+- `77d96bb` — Phase 3+4: homepage argument through AXIS genome.
+
+## Landed (this commit)
+
+- Homepage 06 `CodeTreeSection` replaces CodePainting. AXIS family, not KEYLIT. Beat 4 left.
+- Nine lineage types with glyph + shape + connection (not colour alone).
+- `AxisCodeTree`: tidy layout via existing `FamilyTree` geometry, zoom/pan, collapse Field fork, follow M-94012, compare two descendants. No rAF.
+- Homepage 07 `MutationSection`: M-94012 inspector + ADOPT/TEST/SIMULATE/REJECT/QUARANTINE as labelled demo states.
+- 15-node AXIS family (`data/demo/axis-family.ts`). Field starts collapsed (11 visible).
 
 ## Verified
 
-- `tsc`, eslint, fixtures, `check-beats`, `next build` (29 routes) green.
-- Browser: default NAV-G288 (RoverNav, gen 34, 427 mutations, 18 deps, 82,914 descendants, 97.1%, Investigate). Click VISION → G-VISION-204. ArrowDown VISION → MEMORY. Desktop side pane; mobile stacks. Genes plate matches spec.
-- Contrast `.captures/phase4-r1/`: 12 beats, 189 blocks, **0 helix fails**, footer `helixFramesDelta: 0`.
+- `tsc`, eslint green.
+- Browser: default AXIS Robot Core; Follow mutation → AXIS Mutant; ADOPT copy is demo-only.
+- Contrast `.captures/phase5-r1/`: 12 beats, 189 blocks, **0 helix fails**, footer `helixFramesDelta: 0`.
 
 ## Not started
 
-- Phase 5 CodeTree / AXIS family / Mutation Lab.
-- Commit — waiting for Carlos.
+- Phase 6 Agent DNA / distributed evolution.

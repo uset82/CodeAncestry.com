@@ -1,9 +1,10 @@
 import { BeatScaffold } from '@/components/marketing/BeatScaffold';
-import { CodePaintingTeaser } from '@/components/marketing/CodePaintingTeaser';
+import { CodeTreeSection } from '@/components/marketing/CodeTreeSection';
 import { Endgame } from '@/components/marketing/Endgame';
 import { GenesSection } from '@/components/marketing/GenesSection';
 import { GenomeSection } from '@/components/marketing/GenomeSection';
 import { JoinSection } from '@/components/marketing/JoinSection';
+import { MutationSection } from '@/components/marketing/MutationSection';
 import { PlatformSection } from '@/components/marketing/PlatformSection';
 import { ProblemSection } from '@/components/marketing/ProblemSection';
 import { PropagationStrip } from '@/components/marketing/PropagationStrip';
@@ -34,7 +35,10 @@ export default function HomePage() {
         <GenesSection />
       </Reveal>
       <Reveal>
-        <CodePaintingTeaser />
+        <CodeTreeSection />
+      </Reveal>
+      <Reveal>
+        <MutationSection />
       </Reveal>
       <Reveal>
         <PropagationStrip />
