@@ -7,6 +7,7 @@ import { demoGenes } from './genes';
 import { lineageHealth } from './health';
 import { mutationM94012 } from './mutation-m94012';
 import { keylitOrigin } from './origin';
+import { protocolIndex } from './protocol';
 import { traceFailure } from './trace';
 import { trustEvidence } from './trust';
 
@@ -15,7 +16,9 @@ export type { DemoHonesty, DemoMeta } from './kind';
 export type { BlastActionId, BlastHit, BlastModeId } from './blast';
 export type { DemoGene } from './genes';
 export type { EvolutionDirectionId } from './evolution';
+export type { CloseClaim } from './close';
 export type { OriginNode } from './origin';
+export type { ProtocolGroup, ProtocolKind, ProtocolLocus, ProtocolStatus } from './protocol';
 export type { HealthStatus, HealthViewId } from './health';
 export type { TraceActionId, TracePhase } from './trace';
 export type { EvidenceState } from './trust';
@@ -25,7 +28,9 @@ export { EVOLUTION_DIRECTIONS } from './evolution';
 export { LINEAGE_KIND_META, LINEAGE_KINDS } from './lineage-kinds';
 export { AXIS_IDS, axisFamily, axisLineageKinds, getAxisNode } from './axis-family';
 export { futureCompatibility, trustEvidence } from './trust';
+export { CLOSE_CLAIMS, CLOSE_THESIS } from './close';
 export { ORIGIN_NODES, keylitOrigin, originChildren } from './origin';
+export { PROTOCOL_LOCI, protocolIndex, protocolLoci } from './protocol';
 export { HEALTH_VIEWS, healthInheritors, lineageHealth } from './health';
 export { TRACE_ACTION_COPY, TRACE_ACTIONS, TRACE_STEPS, traceFailure } from './trace';
 export { agentA184, ax2041, axisRobot, demoGenes, mutationM94012 };
@@ -42,6 +47,7 @@ export const homepageDemo = {
   trace: traceFailure,
   health: lineageHealth,
   origin: keylitOrigin,
+  protocol: protocolIndex,
 } as const;
 
 export function getDemoGene(id: string) {

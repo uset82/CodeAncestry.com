@@ -42,3 +42,5 @@ export const HOMEPAGE_BEAT_STANDINS = [
   { beat: 10, id: 'health', side: 'left', standIn: 'HealthSection' },
   { beat: 11, id: 'origin', side: 'left', standIn: 'OriginSection' },
 ] as const;
+
+/** Section 16 (`#research`) has no `data-beat`. Origin and Join share beat 11. */

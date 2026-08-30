@@ -4,6 +4,7 @@ export const site = {
   name: 'CodeAncestry',
   domain: 'codeancestry.com',
   url: 'https://codeancestry.com',
+  github: 'https://github.com/uset82/CodeAncestry.com',
   tagline: 'Every machine has ancestors.',
   description:
     'A genealogy and provenance layer for software, AI agents, and machines. Git tracks code. CodeAncestry tracks evolution.',

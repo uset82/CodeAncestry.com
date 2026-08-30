@@ -12,6 +12,7 @@ import { MutationSection } from '@/components/marketing/MutationSection';
 import { OriginSection } from '@/components/marketing/OriginSection';
 import { PlatformSection } from '@/components/marketing/PlatformSection';
 import { ProblemSection } from '@/components/marketing/ProblemSection';
+import { ResearchSection } from '@/components/marketing/ResearchSection';
 import { PropagationStrip } from '@/components/marketing/PropagationStrip';
 import { TraceSection } from '@/components/marketing/TraceSection';
 import { TrustLadder } from '@/components/marketing/TrustLadder';
@@ -73,6 +74,9 @@ export default function HomePage() {
       </Reveal>
       <Reveal>
         <OriginSection />
+      </Reveal>
+      <Reveal>
+        <ResearchSection />
       </Reveal>
       <Reveal>
         <JoinSection />
