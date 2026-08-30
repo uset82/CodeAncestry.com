@@ -1,27 +1,28 @@
-# Cursor — frame the grown specimen, not the unborn tree
+# Cursor — birth the specimen in pose, still the ledger
 
-The twelve-position instrument was closed. The live sweep is on main. This pass stops the camera aiming at branches that do not exist yet.
+The twelve-position instrument was closed. The live sweep and grown-family framing are on main. This pass stops the canvas opening on a construction camera, and stops the capability column from still growing like a vine.
 
 ## Already on main
 
+- `0294597` — camera tracks grown mass; mid-width lookX reserves chip width.
 - `ed11f44` — live CPU tube sweep; attachments sample the same pose.
-- `6b4ddfb` — camera snap on beat jumps; locus chips fade with `converge`.
-- `20bbbf1` — mid-width lookX scale so the tubes stay in frame.
 
 ## This pass
 
-At `generations: 1` every gen-1 child satisfies `generation < 1.02`, but `strandEased` is still 0. Aiming at their authored `end` pulled the look target down to the unborn tree and parked VISION under the 74px header. A linear aspect scale then kept the tubes in a mid-width frame while the chips — which sit outside the rail — walked off the right edge.
+The Canvas booted at `y = -2.35` looking at the origin — the unborn-tree construction pose. `CameraRig` then lerped to the hero. The specimen settled into being instead of being born in frame. Measure ran in `useEffect`, so the first paint also used `lookX = -4.6` on a mid-width window.
 
-- **Camera Y:** `liveFamilyY` tracks the grown segment, not the generation fence. The look-at descends with the split instead of anticipating it.
-- **Camera X:** `lookXExtent` keeps capture at 4.6 and reserves chip width as the aspect drops. 905×1026 aims at −1.43, not −2.28.
-- **Chips:** `Html center` is enough — the extra `-translate-y-1/2` was a second lift. A chip may slide up to 48px to clear chrome; past that it hides, because the name would be lying.
+At converge = 1 the sweep still screwed, leaned, and waved the tube radius. A machine genome is a layout. A ledger that still coils is the wrong motion language.
+
+- **Boot:** `grownFamilyY` + `FAMILY_LOOK_LIFT` live in `strands.ts`. The Canvas, `onCreated`, and the look-at target all open on that pose. Measure moves to `useLayoutEffect`. The first camera frame snaps.
+- **Ledger:** sweep amplitude scales by `1 - converge`. The track braid is `4c(1-c)` — it peaks in the transition and is silent on the finished column. Low-tier GLSL matches.
 
 ## Verified
 
-- `tsc`, eslint, `check-beats` 12/0.
-- Browser 905×1026 beat 1: VISION–NAVIGATION all visible. VISION top 364 (header is 74). None in the copy, none off the right edge.
+- `tsc`, eslint, `check-beats` 12/0, sweep parity `4.892e-7`.
+- Boot lookX on 905×1026 is already `−1.43`, not `−4.6`. Camera z 8.39 from the first measured frame.
+- Beat 1: VISION–NAVIGATION visible. VISION top 362.
 - `#machine`: 0 helix chips. Camera z 8.39 → 17.44.
-- Contrast `.captures/phase-frame-r1/`: 12 beats, 286 blocks, **0 fails**, `helixFramesDelta: 0`.
+- Contrast `.captures/phase-boot-r1/`: 12 beats, 286 blocks, **0 fails**, `helixFramesDelta: 0`.
 
 ## Not started
 

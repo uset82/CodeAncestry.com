@@ -22,8 +22,9 @@ import {
   STRANDS_BY_ID,
   UPSTREAM_PATH,
   FAMILY_HALF_HEIGHT,
-  FAMILY_Y,
+  FAMILY_LOOK_LIFT,
   FLATTEN_MIX,
+  grownFamilyY,
   applyConvergeInto,
   axisPointAtInto,
   backbonePointAtInto,
@@ -55,7 +56,7 @@ import {
   type SweepBuffers,
   type SweepTuning,
 } from './sweep';
-import { climaxAmount, daylight, holdProgress, type BeatState } from './beats';
+import { climaxAmount, daylight, holdProgress, LOOK_X_EXTENT, type BeatState } from './beats';
 import {
   climaxEmissive,
   depthMaterialOf,
@@ -78,8 +79,6 @@ import {
 const AXIS_A = new Vector3();
 const AXIS_B = new Vector3();
 
-/** Aim above the grown centre so the leftover frame lands below the header. */
-const FAMILY_LOOK_LIFT = 0.8;
 /** Sticky header height. Chips that project into this band sit under chrome. */
 const HEADER_CLEAR = 74;
 const EDGE_CLEAR = 8;
@@ -122,8 +121,10 @@ function patchTrackConverge(material: MeshStandardMaterial) {
           `float poseW = clamp(uFlatten * ${FLATTEN_MIX} + uConverge, 0.0, 1.0) * poseGate;`,
           'transformed = mix(transformed, axisPoint, poseW);',
           'float trackAng = uv.y * 6.2831853;',
-          `transformed.y += sin(trackAng) * ${TRACK_WOBBLE} * uConverge * poseGate;`,
-          `transformed.z += cos(trackAng) * ${TRACK_WOBBLE} * uConverge * poseGate;`,
+          /* Braid is the transition. A finished ledger is still. */
+          `float braid = uConverge * (1.0 - uConverge) * 4.0;`,
+          `transformed.y += sin(trackAng) * ${TRACK_WOBBLE} * braid * poseGate;`,
+          `transformed.z += cos(trackAng) * ${TRACK_WOBBLE} * braid * poseGate;`,
         ].join('\n       '),
       );
   };
@@ -133,7 +134,7 @@ function patchTrackConverge(material: MeshStandardMaterial) {
     previous?.(shader, renderer);
     rewrite(shader);
   };
-  material.customProgramCacheKey = () => 'helix-track-converge';
+  material.customProgramCacheKey = () => 'helix-track-converge-braid';
 
   const depth = material.userData.depthMaterial as MeshStandardMaterial | undefined;
   if (!depth) return;
@@ -142,7 +143,7 @@ function patchTrackConverge(material: MeshStandardMaterial) {
     previousDepth?.(shader, renderer);
     rewrite(shader);
   };
-  depth.customProgramCacheKey = () => 'helix-track-converge-depth';
+  depth.customProgramCacheKey = () => 'helix-track-converge-braid-depth';
 }
 
 type PoseUniforms = { uConverge?: { value: number }; uCpuPose?: { value: number } };
@@ -161,31 +162,6 @@ function writeConverge(material: MeshStandardMaterial, converge: number, cpuPose
         { userData?: { shader?: { uniforms?: PoseUniforms } } } | undefined
     )?.userData?.shader?.uniforms,
   );
-}
-
-/**
- * Centre of the mass that is actually on screen.
- *
- * The generation fence is the wrong bound. At `generations: 1` every gen-1
- * child satisfies `generation < 1.02`, but `strandEased` is still 0 — those
- * branches do not exist yet. Aiming at their authored `end` pulled the look
- * target down to the unborn tree and parked the origin crown (VISION) under
- * the 74px header. The camera follows the grown segment, so it descends with
- * the split instead of anticipating it.
- */
-function liveFamilyY(generations: number): number {
-  let top = Number.NEGATIVE_INFINITY;
-  let bottom = Number.POSITIVE_INFINITY;
-  for (const spec of STRANDS) {
-    const grow = strandEased(generations, spec.generation);
-    if (grow < 0.08) continue;
-    const y0 = spec.start.y;
-    const y1 = spec.start.y + (spec.end.y - spec.start.y) * grow;
-    top = Math.max(top, y0, y1);
-    bottom = Math.min(bottom, y0, y1);
-  }
-  if (!Number.isFinite(top)) return FAMILY_Y;
-  return (top + bottom) / 2;
 }
 
 const RUNGS_PER_STRAND = 24;
@@ -303,9 +279,13 @@ function runSweep(
   time: number,
   cursor: { x: number; y: number },
 ): void {
-  /* The converge braid the shader would otherwise add. Reproduced here because
-     `uCpuPose` switches the shader's copy off. */
-  const track = beat.converge * TRACK_WOBBLE;
+  /* Braid is the transition into the column. A finished ledger is still —
+     `c * (1-c) * 4` peaks at the same 0.07 the shader used to hold at c = 1. */
+  const track = beat.converge * (1 - beat.converge) * 4 * TRACK_WOBBLE;
+  const ledger = {
+    ...sweep.tuning,
+    amplitude: sweep.tuning.amplitude * (1 - beat.converge),
+  };
 
   sweep.strands.forEach((entry, i) => {
     const strand = strands[i];
@@ -318,8 +298,8 @@ function runSweep(
       beat.converge,
       strandEased(beat.generations, strand.spec.generation),
     );
-    advanceLive(live, delta, time, leanCursor(beat, cursor), sweep.tuning);
-    writeCenterlines(live, rings, radius, sweep.tuning);
+    advanceLive(live, delta, time, leanCursor(beat, cursor), ledger);
+    writeCenterlines(live, rings, radius, ledger);
 
     sweepInto(buffers[0], rings.centersA, rings.radii, rings.phases, 0, live.basis.u, track);
     sweepInto(buffers[1], rings.centersB, rings.radii, rings.phases, 0, live.basis.u, track);
@@ -1204,7 +1184,11 @@ function CameraRig({
   pointer: React.RefObject<{ x: number; y: number }>;
 }) {
   const { camera } = useThree();
-  const target = useMemo(() => new Vector3(0, 1.4, 0), []);
+  const settled = useRef(false);
+  const target = useMemo(
+    () => new Vector3(-LOOK_X_EXTENT, grownFamilyY(1) + FAMILY_LOOK_LIFT, 0),
+    [],
+  );
   const desired = useMemo(() => new Vector3(), []);
   const lookAt = useMemo(() => new Vector3(), []);
 
@@ -1227,7 +1211,7 @@ function CameraRig({
     const fov = 'fov' in camera ? (camera.fov as number) : 42;
     const fit = FAMILY_HALF_HEIGHT / Math.tan((fov * Math.PI) / 360);
     const z = fit * current.cameraMultiple;
-    const lookY = liveFamilyY(current.generations) + FAMILY_LOOK_LIFT;
+    const lookY = grownFamilyY(current.generations) + FAMILY_LOOK_LIFT;
     const lookX = current.lookX;
 
     /* Pointer may orbit toward the specimen, never toward the copy. */
@@ -1238,8 +1222,9 @@ function CameraRig({
     desired.set(lookX + orbitX, lookY + pointer.current.y * 0.24 * orbit, z);
     lookAt.set(lookX, lookY, 0);
 
-    const snap = window.__HELIX_SNAP === true;
-    if (snap) window.__HELIX_SNAP = false;
+    const snap = window.__HELIX_SNAP === true || !settled.current;
+    settled.current = true;
+    if (window.__HELIX_SNAP === true) window.__HELIX_SNAP = false;
     const lerp = snap ? 1 : Math.min(1, delta * 3.2);
     camera.position.lerp(desired, lerp);
     target.lerp(lookAt, lerp);

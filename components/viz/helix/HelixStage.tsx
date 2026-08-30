@@ -3,17 +3,36 @@
 import { Canvas, useFrame } from '@react-three/fiber';
 import { ACESFilmicToneMapping, PCFSoftShadowMap, SRGBColorSpace } from 'three';
 import dynamic from 'next/dynamic';
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { createContext, useContext, useLayoutEffect, useRef, useState } from 'react';
 import { useReducedMotion } from '@/lib/hooks/useReducedMotion';
 import { useWebGL } from '@/lib/hooks/useWebGL';
 import {
+  BEATS,
   beatStateAt,
   daylight,
   LOOK_X_EXTENT,
+  lookXForSide,
   measureViewportBeat,
   type BeatSide,
   type BeatState,
 } from './beats';
+import { FAMILY_HALF_HEIGHT, FAMILY_LOOK_LIFT, grownFamilyY } from './strands';
+
+const HERO_FOV = 42;
+
+function bootCamera() {
+  const lookX = typeof window === 'undefined' ? -LOOK_X_EXTENT : lookXForSide('left');
+  const lookY = grownFamilyY(1) + FAMILY_LOOK_LIFT;
+  const z =
+    (FAMILY_HALF_HEIGHT / Math.tan((HERO_FOV * Math.PI) / 360)) * BEATS[0]!.cameraMultiple;
+  return { lookX, lookY, z };
+}
+
+function initialBeatState(): BeatState {
+  const base = beatStateAt(0, 0);
+  if (typeof window === 'undefined') return base;
+  return { ...base, lookX: lookXForSide('left'), side: 'left' };
+}
 
 const HelixScene = dynamic(() => import('./HelixScene').then((m) => m.HelixScene), {
   ssr: false,
@@ -76,14 +95,14 @@ export function HelixStage({ children }: { children: React.ReactNode }) {
   const animated = supported && !reducedMotion;
   const quality: 'low' | 'high' = tier === 'high' ? 'high' : 'low';
 
-  const state = useRef<BeatState>(beatStateAt(0, 0));
+  const state = useRef<BeatState>(initialBeatState());
   const invalidate = useRef<(() => void) | null>(null);
   const scrim = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [loop, setLoop] = useState<'always' | 'demand'>('always');
   const lastBeat = useRef(0);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!animated) return;
 
     const measure = () => {
@@ -126,6 +145,8 @@ export function HelixStage({ children }: { children: React.ReactNode }) {
     };
   }, [animated]);
 
+  const boot = bootCamera();
+
   return (
     <HelixDriverContext.Provider value={{ activeIndex, animated }}>
       {animated && (
@@ -134,7 +155,12 @@ export function HelixStage({ children }: { children: React.ReactNode }) {
             frameloop={loop}
             shadows={quality === 'high' ? { type: PCFSoftShadowMap, enabled: true } : false}
             dpr={quality === 'low' ? [1, 1.4] : [1, 1.9]}
-            camera={{ position: [-4.6, -2.35, 8.4], fov: 42, near: 0.1, far: 120 }}
+            camera={{
+              position: [boot.lookX, boot.lookY, boot.z],
+              fov: HERO_FOV,
+              near: 0.1,
+              far: 120,
+            }}
             gl={{
               antialias: quality === 'high',
               alpha: false,
@@ -142,7 +168,10 @@ export function HelixStage({ children }: { children: React.ReactNode }) {
               toneMapping: ACESFilmicToneMapping,
               outputColorSpace: SRGBColorSpace,
             }}
-            onCreated={({ gl, invalidate: nextInvalidate }) => {
+            onCreated={({ gl, camera, invalidate: nextInvalidate }) => {
+              const boot = bootCamera();
+              camera.position.set(boot.lookX, boot.lookY, boot.z);
+              camera.lookAt(boot.lookX, boot.lookY, 0);
               gl.toneMappingExposure = 1.16;
               gl.setClearColor('#07090d', 1);
               invalidate.current = nextInvalidate;

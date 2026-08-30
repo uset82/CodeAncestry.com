@@ -393,6 +393,32 @@ export const FAMILY_Y = (FAMILY_TOP + FAMILY_BOTTOM) / 2;
  */
 export const FAMILY_HALF_HEIGHT = ((FAMILY_TOP - FAMILY_BOTTOM) * 1.06) / 2;
 
+/** Aim above the grown centre so leftover frame lands below the header. */
+export const FAMILY_LOOK_LIFT = 0.8;
+
+/**
+ * Centre of the mass that is actually on screen.
+ *
+ * The generation fence is the wrong bound. At `generations: 1` every gen-1
+ * child satisfies `generation < 1.02`, but `strandEased` is still 0 — those
+ * branches do not exist yet. The camera follows the grown segment so it
+ * descends with the split instead of anticipating it.
+ */
+export function grownFamilyY(generations: number): number {
+  let top = Number.NEGATIVE_INFINITY;
+  let bottom = Number.POSITIVE_INFINITY;
+  for (const spec of STRANDS) {
+    const grow = strandEased(generations, spec.generation);
+    if (grow < 0.08) continue;
+    const y0 = spec.start.y;
+    const y1 = spec.start.y + (spec.end.y - spec.start.y) * grow;
+    top = Math.max(top, y0, y1);
+    bottom = Math.min(bottom, y0, y1);
+  }
+  if (!Number.isFinite(top)) return FAMILY_Y;
+  return (top + bottom) / 2;
+}
+
 /**
  * converge = 1 re-poses each strand into a horizontal track. Tracks stack
  * vertically in STRANDS order (loci 6/5/5/5/4/4/4/3), length ∝ gene count.
