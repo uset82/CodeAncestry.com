@@ -45,9 +45,8 @@ export type NavItem = NavLink & {
 };
 
 /**
- * Claude’s primary IA. Trace stays out of the header until section 13 exists
- * as `#trace` (Phase 9), then retargets `/trace` when that route exists.
- * Connect Repository is the alpha waitlist — not a fake OAuth.
+ * Primary IA. Homepage beats that exist are hashes. Registry routes stay
+ * under Explore. Connect Repository is the alpha waitlist — not a fake OAuth.
  */
 export const exploreMenu = [
   { href: '/explore', label: 'Projects' },
@@ -69,8 +68,8 @@ export const nav: readonly NavItem[] = [
   { href: '/explore', label: 'Explore', menu: exploreMenu },
   { href: '/lineage', label: 'Lineage' },
   { href: '/#trace', label: 'Trace' },
-  { href: '/explore', label: 'Genome' },
-  { href: '/explore', label: 'Agents' },
+  { href: '/#genome', label: 'Genome' },
+  { href: '/#agents', label: 'Agents' },
   { href: '/research', label: 'Research', menu: researchMenu },
 ];
 

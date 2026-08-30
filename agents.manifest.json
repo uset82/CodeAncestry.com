@@ -4,8 +4,8 @@
   "defaultBranch": "main",
   "worktreeRoot": ".",
   "shared": {
-    "owner": "claude",
-    "reason": "Cross-cutting config touched by almost every task. One owner prevents a conflict on every merge, and these files decide how the whole team builds.",
+    "owner": "cursor",
+    "reason": "Claude is out of credit. Cursor is design lead and builder. One owner on shared config so the instrument does not stall.",
     "paths": [
       "package.json",
       "package-lock.json",
@@ -19,30 +19,29 @@
   },
   "agents": {
     "claude": {
-      "role": "architect",
-      "branch": "main",
-      "owns": [
-        "taskplan.md",
-        "HANDOFF.md",
-        "docs/**",
-        "research/**"
-      ],
-      "title": "Claude — design & product lead",
+      "role": "paused",
+      "branch": "feat/platform",
+      "owns": [],
+      "title": "Claude — paused (no credit)",
       "color": "orange",
       "icon": "◈",
       "worktree": "."
     },
     "cursor": {
-      "role": "builder",
+      "role": "architect",
       "branch": "main",
       "owns": [
         "app/**",
         "components/**",
         "lib/**",
         "data/**",
-        "scripts/**"
+        "scripts/**",
+        "taskplan.md",
+        "HANDOFF.md",
+        "docs/**",
+        "research/**"
       ],
-      "title": "Cursor — primary engineering & integration",
+      "title": "Cursor — design lead and builder",
       "color": "cyan",
       "icon": "▶",
       "worktree": "."
@@ -68,6 +67,16 @@
       "color": "purple",
       "icon": "○",
       "worktree": "."
+    },
+    "kali-linux": {
+      "role": "builder",
+      "branch": "feat/kali-Linux",
+      "owns": [
+        "test/**"
+      ],
+      "title": "kali-Linux",
+      "color": "blue",
+      "icon": "🤖"
     }
   },
   "everyoneMayWrite": [

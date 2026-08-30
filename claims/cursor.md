@@ -1,29 +1,27 @@
-# Cursor — birth the specimen in pose, still the ledger
+# Cursor — design lead. Header names the beats that exist.
 
-The twelve-position instrument was closed. The live sweep and grown-family framing are on main. This pass stops the canvas opening on a construction camera, and stops the capability column from still growing like a vine.
-
-## Already on main
-
-- `0294597` — camera tracks grown mass; mid-width lookX reserves chip width.
-- `ed11f44` — live CPU tube sweep; attachments sample the same pose.
+Claude is out of credit. Cursor owns the plan and the instrument.
 
 ## This pass
 
-The Canvas booted at `y = -2.35` looking at the origin — the unborn-tree construction pose. `CameraRig` then lerped to the hero. The specimen settled into being instead of being born in frame. Measure ran in `useEffect`, so the first paint also used `lookX = -4.6` on a mid-width window.
+The taskplan still said “wait for Claude, then start Phase 3.” Phases 3–14 are
+already on `main`. Genome and Agents in the header dumped both stories into
+`/explore` while `#genome` and `#agents` sit on the homepage. A label that
+does not go where it points is a lie.
 
-At converge = 1 the sweep still screwed, leaned, and waved the tube radius. A machine genome is a layout. A ledger that still coils is the wrong motion language.
-
-- **Boot:** `grownFamilyY` + `FAMILY_LOOK_LIFT` live in `strands.ts`. The Canvas, `onCreated`, and the look-at target all open on that pose. Measure moves to `useLayoutEffect`. The first camera frame snaps.
-- **Ledger:** sweep amplitude scales by `1 - converge`. The track braid is `4c(1-c)` — it peaks in the transition and is silent on the finished column. Low-tier GLSL matches.
+- **Lead:** `taskplan.md` current position and session fields tell the truth.
+  `agents.manifest.json` — Cursor is architect; Claude is paused.
+- **Nav:** Genome → `/#genome`. Agents → `/#agents`. Trace already hashed.
+  Explore keeps the registry.
+- **Verify script:** `test:sweep` stays on `verify`.
 
 ## Verified
 
-- `tsc`, eslint, `check-beats` 12/0, sweep parity `4.892e-7`.
-- Boot lookX on 905×1026 is already `−1.43`, not `−4.6`. Camera z 8.39 from the first measured frame.
-- Beat 1: VISION–NAVIGATION visible. VISION top 362.
-- `#machine`: 0 helix chips. Camera z 8.39 → 17.44.
-- Contrast `.captures/phase-boot-r1/`: 12 beats, 286 blocks, **0 fails**, `helixFramesDelta: 0`.
+- `tsc`, eslint, `check-beats` 12/0.
+- Homepage `?helix=high`: Genome stays on `/`, hash `#genome`, section top 64,
+  beat 4. Agents stays on `/`, hash `#agents`, section under the header.
+  Neither dumps into `/explore`.
 
-## Not started
+## Open
 
-Claude still owns the taskplan checkboxes. There is no Phase 15.
+The next real instrument defect. No Phase 15. Do not restart Phases 3–14.

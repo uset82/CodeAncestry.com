@@ -13,7 +13,8 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "test:fixtures": "tsx scripts/validate-fixtures.ts",
-    "verify": "npm run typecheck && npm run lint && npm run test:fixtures",
+    "test:sweep": "tsx scripts/check-sweep-parity.ts",
+    "verify": "npm run typecheck && npm run lint && npm run test:fixtures && npm run test:sweep",
     "analyze": "cross-env ANALYZE=true next build",
     "capture": "node scripts/capture.mjs"
   },

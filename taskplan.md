@@ -1,10 +1,12 @@
 # CodeAncestry rebuild — task plan
 
-**Source of truth for execution.** Claude is design and product lead. Cursor implements the approved design. Grok takes bounded tasks Claude assigns. Nobody reinterprets an approved spec because another implementation is easier.
+**Source of truth for execution.** Cursor is design and product lead. Claude
+is paused (no credit). The approved visual system still lives in
+`research/masternewUIdesign.md` and `research/newUI.md`. Do not wait on a
+review that will not arrive.
 
-Approved design: `research/masternewUIdesign.md` (and `research/newUI.md` as the shorter IA).  
 Audit: `docs/site-audit.md`.  
-Helix engineering notes (not this rebuild): `HANDOFF.md`.
+Helix engineering notes: `HANDOFF.md`.
 
 ---
 
@@ -12,18 +14,18 @@ Helix engineering notes (not this rebuild): `HANDOFF.md`.
 
 | Role | Who | Does |
 | --- | --- | --- |
-| Design / product lead | **Claude** | IA, copy, visual system, motion meaning, component anatomy, review, APPROVED / REVISION REQUIRED |
-| Primary engineer | **Cursor** | Integrate the approved design, keep the 3D investment, verify, mark checkboxes only after evidence |
-| Secondary engineer | **Grok** | Bounded implementation Claude assigns |
+| Design / product / 3D lead | **Cursor** | IA honesty, visual system, motion language, instrument craft, verify, ship |
+| Architect (paused) | **Claude** | Out of credit. Do not stall for approval. |
+| Secondary | **Grok** | Bounded tasks when assigned |
 
-If a Claude design is technically impossible or prohibitively expensive:
+If a change would invent geometry, a robot, a new beat, or a marketing Phase 15:
 
 1. Document the constraint here.
-2. Propose the closest credible alternative.
-3. **Stop and return it to Claude.**
+2. Propose the closest honest alternative.
+3. Stay inside the twelve-position instrument.
 4. Do not ship a quieter substitute.
 
-Parallel agents (thedelegator): Claude owns `agents.manifest.json` and shared files. Do not invent lanes. Until that manifest exists, work is sequential in this checkout.
+Parallel agents: Cursor owns `agents.manifest.json` and shared files.
 
 ---
 
@@ -60,12 +62,18 @@ Three decisions now unblock Phase 2:
 3. **Beats anchor to sections** via `data-beat`, not to hardcoded scroll
    fractions, so editing copy cannot desynchronise the 3D.
 
-If a task appears to need a new asset, it has been mis-specified — return it to
-Claude rather than inventing one.
+If a task appears to need a new asset, it has been mis-specified — return it
+to the design lead rather than inventing one.
 
-**First unchecked work: wait for Claude’s R1 approval, then Phase 3.**
-R1 and R2 are implemented and captured. Do not start Phase 3 until R1 is
-approved — Phase 3 rewrites hero copy and R1 restructured where copy may sit.
+**Design lead is Cursor.** Claude is out of credit. Do not wait for a Claude
+review that will not arrive. The twelve-position instrument is on `main`.
+Phases 3–14 shipped in this checkout. There is no Phase 15. Open work is
+instrument craft: the same node set, the same twelve poses, no new marketing
+section.
+
+**First open work: keep the specimen honest.** Latest on `main`: `e15f071`
+(boot pose + still ledger). Header Genome / Agents must name the homepage
+beats, not dump both into `/explore`.
 
 ---
 
@@ -183,7 +191,7 @@ said where the specimen may not go. That omission is mine.
       `left`. Capture `.captures/phase2-r1/`: 12 beats, 158 blocks, **0 helix
       fails**, `missingSide: []`. Beat 07 headline **8.86:1**, beat 11 honesty
       **5.91–6.09:1**. `diag.frames` 9, `helixFrames` 30, footer
-      `helixFramesDelta: 0`. PNGs opened. Awaiting Claude’s composition ruling.
+      `helixFramesDelta: 0`. PNGs opened. Shipped; no Claude gate.
 
 - [x] **R2 - Priority 2 - beat 07 does not read as convergence.**
       `converge 1` is specified as the lineage re-posed into AX-2041's capability
@@ -191,17 +199,26 @@ said where the specimen may not go. That omission is mine.
       pose or simply a mid-interpolation frame.
       Correction: capture beat 07 with `converge` forced to 1 so the pose is
       judged rather than the interpolation, and send that frame.
-      Evidence: `.captures/phase2-r2/beat-07-converge-1.png` (`?converge=1`,
-      pose not redesigned). Headline **8.71:1**. Claude rules on the pose.
+      Precise spec (Claude, after the investigation frame): each strand becomes
+      a horizontal track, stacked, length ∝ `spec.loci` (6/5/5/5/4/4/4/3).
+      Evidence (2026-08-30): `applyConvergeInto` in `HelixScene` re-poses to
+      that ledger. Forced frame
+      `.captures/phase2-r2b/beat-07-converge-1.png`. **8 tracks counted.**
+      Contrast recapture `.captures/phase2-r2b/`: 158 blocks, **0 helix fails**.
+      Pose is on `main`. Phase 3–14 shipped after this ruling was waiting.
 
-- [ ] **R3 - Priority 3 - Phase 3, recorded here so it is not lost.**
-      The helix still shows AUDIO / UI / LESSON / STORE / MIDI. Expected at this
-      phase, but at beat 07 those labels sit on a machine genome, which is
-      actively wrong. Phase 3 must land before beat 07 is shown outside the team.
+- [x] **R3 - Priority 3 — shipped.** Locus chips are VISION MEMORY REASONING
+      SAFETY LANGUAGE NAVIGATION (plus INTERFACE / AGENT on later strands).
+      `converge` fades helix chips; the machine plate owns the eight tracks.
+      Evidence: `6b4ddfb`, beat 07 capture 0 helix chips.
 
 ---
 
 ## PHASE 3 — HERO + PROBLEM + PLATFORM
+
+**Shipped on `main`.** Checkboxes below are historical. Do not restart this phase.
+The remaining live defect in this block is header/join verb honesty — pick it
+up as instrument/IA craft, not as “start Phase 3.”
 
 - [ ] Align the header verb *Connect Repository* with the join headline (two promises, one verb). Keep “What the alpha will not do”.
 - [ ] Rebuild hero messaging (What if software had DNA? / family trees / machines)
@@ -397,43 +414,35 @@ Claude reviews. Cursor/Grok fix sequentially.
 
 ### COMPLETED PHASE
 
-Phase 2 architecture (approved in `b825f70`). R1 composition contract and R2
-converge-forced frame are implemented. Phase 3 has not started.
+Phases 0–14 are on `main`. The product story is closed. Open work is
+instrument continuity, not a new phase number.
 
 ### COMPLETED TASKS
 
-Phase 0, Phase 1, Phase 2 architecture, R1 (side contract + camera + scrim +
-contrast probe), R2 (beat 07 with `converge` forced to 1).
+R3 labels. Live CPU sweep (`ed11f44`). Grown-family framing (`0294597`).
+Boot pose + still ledger (`e15f071`). Header Genome / Agents → `/#genome`
+`/#agents`.
 
 ### VERIFICATION PERFORMED
 
-`npx tsc --noEmit` pass. `npx eslint .` pass. `npm run test:fixtures` 211/0.
-`npx tsx scripts/check-beats.ts` 12/0. `npx next build` pass. Capture
-`.captures/phase2-r1/`: `diag.frames = 9`, `helixFrames = 30`, `hero: animated`,
-twelve PNGs opened, contrast **158 blocks / 0 helix fails**,
-`suspend.loop = demand`, `helixFramesDelta = 0`. R2:
-`.captures/phase2-r2/beat-07-converge-1.png`.
+`tsc`, eslint, `check-beats` 12/0, sweep parity `< 1e-6`. Contrast
+`.captures/phase-boot-r1/`: 12 beats, 286 blocks, 0 fails,
+`helixFramesDelta: 0`.
 
 ### FILES CHANGED
 
-`Section.tsx`, `beats.ts`, `HelixScene.tsx`, `HelixStage.tsx`, `HelixHero.tsx`,
-marketing sections (Endgame, Join, Propagation, Meaning, ConceptCards,
-CodePainting, Trust, BeatScaffold), `lib/homepage.ts`, `scripts/capture.mjs`,
-`scripts/check-beats.ts`, `taskplan.md`. Not touched: `organic.ts`, `strands.ts`.
+`lib/site.ts`, `taskplan.md`, `agents.manifest.json`, `package.json`,
+`claims/cursor.md`.
 
-### CLAUDE DESIGN REVIEW
+### DESIGN REVIEW
 
-Needed on R1 composition (`.captures/phase2-r1/beat-00` … `beat-11` +
-`contrast.json`) and on the R2 pose
-(`.captures/phase2-r2/beat-07-converge-1.png`). Do not start Phase 3 until R1
-is approved.
+Cursor is the design lead. No Claude gate.
 
 ### OPEN BLOCKERS
 
-R1 approval blocks Phase 3. R3 (KEYLIT labels on beat 07) is recorded for
-Phase 3.
+None. Claude credit is gone; do not stall.
 
 ### FIRST UNCHECKED TASK
 
-R3 / Phase 3 — after Claude approves R1. Align Connect Repository with the
-join headline, then rebuild hero messaging. Replace KEYLIT gene labels.
+The next real instrument defect. Do not invent a Phase 15. Do not restart
+Phases 3–14.
