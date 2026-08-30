@@ -133,7 +133,7 @@ export function WaitlistForm() {
           <Button type="submit" size="lg" disabled={status === 'submitting'}>
             {status === 'submitting' ? 'Adding…' : 'Connect Repository'}
           </Button>
-          <p className="text-faint text-[13px]">
+          <p className="text-muted text-[13px]">
             Alpha waitlist — you will be invited to connect a repository. No newsletter.
           </p>
         </div>

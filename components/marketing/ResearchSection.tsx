@@ -4,9 +4,8 @@ import { protocolIndex } from '@/data/demo/protocol';
 import { Eyebrow, Section } from './Section';
 
 /**
- * Homepage 16 — From concept to protocol. No helix beat of its own.
- * Origin and Join already own beat 11 (zoomOut). This plate names that
- * network. Do not steal the pose.
+ * Homepage 16 — From concept to protocol. Same zoomOut as origin and close.
+ * The plate is two strands against that specimen, not a new pose.
  */
 
 const CTAS = [
@@ -18,7 +17,7 @@ const CTAS = [
 
 export function ResearchSection() {
   return (
-    <Section id="research">
+    <Section id="research" beat={11} beatSide="left">
       <div className="max-w-[640px]">
         <Eyebrow index="16">Research</Eyebrow>
         <h2 className="text-headline mt-4 text-balance">
@@ -32,10 +31,10 @@ export function ResearchSection() {
         </p>
       </div>
 
-      <figure className="border-line bg-panel mt-12 max-w-[640px] rounded-sm border p-5 md:p-7">
+      <figure className="border-line bg-panel mt-12 max-w-[640px] rounded-sm border p-5 md:max-w-[780px] md:p-7">
         <ProtocolIndex />
         <figcaption className="text-muted mt-6 border-t border-line pt-4 font-mono text-nano uppercase">
-          Protocol · research · no new pose
+          Two strands · zoomOut
         </figcaption>
       </figure>
 

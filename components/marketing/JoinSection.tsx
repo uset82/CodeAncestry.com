@@ -19,15 +19,15 @@ export function JoinSection() {
         </p>
       </div>
 
-      <FinalSequence className="relative mt-12 max-w-[640px] list-none pl-6" />
+      <FinalSequence className="relative mt-8 max-w-[640px] list-none pl-6" />
 
-      <h2 className="text-headline mt-12 max-w-[640px] text-balance">
+      <h2 id="close-thesis" className="text-headline mt-8 max-w-[640px] text-balance">
         Every machine
         <br />
         <span className="text-emphasis">has ancestors.</span>
       </h2>
 
-      <CloseCtas className="mt-10 flex flex-wrap items-center gap-3" />
+      <CloseCtas className="mt-8 flex flex-wrap items-center gap-3" />
 
       <div id="waitlist" className="mt-12 max-w-[560px] scroll-mt-28">
         <WaitlistForm />

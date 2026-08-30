@@ -187,7 +187,7 @@ function StaticHero() {
           <HeroFallback />
         </div>
 
-        <p className="text-faint mt-10 font-mono text-nano uppercase">
+        <p className="text-muted mt-10 font-mono text-nano uppercase">
           Static view · reduced motion
         </p>
       </div>
@@ -210,7 +210,7 @@ function AnimatedHero() {
       >
         <div className="shell-wide relative z-10 flex min-h-screen flex-col justify-center pt-24 pb-16">
           <HeroCopy />
-          <p className="text-faint mt-10 font-mono text-nano uppercase">
+          <p className="text-muted mt-10 font-mono text-nano uppercase">
             Scroll to descend the lineage
           </p>
         </div>

@@ -43,4 +43,4 @@ export const HOMEPAGE_BEAT_STANDINS = [
   { beat: 11, id: 'origin', side: 'left', standIn: 'OriginSection' },
 ] as const;
 
-/** Section 16 (`#research`) has no `data-beat`. Origin and Join share beat 11. */
+/** Origin, research, and join share beat 11 (`zoomOut`). Capture samples Origin. */

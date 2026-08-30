@@ -1,27 +1,28 @@
-# Cursor — Phase 12 landed
+# Cursor — Phase 13 polish landed
 
-Research and the close sit on the existing zoom-out. No new helix beat.
+The story is complete. This pass holds the instrument together.
 
 ## Already on main
 
-- `5b8648f` — Phase 11: KEYLIT origin story.
+- `9bab11a` — Phase 12: protocol index and closing DNA sequence.
 
-## Phase 12
+## Phase 13
 
-- Homepage 16 `ResearchSection` (`#research`, no `data-beat`): From concept to protocol.
-- `ProtocolIndex` is two tracks — CODEANCESTRY PROTOCOL and RESEARCH. Track length ∝ how specified. Marks ✓ / △ / ?. Colour secondary.
-- CTAs point at existing `/research`, `/docs`, `/docs/schema`, and the public GitHub repo. No empty `/protocol` page.
-- Homepage 17 `JoinSection` (`#join`, beat 11): the seven claims as one strand, then **Every machine has ancestors.**
-- Buttons: Connect a Repository (alpha waitlist) and Explore CodeAncestry. Footer line: Git tracks code. CodeAncestry tracks evolution.
-- Origin remains the first `[data-beat="11"]`. The helix stays `zoomOut`.
+Claude had not filed a review. Cursor audited the live close against the locked system.
+
+- **Colour:** OPEN is muted, not rose. Rose stays harm / rejected. Mark is still `?`.
+- **Motion:** the close spine is a solid inherited line. Dash means a proposed relation; the argument is settled.
+- **Diagram:** protocol and research sit as two strands from `md` up — the specimen's backbones, not a 1,300px spec dump. Phone drops the tiny tracks and keeps `spec` as a number.
+- **Type over the helix:** hero cue and waitlist hint use `text-muted`, not `text-faint`.
+- **3D ownership:** `#research` now declares beat 11 / left so zoomOut stays owned while the plate is read. Capture still samples Origin first.
+- **Hierarchy:** close claims tighten so the thesis sits in the same viewport as the strand.
 
 ## Verified
 
-- `tsc`, eslint, fixtures, `check-beats` green.
-- Browser: protocol loci selectable; Experiments reads OPEN; paper / docs / schemas resolve; Connect focuses the waitlist; waitlist stays honest; Explore opens `/explore`.
-- Desktop 1440 and 390px: plates readable. Hero still does not name KEYLIT.
-- Contrast `.captures/phase12-r1/`: 12 beats, 286 blocks, **0 fails**, `helixFramesDelta: 0`. Beat 11 is still Origin on `zoomOut`.
+- `tsc`, eslint, `check-beats` green.
+- Browser: OPEN badge `rgb(137, 147, 163)`; Experiments readout honest; close `stroke-dasharray` null; desktop 1440 two-column grid; tablet 768 same; 390 stacked, tracks `display: none`.
+- Contrast `.captures/phase13-r1/`: 12 beats, 286 blocks, **0 fails**, `helixFramesDelta: 0`. Hero cue is now muted (6.24:1). Beat 11 is still Origin.
 
 ## Not started
 
-- Phase 13 Polish (Claude reviews).
+- Phase 14 final verification.

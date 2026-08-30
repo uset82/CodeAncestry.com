@@ -7,9 +7,9 @@ import { PROTOCOL_LOCI, protocolIndex, type ProtocolStatus } from '@/data/demo/p
 import { useRadioGroup } from '@/lib/hooks/useRadioGroup';
 
 /**
- * 2D readout of the zoomed-out helix. Same node set, named as protocol
- * objects. Track length encodes how specified each object is — live Zod
- * runs long, open questions stay short. No new 3D beat.
+ * 2D readout of the zoomed-out helix. Two strands — protocol and research —
+ * like the specimen's backbones. Track length encodes how specified each
+ * object is. OPEN is muted, not rose: rose is reserved for harm.
  */
 
 const STATUS: Record<
@@ -18,7 +18,7 @@ const STATUS: Record<
 > = {
   LIVE: { mark: '✓', tone: 'text-acid border-acid/40', stroke: 'var(--color-cyan)' },
   WORKING: { mark: '△', tone: 'text-amber border-amber/45', stroke: 'var(--color-amber)' },
-  OPEN: { mark: '?', tone: 'text-rose border-rose/45', stroke: 'var(--color-rose)' },
+  OPEN: { mark: '?', tone: 'text-muted border-line', stroke: 'var(--color-muted)' },
 };
 
 const TRACK_SPAN = 200;
@@ -58,13 +58,17 @@ export function ProtocolIndex({ className }: { className?: string }) {
         gets names that survive a rewrite. Colour is secondary. Marks change shape.
       </p>
 
-      <div {...radio.groupProps} aria-label="Protocol and research loci" className="mt-8">
+      <div
+        {...radio.groupProps}
+        aria-label="Protocol and research loci"
+        className="mt-8 md:grid md:grid-cols-2 md:items-start md:gap-8"
+      >
         {GROUPS.map((group) => {
           const rows = PROTOCOL_LOCI.map((item, index) => ({ item, index })).filter(
             ({ item }) => item.group === group.id,
           );
           return (
-            <div key={group.id} className={group.id === 'research' ? 'mt-7' : undefined}>
+            <div key={group.id} className={group.id === 'research' ? 'mt-7 md:mt-0' : undefined}>
               <p className="text-muted font-mono text-nano uppercase">{group.label}</p>
               <div className="mt-2">
                 {rows.map(({ item, index }) => {
@@ -75,9 +79,9 @@ export function ProtocolIndex({ className }: { className?: string }) {
                     <button
                       key={item.id}
                       {...radio.radioProps(index)}
-                      aria-label={`${item.name}, ${item.status}, ${item.kind}`}
+                      aria-label={`${item.name}, ${item.status}, ${item.kind}, specified ${item.specified.toFixed(2)}`}
                       className={cn(
-                        'mb-1 grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-xs px-2 py-2 text-left last:mb-0',
+                        'mb-0.5 grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-xs px-2 py-1.5 text-left last:mb-0',
                         active ? 'bg-void' : 'hover:bg-hover',
                       )}
                     >
@@ -94,11 +98,14 @@ export function ProtocolIndex({ className }: { className?: string }) {
                         <span className="text-text block font-mono text-nano uppercase">
                           {item.name}
                         </span>
-                        <span className="text-muted block text-[12.5px]">{item.kind}</span>
+                        <span className="text-muted block text-[12.5px]">
+                          {item.kind}
+                          <span className="md:hidden"> · spec {item.specified.toFixed(2)}</span>
+                        </span>
                         <svg
                           aria-hidden="true"
                           viewBox={`0 0 ${TRACK_SPAN} 10`}
-                          className="mt-1.5 h-2.5 w-full"
+                          className="mt-1.5 hidden h-2.5 w-full md:block"
                           preserveAspectRatio="none"
                         >
                           <line
