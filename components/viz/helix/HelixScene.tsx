@@ -55,7 +55,7 @@ import {
   type SweepBuffers,
   type SweepTuning,
 } from './sweep';
-import { climaxAmount, daylight, holdProgress, type BeatSide, type BeatState } from './beats';
+import { climaxAmount, daylight, holdProgress, type BeatState } from './beats';
 import {
   climaxEmissive,
   depthMaterialOf,
@@ -78,8 +78,13 @@ import {
 const AXIS_A = new Vector3();
 const AXIS_B = new Vector3();
 
-/** Aim above centre so the extra margin lands at the top, under the header. */
+/** Aim above the grown centre so the leftover frame lands below the header. */
 const FAMILY_LOOK_LIFT = 0.8;
+/** Sticky header height. Chips that project into this band sit under chrome. */
+const HEADER_CLEAR = 74;
+const EDGE_CLEAR = 8;
+/** A chip may slide this far in screen space and still name its locus. */
+const MAX_CHIP_NUDGE = 48;
 /* FAMILY_LOOK_X is no longer a constant. CameraRig reads `state.lookX`,
    which lerps with data-beat-side: copy left → lineage right (negative). */
 
@@ -158,12 +163,28 @@ function writeConverge(material: MeshStandardMaterial, converge: number, cpuPose
   );
 }
 
-/** Centre of the strands the current generation count has revealed. */
+/**
+ * Centre of the mass that is actually on screen.
+ *
+ * The generation fence is the wrong bound. At `generations: 1` every gen-1
+ * child satisfies `generation < 1.02`, but `strandEased` is still 0 — those
+ * branches do not exist yet. Aiming at their authored `end` pulled the look
+ * target down to the unborn tree and parked the origin crown (VISION) under
+ * the 74px header. The camera follows the grown segment, so it descends with
+ * the split instead of anticipating it.
+ */
 function liveFamilyY(generations: number): number {
-  const live = STRANDS.filter((spec) => spec.generation < generations + 0.02);
-  if (live.length === 0) return FAMILY_Y;
-  const top = Math.max(...live.map((spec) => Math.max(spec.start.y, spec.end.y)));
-  const bottom = Math.min(...live.map((spec) => Math.min(spec.start.y, spec.end.y)));
+  let top = Number.NEGATIVE_INFINITY;
+  let bottom = Number.POSITIVE_INFINITY;
+  for (const spec of STRANDS) {
+    const grow = strandEased(generations, spec.generation);
+    if (grow < 0.08) continue;
+    const y0 = spec.start.y;
+    const y1 = spec.start.y + (spec.end.y - spec.start.y) * grow;
+    top = Math.max(top, y0, y1);
+    bottom = Math.min(bottom, y0, y1);
+  }
+  if (!Number.isFinite(top)) return FAMILY_Y;
   return (top + bottom) / 2;
 }
 
@@ -864,13 +885,38 @@ function Loci({ state, tier, materials }: Props) {
 
 /* --------------------------------------------------------- locus labels */
 
-/** True when a chip sits in the copy half. The specimen owns the other half. */
-function labelHitsReadingField(node: HTMLElement, side: BeatSide): boolean {
-  if (side === 'full') return false;
-  const rect = node.getBoundingClientRect();
-  if (rect.width < 2 || rect.height < 2) return false;
-  const mid = window.innerWidth * 0.5;
-  return side === 'left' ? rect.left < mid : rect.right > mid;
+/**
+ * Screen-space pin. The 3D point stays on the locus; the chip may slide a
+ * few pixels so it does not sit under the header or clip the frame. Past
+ * `MAX_CHIP_NUDGE` the name would be lying, and the caller hides it.
+ */
+function chipNudgeInto(
+  rect: DOMRect,
+  applied: { x: number; y: number },
+  target: { x: number; y: number },
+): { x: number; y: number } {
+  const top = rect.top - applied.y;
+  const left = rect.left - applied.x;
+  const right = rect.right - applied.x;
+  target.x = 0;
+  target.y = 0;
+  if (top < HEADER_CLEAR) target.y = HEADER_CLEAR - top;
+  if (right > window.innerWidth - EDGE_CLEAR) {
+    target.x = window.innerWidth - EDGE_CLEAR - right;
+  } else if (left < EDGE_CLEAR) {
+    target.x = EDGE_CLEAR - left;
+  }
+  if (Math.abs(target.x) > MAX_CHIP_NUDGE) target.x = 0;
+  if (Math.abs(target.y) > MAX_CHIP_NUDGE) target.y = 0;
+  return target;
+}
+
+function labelHitsChrome(box: { top: number; left: number; right: number; width: number; height: number }): boolean {
+  if (box.width < 2 || box.height < 2) return false;
+  if (box.top < HEADER_CLEAR - 0.5) return true;
+  if (box.left < EDGE_CLEAR - 0.5) return true;
+  if (box.right > window.innerWidth - EDGE_CLEAR + 0.5) return true;
+  return false;
 }
 
 function LocusLabels({ state }: Pick<Props, 'state'>) {
@@ -890,8 +936,13 @@ function LocusLabels({ state }: Pick<Props, 'state'>) {
   const groups = useRef<(HTMLDivElement | null)[]>([]);
   const frames = useRef<(Group | null)[]>([]);
   const lastOpacity = useRef<number[]>([]);
+  const nudges = useRef<{ x: number; y: number }[]>([]);
   const scratch = useMemo(
-    () => ({ position: new Vector3(), direction: new Vector3() }),
+    () => ({
+      position: new Vector3(),
+      direction: new Vector3(),
+      nudge: { x: 0, y: 0 },
+    }),
     [],
   );
 
@@ -940,8 +991,33 @@ function LocusLabels({ state }: Pick<Props, 'state'>) {
         current.geneFocus * (1 - holdProgress(current) * 0.9) * (1 - current.converge);
       let opacity =
         front > 0.55 ? Math.round(Math.min(1, (front - 0.55) / 0.45) * reveal * 100) / 100 : 0;
-      /* A chip in the reading field is a composition failure. Hide it. */
-      if (opacity > 0.02 && labelHitsReadingField(node, current.side)) opacity = 0;
+      const prev = nudges.current[i] ?? { x: 0, y: 0 };
+      const rect = node.getBoundingClientRect();
+      chipNudgeInto(rect, prev, scratch.nudge);
+      const nx = scratch.nudge.x;
+      const ny = scratch.nudge.y;
+      if (prev.x !== nx || prev.y !== ny) {
+        nudges.current[i] = { x: nx, y: ny };
+        node.style.transform = nx || ny ? `translate(${nx}px, ${ny}px)` : '';
+      }
+      const predicted = {
+        top: rect.top - prev.y + ny,
+        left: rect.left - prev.x + nx,
+        right: rect.right - prev.x + nx,
+        width: rect.width,
+        height: rect.height,
+      };
+      /* Copy half, header, or a frame edge the chip cannot reach without
+         leaving its locus — hide. Do not slide into the reading field. */
+      if (opacity > 0.02) {
+        if (current.side !== 'full') {
+          const mid = window.innerWidth * 0.5;
+          if (current.side === 'left' ? predicted.left < mid : predicted.right > mid) {
+            opacity = 0;
+          }
+        }
+        if (opacity > 0.02 && labelHitsChrome(predicted)) opacity = 0;
+      }
       const mark = node.querySelector('[data-locus-mark]');
       if (mark) {
         mark.textContent = current.recovery > 0.45 && anchor.label.mutated ? '✓' : '';
@@ -967,7 +1043,7 @@ function LocusLabels({ state }: Pick<Props, 'state'>) {
               ref={(node) => {
                 groups.current[i] = node;
               }}
-              className="group/locus relative w-max -translate-y-1/2 opacity-0"
+              className="group/locus relative w-max opacity-0"
             >
               <button
                 type="button"

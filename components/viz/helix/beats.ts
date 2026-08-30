@@ -40,14 +40,19 @@ const LOOK_X_REF_ASPECT = 1600 / 900;
 
 /**
  * Horizontal aim used by the driver and the camera.
- * At 1600×900 this is exactly `LOOK_X_EXTENT`. Below that, the same world
- * offset walks the labels off the right edge — the mid-width collision Claude
- * named is the specimen leaving the frame, not the type scale.
+ *
+ * At 1600×900 this is exactly `LOOK_X_EXTENT`. A linear aspect scale keeps
+ * the tubes in a narrower frame, but the chips sit outside the rail — so a
+ * mid-width window that fits the helix still walks VISION and SAFETY off
+ * the right edge. The reserve grows as the aspect drops; capture (t = 1)
+ * is unchanged.
  */
 export function lookXExtent(): number {
   if (typeof window === 'undefined') return LOOK_X_EXTENT;
   const aspect = window.innerWidth / Math.max(1, window.innerHeight);
-  return LOOK_X_EXTENT * Math.min(1, aspect / LOOK_X_REF_ASPECT);
+  const t = Math.min(1, aspect / LOOK_X_REF_ASPECT);
+  const chipReserve = (1 - t) * 1.7;
+  return Math.max(1.35, LOOK_X_EXTENT * t - chipReserve);
 }
 
 export function lookXForSide(side: BeatSide): number {

@@ -1,31 +1,28 @@
-# Cursor — live CPU tube sweep, attachments on the same pose
+# Cursor — frame the grown specimen, not the unborn tree
 
-The twelve-position instrument was closed. This pass stops the specimen coming apart when the tubes start to live.
+The twelve-position instrument was closed. The live sweep is on main. This pass stops the camera aiming at branches that do not exist yet.
 
 ## Already on main
 
-- `76d84a6` — shared `applyConvergeInto` / `FAMILY_*` so the ledger pose is one helper.
+- `ed11f44` — live CPU tube sweep; attachments sample the same pose.
 - `6b4ddfb` — camera snap on beat jumps; locus chips fade with `converge`.
-- `20bbbf1` — mid-width lookX scale so labels stay in frame.
+- `20bbbf1` — mid-width lookX scale so the tubes stay in frame.
 
 ## This pass
 
-High-tier tubes now re-sweep on the CPU (Vine-Overgrowth ring walk, `uv.x === t`). That is not enough on its own. If the rails screw and the rungs, loci, labels, tips and pulses stay on the baked helix, the specimen is two objects.
+At `generations: 1` every gen-1 child satisfies `generation < 1.02`, but `strandEased` is still 0. Aiming at their authored `end` pulled the look target down to the unborn tree and parked VISION under the 74px header. A linear aspect scale then kept the tubes in a mid-width frame while the chips — which sit outside the rail — walked off the right edge.
 
-- **Tubes:** `sweep.ts` pre-allocates position/normal buffers and Gram-Schmidt-walks the ring stack each frame. `?sweep=0` and the low tier keep baked `TubeGeometry`.
-- **Pose:** `setLivePose` uses the same `flatten * 0.42 + converge` weight the shader does. `uCpuPose` turns the shader copy off so flatten/converge/track wobble are not applied twice.
-- **Attachments:** rungs stay on the collapsed axis and take `liveRadialInto` for direction. Gene loci, labels, growing tips and downstream pulses sample `sampleLiveInto`. Upstream pulses stay on the axis.
-- **Lean:** pointer lean, like camera orbit, may pull toward the specimen, never toward the copy.
-- **Frame order:** sweep runs at useFrame priority `-1` so every attachment reads this frame's centreline.
-- **Parity:** `scripts/check-sweep-parity.ts` — layout match, amplitude-0 live point equals the shader mix to `< 1e-6`.
+- **Camera Y:** `liveFamilyY` tracks the grown segment, not the generation fence. The look-at descends with the split instead of anticipating it.
+- **Camera X:** `lookXExtent` keeps capture at 4.6 and reserves chip width as the aspect drops. 905×1026 aims at −1.43, not −2.28.
+- **Chips:** `Html center` is enough — the extra `-translate-y-1/2` was a second lift. A chip may slide up to 48px to clear chrome; past that it hides, because the name would be lying.
 
 ## Verified
 
-- `tsc`, eslint, `check-beats` 12/0, `check-sweep-parity` layout + parity `4.892e-7`.
-- Browser `?helix=high`: 6 chips on the origin strand; jump to `#machine` hides all helix chips; camera z 8.39 → 17.64; `?sweep=0` still draws (`helixFrames` climbing).
-- Contrast `.captures/phase-sweep-r1/`: 12 beats, 286 blocks, **0 fails**, `helixFramesDelta: 0`.
+- `tsc`, eslint, `check-beats` 12/0.
+- Browser 905×1026 beat 1: VISION–NAVIGATION all visible. VISION top 364 (header is 74). None in the copy, none off the right edge.
+- `#machine`: 0 helix chips. Camera z 8.39 → 17.44.
+- Contrast `.captures/phase-frame-r1/`: 12 beats, 286 blocks, **0 fails**, `helixFramesDelta: 0`.
 
 ## Not started
 
 Claude still owns the taskplan checkboxes. There is no Phase 15.
-`package.json` `test:sweep` / `verify` is Claude-owned; the harness lives in `scripts/`.
