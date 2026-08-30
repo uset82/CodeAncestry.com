@@ -27,7 +27,11 @@ export function JoinSection() {
         <span className="text-emphasis">has ancestors.</span>
       </h2>
 
-      <CloseCtas className="mt-8 flex flex-wrap items-center gap-3" />
+      <p className="text-muted mt-5 max-w-[560px] font-mono text-nano uppercase">
+        The alpha is an invite to connect a repository. Not a login.
+      </p>
+
+      <CloseCtas className="mt-6 flex flex-wrap items-center gap-3" />
 
       <div id="waitlist" className="mt-12 max-w-[560px] scroll-mt-28">
         <WaitlistForm />

@@ -1,6 +1,7 @@
 'use client';
 
 import { ButtonLink } from '@/components/ui/Button';
+import { connectCta } from '@/lib/site';
 
 const handleFocusWaitlist = () => {
   const email = document.querySelector<HTMLInputElement>('#waitlist input[type="email"]');
@@ -8,14 +9,14 @@ const handleFocusWaitlist = () => {
 };
 
 /**
- * Specified close buttons. Connect is the alpha waitlist — not a fake OAuth.
- * Hash scroll lives on ButtonLink — Next intercepts `#` otherwise.
+ * Close actions. One verb with the header: Connect Repository is the alpha
+ * invite, not a fake OAuth. Hash scroll lives on ButtonLink.
  */
 export function CloseCtas({ className }: { className?: string }) {
   return (
     <div className={className}>
-      <ButtonLink href="/#waitlist" size="lg" onClick={handleFocusWaitlist}>
-        Connect a Repository
+      <ButtonLink href={connectCta.href} size="lg" onClick={handleFocusWaitlist}>
+        {connectCta.label}
       </ButtonLink>
       <ButtonLink href="/explore" variant="secondary" size="lg">
         Explore CodeAncestry

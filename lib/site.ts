@@ -46,7 +46,8 @@ export type NavItem = NavLink & {
 
 /**
  * Primary IA. Homepage beats that exist are hashes. Registry routes stay
- * under Explore. Connect Repository is the alpha waitlist — not a fake OAuth.
+ * under Explore. Connect Repository is the one close verb: an alpha invite,
+ * not a GitHub OAuth.
  */
 export const exploreMenu = [
   { href: '/explore', label: 'Projects' },
@@ -74,7 +75,7 @@ export const nav: readonly NavItem[] = [
 ];
 
 export const connectCta = {
-  href: '/#join',
+  href: '/#waitlist',
   label: 'Connect Repository',
   hint: 'Alpha',
 } as const;

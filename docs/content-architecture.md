@@ -330,7 +330,8 @@ Progressive lines:
 
 Then: **Every machine has ancestors.**
 
-Buttons: [ Connect a Repository ] [ Explore CodeAncestry ]
+Buttons: [ Connect Repository ] [ Explore CodeAncestry ]
+The thesis is the close. The verb is the alpha invite — one promise, not a login.
 
 Footer: Git tracks code. CodeAncestry tracks evolution.
 
@@ -350,13 +351,13 @@ Map to existing routes where they already exist. Do not create empty pages to fi
 | --- | --- |
 | Explore | `/explore` |
 | Lineage | `/lineage` (homepage CodeTree section also) |
-| Genome | do not default to KEYLIT accession; prefer `/explore` projects or a future `/genome` only when it has content |
-| Agents | `/explore` agents facet until a real index exists |
-| Trace | omitted until `#trace` exists on the homepage (Phase 9 scaffold is now that anchor). Retarget `/trace` when the route exists |
+| Genome | `/#genome` on the homepage. Registry stays under Explore. |
+| Agents | `/#agents` on the homepage. Registry stays under Explore. |
+| Trace | `/#trace` on the homepage. Retarget `/trace` when that route exists |
 | Research | `/research` |
 | CodeBLAST | `/blast` |
 | Protocol / Docs / Schemas | `/docs`, `/docs/schema` |
-| Connect Repository | current `/#join` waitlist until a real connect flow exists — label it as alpha, do not fake a GitHub OAuth |
+| Connect Repository | `/#waitlist` — one verb with the close. Alpha invite, not a GitHub OAuth |
 
 **Decided (Claude, 2026-08-29):** Trace stays out of the header until `#trace` exists; then header, then `/trace` when the route exists.
 

@@ -21,9 +21,8 @@ import { HelixHero } from '@/components/viz/helix/HelixHero';
 import { HelixStage } from '@/components/viz/helix/HelixStage';
 
 /**
- * Current composition is the pre-rebuild argument plus twelve helix anchors.
- * `data-beat` is the mapping — swap two values and the pose follows, no helix
- * edit. Claude’s 17-section bodies fill from Phase 3 onward.
+ * Twelve helix anchors. `data-beat` is the mapping — swap two values and the
+ * pose follows, no helix edit. The 17-section bodies are on the page.
  */
 export default function HomePage() {
   return (

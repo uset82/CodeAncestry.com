@@ -5,6 +5,7 @@ import { gsap } from 'gsap';
 import { useRef, useState } from 'react';
 import { useReducedMotion } from '@/lib/hooks/useReducedMotion';
 import { ButtonLink } from '@/components/ui/Button';
+import { connectCta } from '@/lib/site';
 import { BEATS } from './beats';
 import { useHelixDriver } from './HelixStage';
 import { HeroFallback } from './HeroFallback';
@@ -64,8 +65,8 @@ function HeroCopy({ children }: { children?: React.ReactNode }) {
         <ButtonLink href="/lineage" size="lg">
           Explore the Lineage
         </ButtonLink>
-        <ButtonLink href="/#join" variant="secondary" size="lg">
-          Connect Repository
+        <ButtonLink href={connectCta.href} variant="secondary" size="lg">
+          {connectCta.label}
         </ButtonLink>
       </div>
 

@@ -2,6 +2,7 @@
 
 import { useId, useState } from 'react';
 import { cn } from '@/lib/cn';
+import { connectCta } from '@/lib/site';
 import { Button } from '@/components/ui/Button';
 
 /**
@@ -131,7 +132,7 @@ export function WaitlistForm() {
 
         <div className="flex flex-wrap items-center gap-4">
           <Button type="submit" size="lg" disabled={status === 'submitting'}>
-            {status === 'submitting' ? 'Adding…' : 'Connect Repository'}
+            {status === 'submitting' ? 'Adding…' : connectCta.label}
           </Button>
           <p className="text-muted text-[13px]">
             Alpha waitlist — you will be invited to connect a repository. No newsletter.

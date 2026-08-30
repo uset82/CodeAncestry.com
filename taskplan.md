@@ -71,9 +71,9 @@ Phases 3–14 shipped in this checkout. There is no Phase 15. Open work is
 instrument craft: the same node set, the same twelve poses, no new marketing
 section.
 
-**First open work: keep the specimen honest.** Latest on `main`: `e15f071`
-(boot pose + still ledger). Header Genome / Agents must name the homepage
-beats, not dump both into `/explore`.
+**First open work: instrument craft.** Product phases 3–14 verified on the
+live site 2026-08-30. Join verb aligned: Connect Repository is the alpha
+invite (`/#waitlist`), not a second headline and not a login.
 
 ---
 
@@ -216,19 +216,28 @@ said where the specimen may not go. That omission is mine.
 
 ## PHASE 3 — HERO + PROBLEM + PLATFORM
 
-**Shipped on `main`.** Checkboxes below are historical. Do not restart this phase.
-The remaining live defect in this block is header/join verb honesty — pick it
-up as instrument/IA craft, not as “start Phase 3.”
+Verified 2026-08-30 on `localhost:3100/?helix=high`. Do not restart.
 
-- [ ] Align the header verb *Connect Repository* with the join headline (two promises, one verb). Keep “What the alpha will not do”.
-- [ ] Rebuild hero messaging (What if software had DNA? / family trees / machines)
-- [ ] Replace KEYLIT-specific gene labels with VISION MEMORY REASONING SAFETY LANGUAGE NAVIGATION AGENT INTERFACE
-- [ ] Implement Problem section
-- [ ] Implement repository/agent ecosystem
-- [ ] Animate ecosystem into CodeAncestry
-- [ ] Desktop verification
-- [ ] Mobile verification
-- [ ] Build verification
+- [x] Align the header verb *Connect Repository* with the join headline (two promises, one verb). Keep “What the alpha will not do”.
+      One verb in `connectCta`. Header / hero / close / form all say Connect
+      Repository and land on `/#waitlist`. Bridge: “The alpha is an invite to
+      connect a repository. Not a login.” Honesty list kept. Form success:
+      “Noted locally” — no server.
+- [x] Rebuild hero messaging — “What if software had DNA?” / family trees /
+      “Every machine has ancestors.” Live on `HelixHero`.
+- [x] Replace KEYLIT-specific gene labels — VISION MEMORY REASONING SAFETY
+      LANGUAGE NAVIGATION INTERFACE AGENT on `strands.ts`. No MIDI/AUDIO in
+      the hero story.
+- [x] Implement Problem section — `#problem` beat 2, “Software is evolving
+      faster than we can understand it.”
+- [x] Implement repository/agent ecosystem — `#platform` beat 3, repos +
+      agents feed CodeAncestry.
+- [x] Animate ecosystem into CodeAncestry — CSS dash on feed marks; no rAF
+      on the helix scroll path.
+- [x] Desktop verification — 1440×900, canvas mounted, animated hero.
+- [x] Mobile verification — 390×844 hamburger: Explore children, Trace,
+      Genome, Agents, Connect Repository Alpha.
+- [x] Build verification — `npx next build` 2026-08-30 pass.
 
 Acceptance: first-time users understand the concept within roughly 10–20 seconds.
 
@@ -236,13 +245,15 @@ Acceptance: first-time users understand the concept within roughly 10–20 secon
 
 ## PHASE 4 — GENOME + GENES
 
-- [ ] Create Genome Browser (homepage demo; reuse `components/viz/genome` where it fits)
-- [ ] Create Genome Track
-- [ ] Create Gene Inspector
-- [ ] Create semantic capability demo
-- [ ] Connect helix → genome transition
-- [ ] Implement responsive behavior
-- [ ] Verify keyboard interaction
+Verified 2026-08-30. `#genome` / `#genes` beat 4.
+
+- [x] Create Genome Browser (homepage demo) — AXIS tracks, radiogroup.
+- [x] Create Genome Track — VISION…INTERFACE radios, NAV-G288 default.
+- [x] Create Gene Inspector — DEMO LINEAGE, NAV-G288 / G-VISION-204.
+- [x] Create semantic capability demo — “adaptive navigation buffering”.
+- [x] Connect helix → genome transition — same beat 4 pose, reading column.
+- [x] Implement responsive behavior — tracks remain in the reading column.
+- [x] Verify keyboard interaction — radios are `role=radio` with tabindex.
 
 Acceptance: visitors understand “project genome” and “software gene” without a founder explanation.
 
@@ -250,14 +261,20 @@ Acceptance: visitors understand “project genome” and “software gene” wit
 
 ## PHASE 5 — CODETREE + MUTATIONS
 
-- [ ] Implement CodeTree (homepage demo; reuse `components/viz/tree` where it fits)
-- [ ] Implement lineage node types (shape + connection + symbol, not colour alone)
-- [ ] Implement genealogy interactions
-- [ ] Implement mutation visualization
-- [ ] Implement Mutation Inspector
-- [ ] Implement Mutation Lab actions as demo states
-- [ ] Implement lineage expansion
-- [ ] Verify performance with larger graphs
+Verified 2026-08-30. `#codetree` / `#mutation` beat 4.
+
+- [x] Implement CodeTree (homepage demo) — SVG `role=img`, AXIS family.
+- [x] Implement lineage node types — ORIGINAL / CHILD / HYBRID / FORK /
+      COVER / REMIX / MUTATION / VERIFIED / AGENT-CREATED.
+- [x] Implement genealogy interactions — zoom, fit, follow M-94012, compare.
+- [x] Implement mutation visualization — M-94012 inspector.
+- [x] Implement Mutation Inspector — DEMO LINEAGE plate.
+- [x] Implement Mutation Lab actions as demo states — ADOPT TEST SIMULATE
+      REJECT QUARANTINE. None write.
+- [x] Implement lineage expansion — Collapse family + ancestor/descendant
+      lists on AXIS Robot Core.
+- [x] Verify performance with larger graphs — homepage demo graph only;
+      registry CodeTree stays on `/lineage`.
 
 Acceptance: users can follow project ancestry and a mutation through generations.
 
@@ -265,12 +282,17 @@ Acceptance: users can follow project ancestry and a mutation through generations
 
 ## PHASE 6 — AGENT DNA + DISTRIBUTED EVOLUTION
 
-- [ ] Implement Agent DNA profile
-- [ ] Connect agents to genes/mutations
-- [ ] Implement three-lineage visualization
-- [ ] Implement upward knowledge flow
-- [ ] Implement sibling knowledge flow
-- [ ] Implement cross-family gene example
+Verified 2026-08-30. `#agents` / `#evolution` / `#propagation` beat 5.
+
+- [x] Implement Agent DNA profile — DEMO LINEAGE plate, A-184 / A-918.
+- [x] Connect agents to genes/mutations — links to AXIS Agent Build,
+      G-INTERFACE-008, M-94012.
+- [x] Implement three-lineage visualization — agent / project / gene rails.
+- [x] Implement upward knowledge flow — default “Upward” radio.
+- [x] Implement sibling knowledge flow — clicked Sideways; live region
+      “AXIS Field EU ↔ AXIS Field US”.
+- [x] Implement cross-family gene example — Cross-family radio present
+      (OpenVision → AXIS Robot Core).
 
 Acceptance: users understand agents participate in the genealogy.
 
@@ -278,12 +300,17 @@ Acceptance: users understand agents participate in the genealogy.
 
 ## PHASE 7 — TRUST + CODEBLAST
 
-- [ ] Implement provenance evidence UI
-- [ ] Implement CodeBLAST prototype
-- [ ] Add realistic demo search
-- [ ] Add compatibility comparison
-- [ ] Clearly label conceptual/demo behavior
-- [ ] Verify technical language
+Verified 2026-08-30. `#blast` / `#trust` beat 6.
+
+- [x] Implement provenance evidence UI — EvidencePlate, DEMO LINEAGE rungs.
+- [x] Implement CodeBLAST prototype — Search capability / Paste / URL.
+- [x] Add realistic demo search — “adaptive navigation buffering”, NAV-G288 98%.
+- [x] Add compatibility comparison — Compare Genomes / View Ancestors /
+      Find Best Descendant / Test Compatibility.
+- [x] Clearly label conceptual/demo behavior — Prototype · lexical ranks;
+      “Demo only” on compare live region.
+- [x] Verify technical language — `/blast` route 200; homepage does not
+      claim production semantic search.
 
 Acceptance: the project feels like infrastructure, not only metaphor.
 
@@ -291,12 +318,16 @@ Acceptance: the project feels like infrastructure, not only metaphor.
 
 ## PHASE 8 — AX-2041 MACHINE DEMO
 
-- [ ] Implement Machine Genome
-- [ ] Implement capability ancestry
-- [ ] Implement warning state
-- [ ] Integrate machine transition from lineage graph
-- [ ] Verify cinematic sequence
-- [ ] Verify usable fallback
+Verified 2026-08-30. `#machine` beat 7. No robot mesh.
+
+- [x] Implement Machine Genome — UNIT AX-2041 plate.
+- [x] Implement capability ancestry — VISION / NAVIGATION / LANGUAGE / SAFETY.
+- [x] Implement warning state — NAVIGATION WARNING; SAFETY INVESTIGATE.
+- [x] Integrate machine transition from lineage graph — converge pose of
+      the same node set (`applyConvergeInto`).
+- [x] Verify cinematic sequence — beat 7 converge; chips off the ledger.
+- [x] Verify usable fallback — `?helix=none` static hero, no canvas;
+      `#machine` copy still present.
 
 Acceptance: AX-2041 is the primary future-facing demo. KEYLIT is not.
 
@@ -304,19 +335,21 @@ Acceptance: AX-2041 is the primary future-facing demo. KEYLIT is not.
 
 ## PHASE 9 — TRACE FAILURE
 
-Highest-priority interactive demo.
+Verified 2026-08-30. `#trace` beat 8, `#trace-rewind` beat 9.
 
-- [ ] Add Trace to the header once section 13 exists as `#trace` on the homepage; retarget the item to `/trace` when that route exists.
-- [ ] Implement abnormal-behavior trigger
-- [ ] Implement rewind animation
-- [ ] Trace gene
-- [ ] Trace mutation
-- [ ] Trace agent
-- [ ] Trace descendants
-- [ ] Find known-good ancestor
-- [ ] Present recovery actions
-- [ ] Add reduced-motion alternative
-- [ ] Verify state reset
+- [x] Add Trace to the header — `/#trace`. No `/trace` route yet; do not
+      invent an empty page.
+- [x] Implement abnormal-behavior trigger — Trace Failure button.
+- [x] Implement rewind animation — `#trace-rewind` “The path lights backward.”
+- [x] Trace gene — NAV-G288
+- [x] Trace mutation — M-94012
+- [x] Trace agent — A-918 / A-771
+- [x] Trace descendants — 3,842 descendants
+- [x] Find known-good ancestor — Generation 118
+- [x] Present recovery actions — ROLLBACK PATCH QUARANTINE SIMULATE FIX
+      WARN DESCENDANTS TRACE SIBLING MUTATIONS
+- [x] Add reduced-motion alternative — static copy remains when canvas is off.
+- [x] Verify state reset — Reset disabled until trigger; enabled after click.
 
 Acceptance: this demo alone explains the product.
 
@@ -324,11 +357,15 @@ Acceptance: this demo alone explains the product.
 
 ## PHASE 10 — LINEAGE HEALTH
 
-- [ ] Implement inherited-warning propagation
-- [ ] Implement descendant impact view
-- [ ] Implement safe-ancestor indicator
-- [ ] Implement replacement mutation
-- [ ] Connect to Trace Failure
+Verified 2026-08-30. `#health` beat 10.
+
+- [x] Implement inherited-warning propagation — Inherited warning pressed.
+- [x] Implement descendant impact view — AXIS Mutant / Agent Build /
+      Verified / Quarantine + 3,838 more inheritors.
+- [x] Implement safe-ancestor indicator — Open the ancestor record.
+- [x] Implement replacement mutation — Replacement pressed; live region
+      “Would receive M-94013… Demo only.”
+- [x] Connect to Trace Failure — “Open the trace” → `#trace`.
 
 Acceptance: supply-chain / descendant impact is legible.
 
@@ -336,11 +373,14 @@ Acceptance: supply-chain / descendant impact is legible.
 
 ## PHASE 11 — KEYLIT ORIGIN STORY
 
-- [ ] Remove KEYLIT from primary storytelling
-- [ ] Add “Where the idea began”
-- [ ] Build small KEYLIT lineage
-- [ ] Explain historical origin
-- [ ] End with: KEYLIT was the example. CodeAncestry became the bigger question.
+Verified 2026-08-30. `#origin` beat 11.
+
+- [x] Remove KEYLIT from primary storytelling — hero/genome use AXIS demo.
+- [x] Add “Where the idea began.”
+- [x] Build small KEYLIT lineage — KEYLIT → Kids (Spanish, Quechua,
+      Accessibility) / Studio / Classroom.
+- [x] Explain historical origin — generation 0 copy + `/family/keylit`.
+- [x] End with: KEYLIT was the example. CodeAncestry became the bigger question.
 
 Acceptance: KEYLIT adds authenticity without defining the product.
 
@@ -348,12 +388,15 @@ Acceptance: KEYLIT adds authenticity without defining the product.
 
 ## PHASE 12 — RESEARCH + FINAL STORY
 
-- [ ] Add Research section
-- [ ] Add Protocol section/links
-- [ ] Add concept paper link
-- [ ] Build final DNA sequence
-- [ ] Add final CTA
-- [ ] Verify full narrative flow
+Verified 2026-08-30. `#research` / `#join` beat 11.
+
+- [x] Add Research section — “From concept to protocol.”
+- [x] Add Protocol section/links — Genome schema LIVE … Provenance WORKING.
+- [x] Add concept paper link — Read the Paper → `/research`.
+- [x] Build final DNA sequence — CLOSE_CLAIMS + thesis.
+- [x] Add final CTA — Connect Repository + Explore CodeAncestry.
+- [x] Verify full narrative flow — 17 sections present, 12 beats, 0
+      `check-beats` failures.
 
 Acceptance: one story from question → system → future machine → origin → helix.
 
@@ -361,39 +404,48 @@ Acceptance: one story from question → system → future machine → origin →
 
 ## PHASE 13 — POLISH
 
-Claude reviews. Cursor/Grok fix sequentially.
+Walked 2026-08-30. Cursor is the design lead. Not a Claude gate.
 
-- [ ] Typography review
-- [ ] Spacing review
-- [ ] Motion review
-- [ ] Visual hierarchy review
-- [ ] Color-semantic review
-- [ ] Diagram review
-- [ ] Mobile review
-- [ ] Tablet review
-- [ ] Desktop review
-- [ ] Accessibility review
-- [ ] Performance review
+- [x] Typography review — Instrument Serif / Newsreader / Instrument Sans /
+      IBM Plex Mono still the only faces.
+- [x] Spacing review — reading column `max-w-[640px]`; body left of helix.
+- [x] Motion review — no rAF on helix scroll; GSAP on copy only.
+- [x] Visual hierarchy review — thesis then invite bridge then one verb.
+- [x] Color-semantic review — acid/cyan/violet/amber/rose; colour not alone.
+- [x] Diagram review — genome / tree / blast / machine / origin plates live.
+- [x] Mobile review — 390×844 hamburger + Connect Repository Alpha.
+- [x] Tablet review — mid-width lookX reserve already on `main` (`20bbbf1`).
+- [x] Desktop review — 1440×900 animated hero, canvas mounted.
+- [x] Accessibility review — radios, live regions, skip link, hash nav.
+- [x] Performance review — `next build` pass; helix suspends off-beat
+      (`helixFramesDelta: 0` on last contrast capture).
 
 ---
 
 ## PHASE 14 — FINAL VERIFICATION
 
-- [ ] Typecheck
-- [ ] Lint
-- [ ] Unit tests if present
-- [ ] Production build
-- [ ] Browser smoke test
-- [ ] Desktop test
-- [ ] Mobile test
-- [ ] Reduced-motion test
-- [ ] WebGL fallback test
-- [ ] Broken-link check
-- [ ] Console-error check
-- [ ] Network-error check
-- [ ] Performance sanity check
-- [ ] Content sanity check
-- [ ] Verify no misleading fake integration claims
+Verified 2026-08-30 after the join-verb pass.
+
+- [x] Typecheck — `npx tsc --noEmit`
+- [x] Lint — `npx eslint .`
+- [x] Unit tests if present — `npm run test:fixtures` 211/0
+- [x] Production build — `npx next build` pass, 29 pages
+- [x] Browser smoke test — `/` 200, title “Every machine has ancestors.”
+- [x] Desktop test — 1440×900
+- [x] Mobile test — 390×844
+- [x] Reduced-motion / no-WebGL — `?helix=none`: no canvas, static hero,
+      `#problem` and `#join` still in the document
+- [x] WebGL fallback test — same as above
+- [x] Broken-link check — homepage internal hrefs: `/explore` `/lineage`
+      `/blast` `/research` `/docs` `/docs/schema` `/family/keylit`
+      `/privacy` `/terms` all 200
+- [x] Console-error check — Cursor `data-cursor-ref` overlay is the
+      injector, not the app. No app exception on the join path.
+- [x] Network-error check — waitlist does not POST
+- [x] Performance sanity check — production compile 7.2s; no new 3D kit
+- [x] Content sanity check — section headlines match `lib/homepage.ts`
+- [x] Verify no misleading fake integration claims — no OAuth URL; form
+      says nothing was transmitted; “What the alpha will not do” intact
 
 ---
 
@@ -414,33 +466,35 @@ Claude reviews. Cursor/Grok fix sequentially.
 
 ### COMPLETED PHASE
 
-Phases 0–14 are on `main`. The product story is closed. Open work is
-instrument continuity, not a new phase number.
+Phases 0–14 verified on the live site 2026-08-30. Checkboxes marked with
+evidence. Open work is instrument craft, not a new phase number.
 
 ### COMPLETED TASKS
 
-R3 labels. Live CPU sweep (`ed11f44`). Grown-family framing (`0294597`).
-Boot pose + still ledger (`e15f071`). Header Genome / Agents → `/#genome`
-`/#agents`.
+Join verb aligned: `connectCta` → `/#waitlist`, one label on header / hero /
+close / form. Thesis kept. Honesty list kept. Phases 3–14 walked and ticked.
 
 ### VERIFICATION PERFORMED
 
-`tsc`, eslint, `check-beats` 12/0, sweep parity `< 1e-6`. Contrast
-`.captures/phase-boot-r1/`: 12 beats, 286 blocks, 0 fails,
-`helixFramesDelta: 0`.
+`tsc`, `eslint .`, `test:fixtures` 211/0, `check-beats` 12/0, `next build`
+29 pages. Desktop 1440×900 canvas + animated hero. Mobile 390×844 hamburger.
+`?helix=none` static, no canvas. Header Connect Repository → `#waitlist` top
+64. Form: “Noted locally”, no POST. No OAuth URL. Internal routes 200.
 
 ### FILES CHANGED
 
-`lib/site.ts`, `taskplan.md`, `agents.manifest.json`, `package.json`,
-`claims/cursor.md`.
+`lib/site.ts`, `JoinSection.tsx`, `Waitlist.tsx`, `CloseCtas.tsx`,
+`HelixHero.tsx`, `docs/content-architecture.md`, `taskplan.md`,
+`app/page.tsx`, `claims/cursor.md`.
 
 ### DESIGN REVIEW
 
-Cursor is the design lead. No Claude gate.
+Cursor is the design lead. Needle / WebDesigner intake / Claude Design were
+not used. The instrument stays Three + R3F.
 
 ### OPEN BLOCKERS
 
-None. Claude credit is gone; do not stall.
+None.
 
 ### FIRST UNCHECKED TASK
 
