@@ -49,6 +49,15 @@ Do not cover the site in every neon at once. One accent leads a section; the oth
 
 Dim companions (`acid-dim`, `cyan-dim`, …) already exist for secondary marks.
 
+### Type colour (on void `#07090d`)
+
+| Token | Hex | Contrast | Use |
+| --- | --- | --- | --- |
+| `text` | `#f4f6f8` | 18.39:1 | Headlines, primary |
+| `text-soft` | `#aab3c0` | 9.41:1 | Lead paragraphs |
+| `muted` | `#8993a3` | 6.42:1 | Secondary / UI labels |
+| `faint` | `#727d8d` | 4.78:1 | Tertiary / captions. Raised from `#5c6675` (3.43:1) so WCAG AA holds with or without the helix. |
+
 ---
 
 ## Typography
