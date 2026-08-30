@@ -40,6 +40,9 @@ declare global {
     __HELIX_BEAT?: number;
     __HELIX_SIDE?: BeatSide;
     __HELIX_LOOK_X?: number;
+    __HELIX_CAM_Z?: number;
+    /** Camera snaps this frame — hash jumps must not lerp across eight poses. */
+    __HELIX_SNAP?: boolean;
   }
 }
 
@@ -78,6 +81,7 @@ export function HelixStage({ children }: { children: React.ReactNode }) {
   const scrim = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [loop, setLoop] = useState<'always' | 'demand'>('always');
+  const lastBeat = useRef(0);
 
   useEffect(() => {
     if (!animated) return;
@@ -89,6 +93,12 @@ export function HelixStage({ children }: { children: React.ReactNode }) {
         Number.isFinite(forced) && window.location.search.includes('converge=')
           ? { ...next.state, converge: Math.min(1, Math.max(0, forced)) }
           : next.state;
+      /* Instant hash scroll updates the pose in one measure. The camera must
+         snap or the specimen tells the previous beat for half a second. */
+      if (Math.abs(nextState.activeIndex - lastBeat.current) > 1) {
+        window.__HELIX_SNAP = true;
+      }
+      lastBeat.current = nextState.activeIndex;
       state.current = nextState;
       const nextLoop = next.owns3d ? 'always' : 'demand';
       window.__HELIX_BEAT = nextState.activeIndex;

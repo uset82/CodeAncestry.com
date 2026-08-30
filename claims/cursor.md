@@ -1,24 +1,25 @@
-# Cursor — mid-width specimen aim landed
+# Cursor — R3 pose language and camera snap
 
-Phase 14 is on `main`. The next instrument defect was composition, not another product phase.
+The twelve-position instrument was closed. This pass makes the later poses tell the truth.
 
 ## Already on main
 
-- `afb00ae` — Phase 14: hash nav, `?helix=none`, final verification.
+- `20bbbf1` — mid-width lookX scale so labels stay in frame.
 
 ## This pass
 
-Claude named a mid-width collision between hero copy and helix labels. The labels were not sitting on the type. A fixed `lookX` of −4.6, sized for the 1600×900 capture, walked the specimen off the right edge as soon as horizontal FOV narrowed. At 960px the capability chips were outside the frame — colour-only spheres, which the system forbids.
+R3: locus chips on beat 07 sat on the machine ledger. Six names lived on the origin strand. A machine genome is eight tracks. That is the wrong encoding, even with VISION–INTERFACE copy.
 
-- **Aim:** `lookXExtent()` scales `LOOK_X_EXTENT` by `aspect / (1600/900)`. Capture stays −4.6. At 960px aim is −2.76. No new breakpoint. Resize already remasures; no rAF on scroll.
-- **Annotations:** chips bias to the specimen side of the locus. A chip that enters the reading half is hidden. Hover origin uses `text-muted`.
-- **R3:** helix labels remain VISION · MEMORY · REASONING · SAFETY · LANGUAGE · NAVIGATION · AGENT · INTERFACE. MIDI/AUDIO are gone.
+- **Labels:** `geneFocus` still reveals chips on the helix. `converge` fades them. The HTML track plate owns the names once the lineage is a column.
+- **Camera:** a hash jump of more than one beat sets `__HELIX_SNAP`. The camera matches the pose in one frame. Lerping across Trace from the hero left the specimen on the previous beat.
+- **Orbit:** pointer may move toward the specimen, never toward the copy.
 
 ## Verified
 
 - `tsc`, eslint, `check-beats` 12/0.
-- Browser: 1440 lookX −4.14, no chip over copy. 960 lookX −2.76; SAFETY / NAVIGATION sit just right of the 740px copy edge; 0 overlaps.
-- Contrast `.captures/phase-lookx-r1/`: 12 beats, 286 blocks, **0 fails**, `helixFramesDelta: 0`.
+- Beat 07: 0 helix chips. Beat 01: VISION–NAVIGATION still on the strand.
+- Hero → Trace: beat 8 in 40ms, camera z 8.39 → 14.91, settle 0.
+- Contrast `.captures/phase-r3-r1/`: 12 beats, 286 blocks, **0 fails**, `helixFramesDelta: 0`.
 
 ## Not started
 

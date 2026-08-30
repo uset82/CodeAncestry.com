@@ -21,6 +21,9 @@ import {
   STRANDS,
   STRANDS_BY_ID,
   UPSTREAM_PATH,
+  FAMILY_HALF_HEIGHT,
+  FAMILY_Y,
+  applyConvergeInto,
   axisPointAtInto,
   backbonePointAtInto,
   GROW_WIDTH,
@@ -57,48 +60,12 @@ import {
 const AXIS_A = new Vector3();
 const AXIS_B = new Vector3();
 
-/* The extent of the whole lineage, measured from the strands rather than typed
-   in, so moving a branch cannot silently crop the closing frame. */
-const FAMILY_TOP = Math.max(...STRANDS.map((s) => Math.max(s.start.y, s.end.y)));
-const FAMILY_BOTTOM = Math.min(...STRANDS.map((s) => Math.min(s.start.y, s.end.y)));
-const FAMILY_Y = (FAMILY_TOP + FAMILY_BOTTOM) / 2;
-/**
- * Half the height the reveal has to cover: the family plus a quarter of margin.
- *
- * A tenth was not enough. The sticky header sits over the top 8% of the frame,
- * so a crown placed 5% from the top edge lands underneath it, and the trunk —
- * the one strand the whole story starts from — was the part being clipped.
- */
-const FAMILY_HALF_HEIGHT = ((FAMILY_TOP - FAMILY_BOTTOM) * 1.06) / 2;
 /** Aim above centre so the extra margin lands at the top, under the header. */
 const FAMILY_LOOK_LIFT = 0.8;
 /* FAMILY_LOOK_X is no longer a constant. CameraRig reads `state.lookX`,
    which lerps with data-beat-side: copy left → lineage right (negative). */
 
-/**
- * converge = 1 re-poses each strand into a horizontal track. Tracks stack
- * vertically in STRANDS order (loci 6/5/5/5/4/4/4/3), length ∝ gene count.
- * Same nodes, a second layout — the genome-browser idiom, not a spindle.
- */
-const CONVERGE_MAX_LOCI = Math.max(...STRANDS.map((spec) => spec.loci));
-const CONVERGE_PITCH = 1.24;
-const CONVERGE_STACK = CONVERGE_PITCH * Math.max(1, STRANDS.length - 1);
-const CONVERGE_TOP = FAMILY_Y + CONVERGE_STACK / 2;
-const CONVERGE_UNIT = (FAMILY_HALF_HEIGHT * 0.7) / CONVERGE_MAX_LOCI;
-const CONVERGE_ORIGIN_X = -2.1;
 const TICK_UP = new Vector3(0, 1, 0);
-
-function strandT(spec: (typeof STRANDS)[number], point: Vector3): number {
-  const dx = spec.end.x - spec.start.x;
-  const dy = spec.end.y - spec.start.y;
-  const dz = spec.end.z - spec.start.z;
-  const span = dx * dx + dy * dy + dz * dz;
-  if (span < 1e-8) return 0;
-  const t =
-    ((point.x - spec.start.x) * dx + (point.y - spec.start.y) * dy + (point.z - spec.start.z) * dz) /
-    span;
-  return Math.min(1, Math.max(0, t));
-}
 
 /**
  * Flatten only mixes 42% toward the axis (growth shader, settled). Converge
@@ -144,22 +111,6 @@ function writeConverge(material: MeshStandardMaterial, converge: number) {
   const depth = (material.userData.depthMaterial as { userData?: { shader?: { uniforms?: { uConverge?: { value: number } } } } } | undefined)
     ?.userData?.shader;
   if (depth?.uniforms?.uConverge) depth.uniforms.uConverge.value = converge;
-}
-
-function applyConvergeInto(
-  spec: (typeof STRANDS)[number],
-  converge: number,
-  target: Vector3,
-  t = strandT(spec, target),
-): Vector3 {
-  if (converge <= 0) return target;
-  const row = STRANDS.findIndex((entry) => entry.id === spec.id);
-  const poseX = CONVERGE_ORIGIN_X + t * spec.loci * CONVERGE_UNIT;
-  const poseY = CONVERGE_TOP - Math.max(0, row) * CONVERGE_PITCH;
-  target.x += (poseX - target.x) * converge;
-  target.y += (poseY - target.y) * converge;
-  target.z += (0 - target.z) * converge;
-  return target;
 }
 
 /** Centre of the strands the current generation count has revealed. */
@@ -698,8 +649,10 @@ function LocusLabels({ state }: Pick<Props, 'state'>) {
       const grow = strandEased(current.generations, anchor.spec.generation);
       const eased = grow - growthJitterAt(grow);
       const front = growthAlong(eased, anchor.t);
-      /* geneFocus fades labels in; zoomOut fades them out so they do not stack. */
-      const reveal = current.geneFocus * (1 - holdProgress(current) * 0.9);
+      /* geneFocus fades labels in. Converge and zoomOut fade them out — the
+         machine ledger is eight tracks, not six chips on the origin strand. */
+      const reveal =
+        current.geneFocus * (1 - holdProgress(current) * 0.9) * (1 - current.converge);
       let opacity =
         front > 0.55 ? Math.round(Math.min(1, (front - 0.55) / 0.45) * reveal * 100) / 100 : 0;
       /* A chip in the reading field is a composition failure. Hide it. */
@@ -905,17 +858,21 @@ function CameraRig({
     const lookY = liveFamilyY(current.generations) + FAMILY_LOOK_LIFT;
     const lookX = current.lookX;
 
-    desired.set(
-      lookX + pointer.current.x * 0.48 * orbit,
-      lookY + pointer.current.y * 0.24 * orbit,
-      z,
-    );
+    /* Pointer may orbit toward the specimen, never toward the copy. */
+    let orbitX = pointer.current.x * 0.48 * orbit;
+    if (lookX < -0.2) orbitX = Math.max(0, orbitX);
+    if (lookX > 0.2) orbitX = Math.min(0, orbitX);
+
+    desired.set(lookX + orbitX, lookY + pointer.current.y * 0.24 * orbit, z);
     lookAt.set(lookX, lookY, 0);
 
-    const lerp = Math.min(1, delta * 3.2);
+    const snap = window.__HELIX_SNAP === true;
+    if (snap) window.__HELIX_SNAP = false;
+    const lerp = snap ? 1 : Math.min(1, delta * 3.2);
     camera.position.lerp(desired, lerp);
     target.lerp(lookAt, lerp);
     camera.lookAt(target);
+    window.__HELIX_CAM_Z = camera.position.z;
   });
 
   return null;
