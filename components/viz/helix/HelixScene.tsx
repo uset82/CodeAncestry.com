@@ -2,7 +2,7 @@
 
 import { Html } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
-import { useEffect, useMemo, useRef } from 'react';
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import {
   CatmullRomCurve3,
   Color,
@@ -23,6 +23,7 @@ import {
   UPSTREAM_PATH,
   FAMILY_HALF_HEIGHT,
   FAMILY_Y,
+  FLATTEN_MIX,
   applyConvergeInto,
   axisPointAtInto,
   backbonePointAtInto,
@@ -36,7 +37,24 @@ import {
   sampleBackbone,
   strandBasis,
   strandEased,
+  type StrandSpec,
 } from './strands';
+import {
+  advanceLive,
+  createStrandLive,
+  createStrandRings,
+  createSweepGeometry,
+  liveRadialInto,
+  sampleLiveInto,
+  setLivePose,
+  sweepInto,
+  sweepTuningFor,
+  writeCenterlines,
+  type StrandLive,
+  type StrandRings,
+  type SweepBuffers,
+  type SweepTuning,
+} from './sweep';
 import { climaxAmount, daylight, holdProgress, type BeatSide, type BeatState } from './beats';
 import {
   climaxEmissive,
@@ -68,22 +86,39 @@ const FAMILY_LOOK_LIFT = 0.8;
 const TICK_UP = new Vector3(0, 1, 0);
 
 /**
- * Flatten only mixes 42% toward the axis (growth shader, settled). Converge
- * has to finish that mix or the tubes stay a spindle while the loci walk.
- * Patched here so organic.ts stays untouched.
+ * The converge "track" wobble, interpolated into the GLSL below *and* passed
+ * to `sweepInto`, so the baked and swept paths braid by the same amount.
+ */
+const TRACK_WOBBLE = 0.07;
+
+/**
+ * `uCpuPose` is the hand-over switch. When the live CPU sweep owns the
+ * geometry it has *already* applied this exact collapse and this exact track
+ * wobble, so leaving them on would apply both twice. It gates the pair with
+ * `(1.0 - uCpuPose)` rather than removing them, which keeps the low tier —
+ * which still runs baked `TubeGeometry` — untouched.
  */
 function patchTrackConverge(material: MeshStandardMaterial) {
-  const rewrite = (shader: { uniforms: Record<string, { value: number }>; vertexShader: string }) => {
+  const rewrite = (shader: {
+    uniforms: Record<string, { value: number }>;
+    vertexShader: string;
+  }) => {
     shader.uniforms.uConverge = { value: 0 };
+    shader.uniforms.uCpuPose = { value: 0 };
     shader.vertexShader = shader.vertexShader
-      .replace('uniform float uFlatten;', 'uniform float uFlatten;\n       uniform float uConverge;')
       .replace(
-        'transformed = mix(transformed, axisPoint, uFlatten * 0.42);',
+        'uniform float uFlatten;',
+        'uniform float uFlatten;\n       uniform float uConverge;\n       uniform float uCpuPose;',
+      )
+      .replace(
+        `transformed = mix(transformed, axisPoint, uFlatten * ${FLATTEN_MIX});`,
         [
-          'transformed = mix(transformed, axisPoint, clamp(uFlatten * 0.42 + uConverge, 0.0, 1.0));',
+          'float poseGate = 1.0 - uCpuPose;',
+          `float poseW = clamp(uFlatten * ${FLATTEN_MIX} + uConverge, 0.0, 1.0) * poseGate;`,
+          'transformed = mix(transformed, axisPoint, poseW);',
           'float trackAng = uv.y * 6.2831853;',
-          'transformed.y += sin(trackAng) * 0.07 * uConverge;',
-          'transformed.z += cos(trackAng) * 0.07 * uConverge;',
+          `transformed.y += sin(trackAng) * ${TRACK_WOBBLE} * uConverge * poseGate;`,
+          `transformed.z += cos(trackAng) * ${TRACK_WOBBLE} * uConverge * poseGate;`,
         ].join('\n       '),
       );
   };
@@ -105,12 +140,22 @@ function patchTrackConverge(material: MeshStandardMaterial) {
   depth.customProgramCacheKey = () => 'helix-track-converge-depth';
 }
 
-function writeConverge(material: MeshStandardMaterial, converge: number) {
-  const color = material.userData.shader as { uniforms?: { uConverge?: { value: number } } } | undefined;
-  if (color?.uniforms?.uConverge) color.uniforms.uConverge.value = converge;
-  const depth = (material.userData.depthMaterial as { userData?: { shader?: { uniforms?: { uConverge?: { value: number } } } } } | undefined)
-    ?.userData?.shader;
-  if (depth?.uniforms?.uConverge) depth.uniforms.uConverge.value = converge;
+type PoseUniforms = { uConverge?: { value: number }; uCpuPose?: { value: number } };
+
+function writeConverge(material: MeshStandardMaterial, converge: number, cpuPose: number) {
+  const write = (uniforms: PoseUniforms | undefined) => {
+    if (!uniforms) return;
+    if (uniforms.uConverge) uniforms.uConverge.value = converge;
+    if (uniforms.uCpuPose) uniforms.uCpuPose.value = cpuPose;
+  };
+
+  write((material.userData.shader as { uniforms?: PoseUniforms } | undefined)?.uniforms);
+  write(
+    (
+      material.userData.depthMaterial as
+        { userData?: { shader?: { uniforms?: PoseUniforms } } } | undefined
+    )?.userData?.shader?.uniforms,
+  );
 }
 
 /** Centre of the strands the current generation count has revealed. */
@@ -134,12 +179,19 @@ const QUALITY: Record<'low' | 'high', Quality> = {
   high: { tubular: 120, radial: 8, radius: 0.04, sphere: 16 },
 };
 
+/**
+ * `?tubular=` overrides, for the capture measurement.
+ *
+ * The result has to be **referentially stable**: `Backbones` keys a `useMemo`
+ * on it, and returning a fresh `{ ...base, tubular }` rebuilt all sixteen
+ * tube geometries on every render. Callers must memoize on `tier` alone.
+ */
 function qualityFor(tier: 'low' | 'high'): Quality {
   const base = QUALITY[tier];
   if (tier !== 'high' || typeof window === 'undefined') return base;
   const tubular = Number(new URLSearchParams(window.location.search).get('tubular'));
-  if (tubular === 96 || tubular === 120) return { ...base, tubular };
-  return base;
+  if (!Number.isFinite(tubular) || tubular < 32 || tubular > 160) return base;
+  return { ...base, tubular: Math.round(tubular) };
 }
 
 type Props = {
@@ -156,6 +208,109 @@ type StrandGeometry = {
   curve: CatmullRomCurve3;
   material: MeshStandardMaterial;
 };
+
+/** One strand's live sweep: pose state, ring centres, and both rails' buffers. */
+type SweepStrand = {
+  live: StrandLive;
+  rings: StrandRings;
+  buffers: [SweepBuffers, SweepBuffers];
+};
+
+/**
+ * The live sweep, or `null` when the baked tubes still own the geometry —
+ * which is both the low tier and `?sweep=0`, so the revert is a real revert
+ * and not "the same code with the amplitude dialled down".
+ */
+type SweepRuntime = {
+  tuning: SweepTuning;
+  strands: SweepStrand[];
+};
+
+/**
+ * Shared so rungs, loci, labels and pulses can read the same live pose the
+ * tubes just wrote. A ref, not the object itself: `Backbones` creates the
+ * runtime in an effect-free memo, and every consumer has to see the *current*
+ * frame, not the one that happened to be current when they rendered.
+ */
+const SweepHolderContext = createContext<React.MutableRefObject<SweepRuntime | null> | null>(
+  null,
+);
+
+function liveOf(sweep: SweepRuntime | null | undefined, spec: StrandSpec): StrandLive | null {
+  if (!sweep) return null;
+  const i = STRANDS.findIndex((entry) => entry.id === spec.id);
+  const live = i >= 0 ? sweep.strands[i]?.live : undefined;
+  return live && live.amp > 0 ? live : null;
+}
+
+function radialInto(
+  live: StrandLive | null,
+  fallback: Vector3,
+  t: number,
+  target: Vector3,
+): Vector3 {
+  return live ? liveRadialInto(live, t, target) : target.copy(fallback);
+}
+
+/** Pointer lean may pull toward the specimen, never toward the copy. */
+const LEAN_CURSOR = { x: 0, y: 0 };
+
+function leanCursor(beat: BeatState, pointer: { x: number; y: number }): { x: number; y: number } {
+  LEAN_CURSOR.x = pointer.x;
+  LEAN_CURSOR.y = pointer.y;
+  if (beat.lookX < -0.2) LEAN_CURSOR.x = Math.max(0, LEAN_CURSOR.x);
+  if (beat.lookX > 0.2) LEAN_CURSOR.x = Math.min(0, LEAN_CURSOR.x);
+  return LEAN_CURSOR;
+}
+
+/**
+ * One full sweep: pose, advance, re-centreline, re-sweep both rails, flag the
+ * buffers dirty.
+ *
+ * Extracted so the same code can prime the buffers once at creation. That
+ * primer is not optional: `createSweepGeometry` hands back zero-filled arrays,
+ * and `HelixStage` drops the canvas to `frameloop="demand"` on beats the helix
+ * does not own — so a strand would render as a degenerate point at the origin
+ * until the first frame happened to run.
+ */
+function runSweep(
+  sweep: SweepRuntime,
+  strands: StrandGeometry[],
+  radius: number,
+  beat: BeatState,
+  delta: number,
+  time: number,
+  cursor: { x: number; y: number },
+): void {
+  /* The converge braid the shader would otherwise add. Reproduced here because
+     `uCpuPose` switches the shader's copy off. */
+  const track = beat.converge * TRACK_WOBBLE;
+
+  sweep.strands.forEach((entry, i) => {
+    const strand = strands[i];
+    if (!strand) return;
+    const { live, rings, buffers } = entry;
+
+    setLivePose(
+      live,
+      beat.flatten,
+      beat.converge,
+      strandEased(beat.generations, strand.spec.generation),
+    );
+    advanceLive(live, delta, time, leanCursor(beat, cursor), sweep.tuning);
+    writeCenterlines(live, rings, radius, sweep.tuning);
+
+    sweepInto(buffers[0], rings.centersA, rings.radii, rings.phases, 0, live.basis.u, track);
+    sweepInto(buffers[1], rings.centersB, rings.radii, rings.phases, 0, live.basis.u, track);
+
+    buffers[0].positionAttribute.needsUpdate = true;
+    buffers[0].normalAttribute.needsUpdate = true;
+    buffers[1].positionAttribute.needsUpdate = true;
+    buffers[1].normalAttribute.needsUpdate = true;
+
+    live.frame += 1;
+  });
+}
 
 function OrganicTicker({
   materials,
@@ -185,7 +340,8 @@ function OrganicTicker({
 /* ------------------------------------------------------------- backbones */
 
 function Backbones({ state, tier, materials, pointer }: Props) {
-  const quality = qualityFor(tier);
+  const quality = useMemo(() => qualityFor(tier), [tier]);
+  const holderRef = useContext(SweepHolderContext);
 
   const strands = useMemo<StrandGeometry[]>(
     () =>
@@ -197,7 +353,13 @@ function Backbones({ state, tier, materials, pointer }: Props) {
             'catmullrom',
             0.5,
           );
-          return new TubeGeometry(curve, quality.tubular, quality.radius, quality.radial, false);
+          return new TubeGeometry(
+            curve,
+            quality.tubular,
+            quality.radius,
+            quality.radial,
+            false,
+          );
         };
 
         const role = backboneMaterial(materials, spec.generation, spec.origin ?? false);
@@ -223,6 +385,27 @@ function Backbones({ state, tier, materials, pointer }: Props) {
     [quality, materials],
   );
 
+  const sweep = useMemo<SweepRuntime | null>(() => {
+    /* Low tier keeps the baked `TubeGeometry` and the shader's own drift: the
+       sweep is a high-tier effect, and `?sweep=0` is what reverts it there. */
+    if (tier !== 'high') return null;
+    const tuning = sweepTuningFor(typeof window === 'undefined' ? '' : window.location.search);
+    if (tuning.amplitude <= 0) return null;
+    const runtime: SweepRuntime = {
+      tuning,
+      strands: STRANDS.map((spec) => ({
+        live: createStrandLive(spec, quality.tubular),
+        rings: createStrandRings(quality.tubular),
+        buffers: [
+          createSweepGeometry(quality.tubular, quality.radial),
+          createSweepGeometry(quality.tubular, quality.radial),
+        ] as [SweepBuffers, SweepBuffers],
+      })),
+    };
+
+    return runtime;
+  }, [tier, quality]);
+
   useEffect(() => {
     return () => {
       strands.forEach((strand) => {
@@ -234,7 +417,57 @@ function Backbones({ state, tier, materials, pointer }: Props) {
     };
   }, [strands]);
 
+  /**
+   * Prime the buffers before the first paint.
+   *
+   * A layout effect, not a plain effect: it has to land before the first
+   * rAF-driven R3F frame, or the strands are briefly sixteen points stacked at
+   * the origin. It also cannot move into the `useMemo` above — reading
+   * `state.current` during render is impure, and the React Compiler rejects it.
+   */
+  useLayoutEffect(() => {
+    if (holderRef) holderRef.current = sweep;
+    if (!sweep) return;
+    runSweep(sweep, strands, quality.radius, state.current, 0, 0, pointer.current);
+  }, [sweep, strands, quality, state, pointer, holderRef]);
+
+  useEffect(() => {
+    if (!sweep) return;
+    return () => {
+      if (holderRef && holderRef.current === sweep) holderRef.current = null;
+      sweep.strands.forEach((entry) => {
+        entry.buffers[0].geometry.dispose();
+        entry.buffers[1].geometry.dispose();
+      });
+    };
+  }, [sweep, holderRef]);
+
   const group = useRef<Mesh[]>([]);
+
+  /**
+   * Priority **-1**: R3F sorts subscribers ascending, and only *positive*
+   * priorities disable auto-rendering — so this runs before every default
+   * callback while the renderer still draws by itself.
+   *
+   * That ordering is the point. `GrowingTips`, `Rungs`, `Loci` and `Pulses`
+   * all read the live centrelines later in the same frame; run them against
+   * last frame's buffers and every attached element lags the tube it is
+   * attached to by one frame, which reads as the helix coming apart at the
+   * seams while it moves.
+   */
+  useFrame(({ clock }, delta) => {
+    const current = state.current;
+    if (!sweep || !current) return;
+    runSweep(
+      sweep,
+      strands,
+      quality.radius,
+      current,
+      delta,
+      clock.elapsedTime,
+      pointer.current,
+    );
+  }, -1);
 
   useFrame(({ clock }) => {
     const current = state.current;
@@ -270,11 +503,18 @@ function Backbones({ state, tier, materials, pointer }: Props) {
             ref={(node) => {
               if (node) group.current[i * 2 + side] = node;
             }}
-            geometry={geometry}
+            geometry={sweep ? sweep.strands[i]!.buffers[side]!.geometry : geometry}
             material={strand.material}
             customDepthMaterial={depthMaterialOf(strand.material)}
             castShadow
             receiveShadow
+            /* The swept buffer is rewritten in world space every frame, so any
+               bounding sphere would be stale the moment it was computed — and
+               `projectObject` skips `Frustum.intersectsObject` entirely for a
+               non-culled object, so no sphere is ever needed. This is the
+               honest alternative to the reference's `boundingSphere = 1e5`,
+               which defeats culling with a sphere that lies. */
+            frustumCulled={!sweep}
             onBeforeRender={() => {
               const current = state.current;
               if (!current) return;
@@ -289,7 +529,7 @@ function Backbones({ state, tier, materials, pointer }: Props) {
               axisPointAtInto(strand.spec, 1, current.flatten, AXIS_B);
               applyConvergeInto(strand.spec, current.converge, AXIS_A, 0);
               applyConvergeInto(strand.spec, current.converge, AXIS_B, 1);
-              writeConverge(strand.material, current.converge);
+              writeConverge(strand.material, current.converge, sweep ? 1 : 0);
               syncOrganic(strand.material, {
                 grow: strandEased(current.generations, strand.spec.generation),
                 flatten: current.flatten,
@@ -302,7 +542,7 @@ function Backbones({ state, tier, materials, pointer }: Props) {
           />
         )),
       )}
-      <GrowingTips strands={strands} state={state} materials={materials} />
+      <GrowingTips strands={strands} state={state} materials={materials} sweep={sweep} />
     </>
   );
 }
@@ -311,10 +551,12 @@ function GrowingTips({
   strands,
   state,
   materials,
+  sweep,
 }: {
   strands: StrandGeometry[];
   state: React.RefObject<BeatState>;
   materials: HelixMaterials;
+  sweep: SweepRuntime | null;
 }) {
   const mesh = useRef<InstancedMesh>(null);
   const scratch = useMemo(
@@ -341,15 +583,22 @@ function GrowingTips({
       const grow = strandEased(current.generations, strand.spec.generation);
       const eased = grow - growthJitterAt(grow);
       const t = Math.min(0.999, Math.max(0, eased));
-      strand.curve.getPoint(t, position);
-      axisPointAtInto(strand.spec, t, current.flatten, axis);
-      applyConvergeInto(strand.spec, current.converge, axis, t);
-      /* Follow the tube as it tapers onto the axis, then as flatten collapses
-         the whole strand. Otherwise the tip sits on the full-radius helix
-         while the backbone has already closed to a point. */
-      const taper = pathTaper(t, eased, startTaperWidth(strand.spec.generation));
-      position.lerp(axis, 1 - taper * (1 - current.flatten));
-      applyConvergeInto(strand.spec, current.converge, position, t);
+      const live = liveOf(sweep, strand.spec);
+      if (live) {
+        /* The live rail already carries flatten, converge, screw, wobble and
+           lean. A second lerp toward the axis would collapse twice. */
+        sampleLiveInto(live, 0, t, position);
+      } else {
+        strand.curve.getPoint(t, position);
+        axisPointAtInto(strand.spec, t, current.flatten, axis);
+        applyConvergeInto(strand.spec, current.converge, axis, t);
+        /* Follow the tube as it tapers onto the axis, then as flatten collapses
+           the whole strand. Otherwise the tip sits on the full-radius helix
+           while the backbone has already closed to a point. */
+        const taper = pathTaper(t, eased, startTaperWidth(strand.spec.generation));
+        position.lerp(axis, 1 - taper * (1 - current.flatten));
+        applyConvergeInto(strand.spec, current.converge, position, t);
+      }
       const growing = eased > 0.03 && eased < 0.985;
       const settled = eased >= 0.985 ? 0.046 : 0;
       scale.setScalar(growing ? 0.068 : settled);
@@ -376,6 +625,7 @@ function GrowingTips({
 
 function Rungs({ state, materials }: Pick<Props, 'state' | 'materials'>) {
   const mesh = useRef<InstancedMesh>(null);
+  const holderRef = useContext(SweepHolderContext);
   const total = STRANDS.length * RUNGS_PER_STRAND;
 
   const slots = useMemo(
@@ -419,7 +669,10 @@ function Rungs({ state, materials }: Pick<Props, 'state' | 'materials'>) {
 
       axisPointAtInto(slot.spec, slot.t, current.flatten, position);
       applyConvergeInto(slot.spec, current.converge, position, slot.t);
-      direction.copy(slot.direction).lerp(TICK_UP, current.converge).normalize();
+      /* Position stays on the collapsed axis. Direction has to follow the
+         screw — `rungDirection` points between the rails once they coil. */
+      radialInto(liveOf(holderRef?.current, slot.spec), slot.direction, slot.t, direction);
+      direction.lerp(TICK_UP, current.converge).normalize();
       quaternion.setFromUnitVectors(up, direction);
 
       const breathe = 1 + Math.sin(time * 1.1 + i * 0.7) * 0.06 * (1 - current.flatten);
@@ -454,6 +707,7 @@ function Rungs({ state, materials }: Pick<Props, 'state' | 'materials'>) {
 
 function Loci({ state, tier, materials }: Props) {
   const mesh = useRef<InstancedMesh>(null);
+  const holderRef = useContext(SweepHolderContext);
   const quality = QUALITY[tier];
 
   const slots = useMemo(
@@ -492,6 +746,7 @@ function Loci({ state, tier, materials }: Props) {
       scale: new Vector3(),
       color: new Color(),
       alarm: new Color(),
+      direction: new Vector3(),
     }),
     [],
   );
@@ -508,26 +763,34 @@ function Loci({ state, tier, materials }: Props) {
       const eased = grow - growthJitterAt(grow);
       const overshoot = slot.kind === 'junction' && slot.t === 1 && grow >= 1 ? GROW_WIDTH : 0;
       const front = growthAlong(eased, slot.t, overshoot);
-      const { matrix, position, quaternion, scale, color, alarm } = scratch;
+      const { matrix, position, quaternion, scale, color, alarm, direction } = scratch;
+      const live = liveOf(holderRef?.current, slot.spec);
 
-      axisPointAtInto(slot.spec, slot.t, current.flatten, position);
-      applyConvergeInto(slot.spec, current.converge, position, slot.t);
-      if (slot.kind === 'gene') {
-        position.addScaledVector(slot.direction, slot.spec.radius * (1 - current.flatten));
+      if (slot.kind === 'gene' && live) {
+        sampleLiveInto(live, 0, slot.t, position);
+      } else {
+        axisPointAtInto(slot.spec, slot.t, current.flatten, position);
+        applyConvergeInto(slot.spec, current.converge, position, slot.t);
+        if (slot.kind === 'gene') {
+          position.addScaledVector(slot.direction, slot.spec.radius * (1 - current.flatten));
+        }
       }
+
+      radialInto(live, slot.direction, slot.t, direction);
 
       const agentLocus =
         slot.kind === 'gene' &&
         slot.spec.generation > 0 &&
         Math.floor(slot.t * slot.spec.loci) % 2 === 0;
       if (agentLocus) {
-        position.addScaledVector(slot.direction, slot.spec.radius * 0.45 * current.agents);
+        position.addScaledVector(direction, slot.spec.radius * 0.45 * current.agents);
       }
       if (slot.mutated) {
-        position.addScaledVector(slot.direction, 0.08 * current.mutate);
+        position.addScaledVector(direction, 0.08 * current.mutate);
       }
 
-      const pulse = 1 + Math.sin(time * 2 + slot.seed) * (slot.kind === 'junction' ? 0.06 : 0.16);
+      const pulse =
+        1 + Math.sin(time * 2 + slot.seed) * (slot.kind === 'junction' ? 0.06 : 0.16);
       const terminal = slot.kind === 'junction' && slot.t === 1;
       const emphasis = slot.mutated
         ? 1.7 + current.upstream * 0.6 + current.recovery * 0.4
@@ -574,7 +837,8 @@ function Loci({ state, tier, materials }: Props) {
         color.lerp(alarm, current.alarm);
       }
       if (
-        (slot.mutated || (slot.spec.generation === 0 && slot.kind === 'junction' && slot.t === 0)) &&
+        (slot.mutated ||
+          (slot.spec.generation === 0 && slot.kind === 'junction' && slot.t === 0)) &&
         current.recovery > 0
       ) {
         color.lerp(HELIX.acid, current.recovery);
@@ -610,6 +874,7 @@ function labelHitsReadingField(node: HTMLElement, side: BeatSide): boolean {
 }
 
 function LocusLabels({ state }: Pick<Props, 'state'>) {
+  const holderRef = useContext(SweepHolderContext);
   const anchors = useMemo(
     () =>
       LOCUS_LABELS.flatMap((label) => {
@@ -625,7 +890,10 @@ function LocusLabels({ state }: Pick<Props, 'state'>) {
   const groups = useRef<(HTMLDivElement | null)[]>([]);
   const frames = useRef<(Group | null)[]>([]);
   const lastOpacity = useRef<number[]>([]);
-  const scratch = useMemo(() => new Vector3(), []);
+  const scratch = useMemo(
+    () => ({ position: new Vector3(), direction: new Vector3() }),
+    [],
+  );
 
   useFrame(() => {
     const current = state.current;
@@ -635,14 +903,31 @@ function LocusLabels({ state }: Pick<Props, 'state'>) {
       const node = groups.current[i];
       const frame = frames.current[i];
       if (frame) {
-        axisPointAtInto(anchor.spec, anchor.t, current.flatten, scratch);
-        applyConvergeInto(anchor.spec, current.converge, scratch, anchor.t);
-        scratch.addScaledVector(anchor.direction, anchor.spec.radius * 1.9 * (1 - current.flatten));
+        const live = liveOf(holderRef?.current, anchor.spec);
+        const { position, direction } = scratch;
+        if (live) {
+          sampleLiveInto(live, 0, anchor.t, position);
+          liveRadialInto(live, anchor.t, direction);
+          /* Live sample is already on the rail. The extra 0.9·radius keeps
+             the chip outside the tube, matching the baked 1.9·radius offset
+             from the axis. */
+          position.addScaledVector(
+            direction,
+            anchor.spec.radius * 0.9 * (1 - current.flatten),
+          );
+        } else {
+          axisPointAtInto(anchor.spec, anchor.t, current.flatten, position);
+          applyConvergeInto(anchor.spec, current.converge, position, anchor.t);
+          position.addScaledVector(
+            anchor.direction,
+            anchor.spec.radius * 1.9 * (1 - current.flatten),
+          );
+        }
         /* Keep the chip on the specimen side of the locus. */
         if (current.flatten < 0.95 && current.lookX !== 0) {
-          scratch.x += Math.sign(-current.lookX) * anchor.spec.radius * 0.55;
+          position.x += Math.sign(-current.lookX) * anchor.spec.radius * 0.55;
         }
-        frame.position.copy(scratch);
+        frame.position.copy(position);
       }
       if (!node) return;
 
@@ -688,7 +973,7 @@ function LocusLabels({ state }: Pick<Props, 'state'>) {
                 type="button"
                 /* Opaque void plate. The scene stays dark; a translucent chip
                    disappeared into the tubes. */
-                className={`hover:border-current focus-visible:border-current bg-void inline-flex items-center gap-1.5 rounded-xs border px-1.5 py-[3px] font-mono text-[9px] tracking-[0.14em] uppercase ${
+                className={`bg-void inline-flex items-center gap-1.5 rounded-xs border px-1.5 py-[3px] font-mono text-[9px] tracking-[0.14em] uppercase hover:border-current focus-visible:border-current ${
                   anchor.label.mutated
                     ? 'border-violet/50 text-violet'
                     : 'border-acid/30 text-acid'
@@ -703,10 +988,12 @@ function LocusLabels({ state }: Pick<Props, 'state'>) {
                 {anchor.label.short}
               </button>
 
-              <div className="border-line bg-void pointer-events-none absolute top-full left-0 mt-1.5 hidden w-max max-w-[220px] rounded-xs border p-2 group-hover/locus:block group-focus-within/locus:block">
+              <div className="border-line bg-void pointer-events-none absolute top-full left-0 mt-1.5 hidden w-max max-w-[220px] rounded-xs border p-2 group-focus-within/locus:block group-hover/locus:block">
                 <p className="text-text text-[12px] font-semibold">{anchor.label.gene}</p>
                 <p className="text-muted mt-0.5 text-[11px]">{anchor.label.origin}</p>
-                <p className="text-muted mt-1 font-mono text-[10px]">{anchor.label.accession}</p>
+                <p className="text-muted mt-1 font-mono text-[10px]">
+                  {anchor.label.accession}
+                </p>
               </div>
             </div>
           </Html>
@@ -721,6 +1008,7 @@ function LocusLabels({ state }: Pick<Props, 'state'>) {
 function Pulses({ state, tier, materials }: Props) {
   const down = useRef<InstancedMesh>(null);
   const up = useRef<InstancedMesh>(null);
+  const holderRef = useContext(SweepHolderContext);
   const quality = QUALITY[tier];
 
   const downSlots = useMemo(
@@ -738,8 +1026,11 @@ function Pulses({ state, tier, materials }: Props) {
         const spec = STRANDS.find((entry) => entry.id === id);
         if (!spec) return null;
         return { spec, basis: strandBasis(spec) };
-      }).filter((entry): entry is { spec: (typeof STRANDS)[number]; basis: ReturnType<typeof strandBasis> } =>
-        Boolean(entry),
+      }).filter(
+        (
+          entry,
+        ): entry is { spec: (typeof STRANDS)[number]; basis: ReturnType<typeof strandBasis> } =>
+          Boolean(entry),
       ),
     [],
   );
@@ -765,8 +1056,13 @@ function Pulses({ state, tier, materials }: Props) {
       downSlots.forEach((slot, i) => {
         const raw = (time * 0.34 + i * 0.21) % 1;
         const t = raw + (1 - 2 * raw) * current.rewind;
-        backbonePointAtInto(slot.spec, slot.basis, 0, t, current.flatten, position);
-        applyConvergeInto(slot.spec, current.converge, position, t);
+        const live = liveOf(holderRef?.current, slot.spec);
+        if (live) {
+          sampleLiveInto(live, 0, t, position);
+        } else {
+          backbonePointAtInto(slot.spec, slot.basis, 0, t, current.flatten, position);
+          applyConvergeInto(slot.spec, current.converge, position, t);
+        }
         const edge = Math.min(1, Math.min(t, 1 - t) * 7);
         const grow = strandEased(current.generations, slot.spec.generation);
         const grown = growthAlong(grow - growthJitterAt(grow), t);
@@ -883,12 +1179,13 @@ function CameraRig({
 export function HelixScene({ state, tier }: Omit<Props, 'materials' | 'pointer'>) {
   const materials = useMemo(() => createHelixMaterials(), []);
   const pointer = useRef({ x: 0, y: 0 });
+  const sweepHolderRef = useRef<SweepRuntime | null>(null);
   const shadows = tier === 'high';
 
   useEffect(() => () => disposeHelixMaterials(materials), [materials]);
 
   return (
-    <>
+    <SweepHolderContext.Provider value={sweepHolderRef}>
       <StudioRig state={state} shadows={shadows} />
       <OrganicTicker
         materials={materials}
@@ -902,6 +1199,6 @@ export function HelixScene({ state, tier }: Omit<Props, 'materials' | 'pointer'>
       <Loci state={state} tier={tier} materials={materials} pointer={pointer} />
       <Pulses state={state} tier={tier} materials={materials} pointer={pointer} />
       {tier === 'high' && <LocusLabels state={state} />}
-    </>
+    </SweepHolderContext.Provider>
   );
 }

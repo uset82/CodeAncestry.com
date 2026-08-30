@@ -348,7 +348,12 @@ export function strandEased(generations: number, generation: number): number {
  * How far past this slot the growth front has travelled. 0 = still ahead of
  * the tip, 1 = the tip has moved on and this detail should be fully on.
  */
-export function growthAlong(eased: number, t: number, overshoot = 0, width = GROW_WIDTH): number {
+export function growthAlong(
+  eased: number,
+  t: number,
+  overshoot = 0,
+  width = GROW_WIDTH,
+): number {
   /* `overshoot` is 0 for rungs and gene loci — the 1.08 term used to cancel
      the trail and hang them past the tube. Only a finished end cap (t = 1,
      grow = 1) passes GROW_WIDTH, which is the bug this term originally fixed. */
@@ -399,6 +404,18 @@ const CONVERGE_STACK = CONVERGE_PITCH * Math.max(1, STRANDS.length - 1);
 const CONVERGE_TOP = FAMILY_Y + CONVERGE_STACK / 2;
 const CONVERGE_UNIT = (FAMILY_HALF_HEIGHT * 0.7) / CONVERGE_MAX_LOCI;
 const CONVERGE_ORIGIN_X = -2.1;
+
+/**
+ * How far flatten alone pulls a vertex toward the axis.
+ *
+ * Three places must agree on this number or the CPU sweep and the vertex
+ * shader collapse by different amounts: the growth shader in `organic.ts`
+ * (a literal, left alone deliberately), the converge patch in `HelixScene`
+ * (interpolated into the GLSL), and `setLivePose` in `sweep.ts`. Exporting it
+ * from here means only the GLSL in `organic.ts` can drift — and that one is
+ * what the parity harness measures against.
+ */
+export const FLATTEN_MIX = 0.42;
 
 /**
  * Re-pose a point toward its capability track. Generation becomes the track.
@@ -457,7 +474,10 @@ export type StrandBasis = {
   v: Vector3;
 };
 
-function helixFrame(dir: Vector3, frameAxis: StrandSpec['frameAxis']): Pick<StrandBasis, 'u' | 'v'> {
+function helixFrame(
+  dir: Vector3,
+  frameAxis: StrandSpec['frameAxis'],
+): Pick<StrandBasis, 'u' | 'v'> {
   const reference = frameAxis === 'x' ? new Vector3(1, 0, 0) : new Vector3(0, 1, 0);
   const u = new Vector3().crossVectors(dir, reference).normalize();
   const v = new Vector3().crossVectors(dir, u).normalize();
