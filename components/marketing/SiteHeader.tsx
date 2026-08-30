@@ -2,24 +2,15 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useId, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
+import { useEffect, useId, useRef, useState, type ComponentProps } from 'react';
 import { cn } from '@/lib/cn';
+import { handleHashNav, isHomeHash, scrollToHashId } from '@/lib/hash-nav';
 import { connectCta, nav, site, type NavItem } from '@/lib/site';
 import { HelixMark } from '@/components/ui/HelixMark';
 import { ButtonLink } from '@/components/ui/Button';
 
 const isActive = (pathname: string, href: string) =>
   pathname === href || (href !== '/' && !href.includes('#') && pathname.startsWith(`${href}/`));
-
-const handleHashNav = (event: ReactMouseEvent<HTMLAnchorElement>, href: string) => {
-  if (!href.startsWith('/#')) return;
-  const node = document.getElementById(href.slice(2));
-  if (!node) return;
-  event.preventDefault();
-  const top = window.scrollY + node.getBoundingClientRect().top - 80;
-  window.scrollTo({ top, behavior: 'instant' });
-  window.history.pushState(null, '', href);
-};
 
 export function SiteHeader() {
   const pathname = usePathname();
@@ -35,6 +26,11 @@ export function SiteHeader() {
       window.removeEventListener('scroll', handleScroll);
     };
   }, []);
+
+  useEffect(() => {
+    const id = window.location.hash.slice(1);
+    if (id) scrollToHashId(id);
+  }, [pathname]);
 
   const handleToggleMenu = () => setOpen((value) => !value);
 
@@ -65,9 +61,10 @@ export function SiteHeader() {
             item.menu ? (
               <NavDisclosure key={item.label} item={item} pathname={pathname} />
             ) : (
-              <Link
+              <HashAwareLink
                 key={item.label}
                 href={item.href}
+                pathname={pathname}
                 onClick={(event) => handleHashNav(event, item.href)}
                 aria-current={isActive(pathname, item.href) ? 'page' : undefined}
                 className={cn(
@@ -76,7 +73,7 @@ export function SiteHeader() {
                 )}
               >
                 {item.label}
-              </Link>
+              </HashAwareLink>
             ),
           )}
         </nav>
@@ -116,8 +113,9 @@ export function SiteHeader() {
           <ul className="shell-wide flex flex-col py-3">
             {nav.map((item) => (
               <li key={item.label}>
-                <Link
+                <HashAwareLink
                   href={item.href}
+                  pathname={pathname}
                   onClick={(event) => {
                     handleHashNav(event, item.href);
                     setOpen(false);
@@ -125,7 +123,7 @@ export function SiteHeader() {
                   className="text-text-soft hover:text-text block py-2.5 text-sm"
                 >
                   {item.label}
-                </Link>
+                </HashAwareLink>
                 {item.menu && (
                   <ul className="border-line/70 mb-2 ml-3 border-l pl-3">
                     {item.menu.map((entry) => (
@@ -162,6 +160,30 @@ export function SiteHeader() {
     </header>
   );
 }
+
+/** Same-page hashes stay on `<a>`. Cross-page `/#trace` stays on Link. */
+const HashAwareLink = ({
+  href,
+  pathname,
+  className,
+  children,
+  onClick,
+  ...rest
+}: ComponentProps<typeof Link> & { pathname: string }) => {
+  if (typeof href === 'string' && isHomeHash(href, pathname)) {
+    const { prefetch: _prefetch, replace: _replace, scroll: _scroll, ...anchor } = rest;
+    return (
+      <a className={className} href={href} onClick={onClick} {...anchor}>
+        {children}
+      </a>
+    );
+  }
+  return (
+    <Link className={className} href={href} onClick={onClick} {...rest}>
+      {children}
+    </Link>
+  );
+};
 
 const NavDisclosure = ({ item, pathname }: { item: NavItem; pathname: string }) => {
   const [open, setOpen] = useState(false);

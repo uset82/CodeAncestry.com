@@ -1,26 +1,20 @@
 'use client';
 
-import type { MouseEvent } from 'react';
 import { ButtonLink } from '@/components/ui/Button';
 
-const scrollToWaitlist = (event: MouseEvent<HTMLAnchorElement>) => {
-  const node = document.getElementById('waitlist');
-  if (!node) return;
-  event.preventDefault();
-  const top = window.scrollY + node.getBoundingClientRect().top - 80;
-  window.scrollTo({ top, behavior: 'instant' });
-  window.history.pushState(null, '', '/#waitlist');
-  const email = node.querySelector<HTMLInputElement>('input[type="email"]');
+const handleFocusWaitlist = () => {
+  const email = document.querySelector<HTMLInputElement>('#waitlist input[type="email"]');
   email?.focus();
 };
 
 /**
  * Specified close buttons. Connect is the alpha waitlist — not a fake OAuth.
+ * Hash scroll lives on ButtonLink — Next intercepts `#` otherwise.
  */
 export function CloseCtas({ className }: { className?: string }) {
   return (
     <div className={className}>
-      <ButtonLink href="/#waitlist" size="lg" onClick={scrollToWaitlist}>
+      <ButtonLink href="/#waitlist" size="lg" onClick={handleFocusWaitlist}>
         Connect a Repository
       </ButtonLink>
       <ButtonLink href="/explore" variant="secondary" size="lg">

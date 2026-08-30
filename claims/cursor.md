@@ -1,28 +1,28 @@
-# Cursor — Phase 13 polish landed
+# Cursor — Phase 14 final verification landed
 
-The story is complete. This pass holds the instrument together.
+The twelve-position instrument is closed. This pass proves it, and fixes the last navigation gap.
 
 ## Already on main
 
-- `9bab11a` — Phase 12: protocol index and closing DNA sequence.
+- `8661ad4` — Phase 13 polish: OPEN muted, close spine solid cyan, research owns beat 11.
 
-## Phase 13
+## Phase 14
 
-Claude had not filed a review. Cursor audited the live close against the locked system.
+Final verification against the locked system. One Cursor-lane defect: Next intercepted `/#join` and `/#trace`, so Connect did not land on the waitlist and `?helix=high` was stripped.
 
-- **Colour:** OPEN is muted, not rose. Rose stays harm / rejected. Mark is still `?`.
-- **Motion:** the close spine is a solid inherited line. Dash means a proposed relation; the argument is settled.
-- **Diagram:** protocol and research sit as two strands from `md` up — the specimen's backbones, not a 1,300px spec dump. Phone drops the tiny tracks and keeps `spec` as a number.
-- **Type over the helix:** hero cue and waitlist hint use `text-muted`, not `text-faint`.
-- **3D ownership:** `#research` now declares beat 11 / left so zoomOut stays owned while the plate is read. Capture still samples Origin first.
-- **Hierarchy:** close claims tighten so the thesis sits in the same viewport as the strand.
+- **Hash nav:** `lib/hash-nav.ts` instant-scrolls with an 80px header offset. Same-page hashes stay on `<a>` and keep `pathname` + `search`. Cross-page `/#join` stays on `Link` so Explore → Connect reaches `#join`.
+- **WebGL QA:** `?helix=none` forces the static hero. Reduced motion still unmounts the canvas. The twelve-beat list and plates carry the story without a frame.
+- **Honesty:** waitlist success is `NOTED LOCALLY` / no server. No OAuth. KEYLIT stays on origin, not the hero.
 
 ## Verified
 
-- `tsc`, eslint, `check-beats` green.
-- Browser: OPEN badge `rgb(137, 147, 163)`; Experiments readout honest; close `stroke-dasharray` null; desktop 1440 two-column grid; tablet 768 same; 390 stacked, tracks `display: none`.
-- Contrast `.captures/phase13-r1/`: 12 beats, 286 blocks, **0 fails**, `helixFramesDelta: 0`. Hero cue is now muted (6.24:1). Beat 11 is still Origin.
+- `tsc`, eslint on the touched files, `check-beats` 12/0, `next build` 29 pages, HEAD 21 primary routes **200**.
+- Browser: hero Connect → `#join` at 64–80px, query preserved. Header Trace → `#trace` at 80px. Explore Connect → `/#join` at 80px. Waitlist: local note, no `/api` post.
+- Reduced motion: `data-hero=static`, no canvas, 12-beat list, `STATIC VIEW · REDUCED MOTION`.
+- `?helix=none` with motion allowed: same static path. Mobile 390: hamburger + stacked close spine.
+- Performance: footer `helixLoop=demand`, capture `helixFramesDelta: 0`. No rAF on the helix scroll path.
+- Contrast `.captures/phase14-r1/`: 12 beats, 286 blocks, **0 fails**, `helixFramesDelta: 0`. Hero cue muted 6.24:1.
 
 ## Not started
 
-- Phase 14 final verification.
+There is no Phase 15. Claude reviews polish and verification.

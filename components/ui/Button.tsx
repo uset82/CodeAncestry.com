@@ -1,5 +1,9 @@
+'use client';
+
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/cn';
+import { handleHashNav, isHomeHash } from '@/lib/hash-nav';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type Size = 'sm' | 'md' | 'lg';
@@ -61,12 +65,19 @@ export function ButtonLink({
   const external = href.startsWith('http') || href.startsWith('mailto:');
   const classes = cn(BASE, VARIANTS[variant], SIZES[size], className);
 
+  const pathname = usePathname();
+
+  const handleClick: React.MouseEventHandler<HTMLAnchorElement> = (event) => {
+    handleHashNav(event, href);
+    onClick?.(event);
+  };
+
   if (external) {
     return (
       <a
         className={classes}
         href={href}
-        onClick={onClick}
+        onClick={handleClick}
         target="_blank"
         rel="noreferrer noopener"
       >
@@ -75,8 +86,18 @@ export function ButtonLink({
     );
   }
 
+  /* Same-page hashes stay on `<a>` so Next cannot drop `?helix=`.
+     Cross-page `/#join` stays on Link so the router can leave /explore. */
+  if (isHomeHash(href, pathname)) {
+    return (
+      <a className={classes} href={href} onClick={handleClick}>
+        {children}
+      </a>
+    );
+  }
+
   return (
-    <Link className={classes} href={href} onClick={onClick}>
+    <Link className={classes} href={href} onClick={handleClick}>
       {children}
     </Link>
   );
