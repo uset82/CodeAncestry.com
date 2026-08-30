@@ -46,6 +46,9 @@ import {
   createStrandRings,
   createSweepGeometry,
   liveRadialInto,
+  rungCenterInto,
+  rungSpanBaked,
+  rungSpanInto,
   sampleLiveInto,
   setLivePose,
   sweepInto,
@@ -78,6 +81,89 @@ import {
    synchronously and the values are consumed before the next call. */
 const AXIS_A = new Vector3();
 const AXIS_B = new Vector3();
+
+/**
+ * Cost of the CPU sweep, in milliseconds.
+ *
+ * This is **sweep cost only** — the maths that refills the pre-allocated ring
+ * stack. It deliberately excludes everything downstream of it: the ~418 KB of
+ * `bufferSubData` happens later, inside `gl.render`, and belongs to the GPU
+ * upload, not to this number. Read them together or read neither.
+ *
+ * Two statistics, because each hides what the other catches. The EMA is the
+ * headline — one number, no allocation, no per-frame sort. The ring-backed p95
+ * is refreshed once every 120 frames (~2 s at 60 fps) and is what exposes a
+ * 40 ms GC hitch that an EMA will smooth into invisibility.
+ */
+const SWEEP_STATS = {
+  ema: 0,
+  p95: 0,
+  n: 0,
+  verts: 0,
+  at: 0,
+  ring: new Float32Array(120),
+  sorted: new Float32Array(120),
+};
+
+/** ~0.5 s at 60 fps. Long enough to be readable, short enough to react. */
+const SWEEP_EMA_ALPHA = 1 / 30;
+/** The first frames pay for cold arrays and JIT tiering. Do not report them. */
+const SWEEP_WARMUP = 30;
+/** DOM writes are the expensive half of publishing. Throttle them. */
+const SWEEP_PUBLISH_EVERY = 15;
+
+function resetSweepStats() {
+  SWEEP_STATS.ema = 0;
+  SWEEP_STATS.p95 = 0;
+  SWEEP_STATS.n = 0;
+  SWEEP_STATS.verts = 0;
+  SWEEP_STATS.at = 0;
+  SWEEP_STATS.ring.fill(0);
+}
+
+function recordSweep(ms: number, verts: number) {
+  const s = SWEEP_STATS;
+  s.verts = verts;
+
+  /* Only `always` frames count. A `demand` frame is a one-off fired by a
+     scroll or a resize: cold arrays, cold JIT, and a number that would be a
+     lie about the steady state. The sweep still runs — only the meter waits. */
+  if (typeof window === 'undefined' || window.__HELIX_LOOP !== 'always') return;
+
+  s.ring[s.at] = ms;
+  s.at += 1;
+  if (s.at >= s.ring.length) {
+    s.at = 0;
+    /* Typed-array sort is numeric and in place — no comparator allocation. */
+    s.sorted.set(s.ring);
+    s.sorted.sort();
+    s.p95 = s.sorted[Math.floor(s.sorted.length * 0.95)]!;
+  }
+
+  s.n += 1;
+  if (s.n <= SWEEP_WARMUP) {
+    s.ema = ms;
+    return;
+  }
+  s.ema += SWEEP_EMA_ALPHA * (ms - s.ema);
+}
+
+let sweepPublishTick = 0;
+
+function publishSweepStats() {
+  const s = SWEEP_STATS;
+  if (typeof window !== 'undefined') {
+    window.__HELIX_SWEEP_MS = s.ema;
+    window.__HELIX_SWEEP_P95 = s.p95;
+    window.__HELIX_SWEEP_N = s.n;
+    window.__HELIX_SWEEP_VERTS = s.verts;
+  }
+  sweepPublishTick += 1;
+  if (sweepPublishTick % SWEEP_PUBLISH_EVERY !== 0) return;
+  if (typeof document !== 'undefined') {
+    document.documentElement.dataset.helixSweepMs = s.ema.toFixed(2);
+  }
+}
 
 /** Sticky header height. Chips that project into this band sit under chrome. */
 const HEADER_CLEAR = 74;
@@ -269,6 +355,9 @@ function leanCursor(beat: BeatState, pointer: { x: number; y: number }): { x: nu
  * and `HelixStage` drops the canvas to `frameloop="demand"` on beats the helix
  * does not own — so a strand would render as a degenerate point at the origin
  * until the first frame happened to run.
+ *
+ * Returns the number of vertices written, which is what the cost is quoted
+ * against — `?tubular=` moves both.
  */
 function runSweep(
   sweep: SweepRuntime,
@@ -278,7 +367,7 @@ function runSweep(
   delta: number,
   time: number,
   cursor: { x: number; y: number },
-): void {
+): number {
   /* Braid is the transition into the column. A finished ledger is still —
      `c * (1-c) * 4` peaks at the same 0.07 the shader used to hold at c = 1. */
   const track = beat.converge * (1 - beat.converge) * 4 * TRACK_WOBBLE;
@@ -286,6 +375,8 @@ function runSweep(
     ...sweep.tuning,
     amplitude: sweep.tuning.amplitude * (1 - beat.converge),
   };
+
+  let swept = 0;
 
   sweep.strands.forEach((entry, i) => {
     const strand = strands[i];
@@ -301,17 +392,43 @@ function runSweep(
     advanceLive(live, delta, time, leanCursor(beat, cursor), ledger);
     writeCenterlines(live, rings, radius, ledger);
 
-    sweepInto(buffers[0], rings.centersA, rings.radii, rings.phases, 0, live.basis.u, track);
-    sweepInto(buffers[1], rings.centersB, rings.radii, rings.phases, 0, live.basis.u, track);
+    /* Scaled by `amplitude` like wobble, lean and the radius waves, so
+       `?sweepAmp=` really is one master scalar and not five. */
+    const lump = ledger.lump * ledger.amplitude;
+
+    sweepInto(
+      buffers[0],
+      rings.centersA,
+      rings.radii,
+      rings.phases,
+      lump,
+      live.basis.u,
+      track,
+    );
+    sweepInto(
+      buffers[1],
+      rings.centersB,
+      rings.radii,
+      rings.phases,
+      lump,
+      live.basis.u,
+      track,
+    );
 
     buffers[0].positionAttribute.needsUpdate = true;
     buffers[0].normalAttribute.needsUpdate = true;
     buffers[1].positionAttribute.needsUpdate = true;
     buffers[1].normalAttribute.needsUpdate = true;
 
+    swept += buffers[0].positionAttribute.count + buffers[1].positionAttribute.count;
     live.frame += 1;
   });
+
+  return swept;
 }
+
+/** `tickClimax` writes values that fill the contact the shadow map is for. */
+const EMISSIVE_SHADOW_READ = 0.4;
 
 function OrganicTicker({
   materials,
@@ -332,7 +449,16 @@ function OrganicTicker({
     tickOrganic(materials.backboneOrigin, time, drift, pointer.current);
     tickOrganic(materials.backboneMutated, time, drift, pointer.current);
     tickOrganic(materials.backboneDescendant, time, drift, pointer.current);
+    /* `tickClimax` lives in closed `organic.ts`. Scale here so Lambert and
+       the one shadow map can show strand-on-rung contact. Colour stays. */
     tickClimax(materials, climax, daylight(current?.progress ?? 0));
+    /* eslint-disable react-hooks/immutability -- three.js materials are
+       mutated every frame; that is what `useFrame` is for. */
+    materials.backboneOrigin.emissiveIntensity *= EMISSIVE_SHADOW_READ;
+    materials.backboneMutated.emissiveIntensity *= EMISSIVE_SHADOW_READ;
+    materials.backboneDescendant.emissiveIntensity *= EMISSIVE_SHADOW_READ;
+    materials.rung.emissiveIntensity *= EMISSIVE_SHADOW_READ;
+    /* eslint-enable react-hooks/immutability */
   });
 
   return null;
@@ -434,6 +560,9 @@ function Backbones({ state, tier, materials, pointer }: Props) {
 
   useEffect(() => {
     if (!sweep) return;
+    /* A `?tubular=` change is a different sweep. The old number describes
+       buffers that are about to be disposed, so it must not survive. */
+    resetSweepStats();
     return () => {
       if (holderRef && holderRef.current === sweep) holderRef.current = null;
       sweep.strands.forEach((entry) => {
@@ -458,8 +587,21 @@ function Backbones({ state, tier, materials, pointer }: Props) {
    */
   useFrame(({ clock }, delta) => {
     const current = state.current;
-    if (!sweep || !current) return;
-    runSweep(
+
+    /* No sweep (`?sweep=0`, or low tier) must read exactly zero. That zero is
+       what proves the revert is real rather than merely quieter. */
+    if (!sweep || !current) {
+      if (SWEEP_STATS.n !== 0 || SWEEP_STATS.ema !== 0) resetSweepStats();
+      publishSweepStats();
+      return;
+    }
+
+    /* Timed here, not inside `runSweep`, so the number is one sweep and only
+       one sweep: the priming `useLayoutEffect` call (cold arrays, cold JIT)
+       and the layout pass that reads the buffers afterwards are both outside
+       the measured window. */
+    const started = performance.now();
+    const verts = runSweep(
       sweep,
       strands,
       quality.radius,
@@ -468,6 +610,8 @@ function Backbones({ state, tier, materials, pointer }: Props) {
       clock.elapsedTime,
       pointer.current,
     );
+    recordSweep(performance.now() - started, verts);
+    publishSweepStats();
   }, -1);
 
   useFrame(({ clock }) => {
@@ -624,9 +768,10 @@ function GrowingTips({
 
 /* ----------------------------------------------------------------- rungs */
 
-function Rungs({ state, materials }: Pick<Props, 'state' | 'materials'>) {
+function Rungs({ state, materials, tier }: Pick<Props, 'state' | 'materials' | 'tier'>) {
   const mesh = useRef<InstancedMesh>(null);
   const holderRef = useContext(SweepHolderContext);
+  const tubeRadius = QUALITY[tier].radius;
   const total = STRANDS.length * RUNGS_PER_STRAND;
 
   const slots = useMemo(
@@ -651,6 +796,7 @@ function Rungs({ state, materials }: Pick<Props, 'state' | 'materials'>) {
       scale: new Vector3(),
       up: new Vector3(0, 1, 0),
       direction: new Vector3(),
+      other: new Vector3(),
     }),
     [],
   );
@@ -667,21 +813,37 @@ function Rungs({ state, materials }: Pick<Props, 'state' | 'materials'>) {
       const eased = grow - growthJitterAt(grow);
       const front = growthAlong(eased, slot.t);
       const { matrix, position, quaternion, scale, up, direction } = scratch;
+      const live = liveOf(holderRef?.current, slot.spec);
 
-      axisPointAtInto(slot.spec, slot.t, current.flatten, position);
-      applyConvergeInto(slot.spec, current.converge, position, slot.t);
-      /* Position stays on the collapsed axis. Direction has to follow the
-         screw — `rungDirection` points between the rails once they coil. */
-      radialInto(liveOf(holderRef?.current, slot.spec), slot.direction, slot.t, direction);
+      if (live) {
+        /* Between the two rails, not on the axis. The axis is where the
+           strand collapses *to*; the rails only follow it by `w`, so at
+           `flatten > 0` the rung would hang off the ladder it is meant to be
+           a step of. `?sweep=0` and the low tier keep the axis below. */
+        rungCenterInto(live, slot.t, position);
+      } else {
+        axisPointAtInto(slot.spec, slot.t, current.flatten, position);
+        applyConvergeInto(slot.spec, current.converge, position, slot.t);
+      }
+
+      /* Direction stays analytic. `rungDirection` is radial at any `t`, so it
+         can never degenerate — taking it from `p1 - p0` would emit NaN
+         matrices at `converge = 1`, where the two rails coincide. The screw is
+         folded in separately below. */
+      radialInto(live, slot.direction, slot.t, direction);
       direction.lerp(TICK_UP, current.converge).normalize();
       quaternion.setFromUnitVectors(up, direction);
 
       const breathe = 1 + Math.sin(time * 1.1 + i * 0.7) * 0.06 * (1 - current.flatten);
-      const span = slot.spec.radius * 2 * (1 - current.flatten * 0.4) * breathe;
+      const sweep = holderRef?.current;
+      const railSpan = live
+        ? rungSpanInto(live, slot.t, tubeRadius, sweep?.tuning)
+        : rungSpanBaked(slot.spec, current.flatten, current.converge, tubeRadius);
       /* Same end / growth profile as the tube. A full-width rung on a
-         needle-thin backbone is the floating dash at every terminus. */
+         needle-thin backbone is the floating dash at every terminus.
+         Converge still collapses the ledger — this is a layout, not a vine. */
       const taper = pathTaper(slot.t, eased, startTaperWidth(slot.spec.generation));
-      scale.set(1, span * front * taper * (1 - current.converge * 0.82), 1);
+      scale.set(1, railSpan * breathe * front * taper * (1 - current.converge * 0.82), 1);
 
       matrix.compose(position, quaternion, scale);
       node.setMatrixAt(i, matrix);
@@ -1256,7 +1418,7 @@ export function HelixScene({ state, tier }: Omit<Props, 'materials' | 'pointer'>
       />
       <CameraRig state={state} pointer={pointer} />
       <Backbones state={state} tier={tier} materials={materials} pointer={pointer} />
-      <Rungs state={state} materials={materials} />
+      <Rungs state={state} materials={materials} tier={tier} />
       <Loci state={state} tier={tier} materials={materials} pointer={pointer} />
       <Pulses state={state} tier={tier} materials={materials} pointer={pointer} />
       {tier === 'high' && <LocusLabels state={state} />}

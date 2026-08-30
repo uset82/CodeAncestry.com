@@ -203,6 +203,43 @@ CAPTURE_ORIGIN=https://codeancestry.com npm run capture  # production
 - **Then open the PNG and look at it**, and this time also look in a real
   browser.
 
+### Reading the sweep cost
+
+```bash
+npm run dev
+# then open /?helix=high&sweepStats=1
+```
+
+A HUD at the bottom left prints the meter, in this shape (the numbers below are
+an illustration of the format, not a measurement):
+
+```text
+sweep <ema> ms · p95 <p95> · <verts> verts · n=<samples>
+```
+
+`<verts>` is `8 strands × 2 rails × (tubular+1) × (radial+1)`, so 17424 at the
+default `tubular: 120` — if it is not, the geometry was rebuilt and the number
+describes something else.
+
+The HUD is dev-only and opt-in (`?sweepStats=1`, never in production); the four
+`window.__HELIX_SWEEP_*` values and `data-helix-sweep-ms` are always published.
+
+- **Budget: p95 < 1.5 ms** (~9% of a 16.7 ms frame).
+- The number is **CPU sweep maths only**. The ~418 KB `bufferSubData` upload
+  happens later, inside `gl.render`, and is not in it.
+- Scroll to the hero first: the meter only accumulates while
+  `__HELIX_LOOP === 'always'`, and the footer suspends to `demand`.
+- `?sweep=0` must read `0.00` — that is how the revert is proven, not assumed.
+- `?tubular=160` costs roughly linearly more; it is the honest A/B against
+  `QUALITY.high.tubular`.
+
+**Do not read this number from a capture.** `scripts/capture.mjs` reports
+`sweepMs` / `sweepP95` in `diag` for wiring checks only — it runs on swiftshader
+at about 2 fps, where 1.7 ms is indistinguishable from noise. As of this writing
+the real-browser p95 is **unmeasured**; the protocol above is how to get it. If
+you find p95 above budget, drop `QUALITY.high.tubular` (120 → 96) rather than
+the sweep.
+
 Ship green every time:
 
 ```bash
@@ -237,5 +274,15 @@ mistaken for a failed deploy once.
 - Keep `GROWTH_SPREAD` interpolated into the GLSL from `strands.ts`. Every
   divergence between the JS front and the shader front has produced this same
   bug in a new costume.
+- **`organic.ts` is off-limits.** The live CPU sweep coexists with it only
+  because `axisPointAtInto` and `applyConvergeInto` are affine in `t`. Touching
+  the GLSL's `mix(uStart, uEnd, vPath)` breaks `npm run test:sweep`, not the
+  build — so it will pass CI and silently desynchronise the growth front.
+- **`uv.x` is the analytic path parameter `t`.** Every organic term in
+  `sweep.ts` is projected onto the cross-section plane for exactly this reason:
+  a displacement along `dir` slides the fbm growth front off the rungs.
+- **`?sweep=0` stays a true revert.** The runtime is `null`, so the baked
+  `TubeGeometry` and the shader's own drift come back. It is the only A/B
+  against the baked path; never make it a "quieter sweep".
 - Two agents edit these files at once. Check `git status` and mtimes first;
   commit as soon as you are green.

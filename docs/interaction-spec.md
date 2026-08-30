@@ -77,6 +77,12 @@ re-coloured and offset; repository sources are streams drawn along the same
 curve primitive already used for pulses. **If a position seems to need a new
 asset, it has been mis-specified — return it to me.**
 
+D2 now covers the sweep: the live motion is a **re-sweep of the same
+pre-allocated ring stack, not new geometry** — no new meshes, no new materials,
+no post-processing, `organic.ts` untouched. So the answer to "make it livelier"
+is to tune the sweep knobs (`?sweepSpeed`, `?sweepWobble`, `?sweepLean`), never
+to add particles.
+
 ### D3 — Beats anchor to sections, not to scroll fractions
 
 Each section carries `data-beat="N"`. The driver finds the section owning the

@@ -312,8 +312,17 @@ const diag = await evaluate(`(async () => {
     helixLoop: window.__HELIX_LOOP ?? document.documentElement.dataset.helixLoop ?? null,
     canvas: canvas ? [canvas.width, canvas.height] : null,
     search: window.location.search,
+    sweepMs: window.__HELIX_SWEEP_MS ?? null,
+    sweepP95: window.__HELIX_SWEEP_P95 ?? null,
+    sweepN: window.__HELIX_SWEEP_N ?? null,
+    sweepVerts: window.__HELIX_SWEEP_VERTS ?? null,
   };
 })()`);
+/* The sweep fields above are NOT REPRESENTATIVE of frame cost. Capture runs on
+   swiftshader at roughly 2 fps, where every frame is tens of milliseconds of
+   software rasterisation. They prove the meter is wired and that the sweep=0
+   revert reads exactly zero; they can never support or refute the 1.5 ms
+   budget. Read p95 in a real browser with ?helix=high&sweepStats=1. */
 console.log('diag', JSON.stringify(diag));
 if (diag.frames === 0 && !diag.helixFrames) {
   console.log('WARNING: no animation frames — nothing 3D will have rendered');

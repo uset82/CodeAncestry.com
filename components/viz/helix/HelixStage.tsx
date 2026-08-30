@@ -62,6 +62,20 @@ declare global {
     __HELIX_CAM_Z?: number;
     /** Camera snaps this frame — hash jumps must not lerp across eight poses. */
     __HELIX_SNAP?: boolean;
+    /**
+     * CPU sweep cost. EMA in ms; `P95` over the last 120 frames; `N` samples
+     * since the sweep was created; `VERTS` vertices written per frame.
+     *
+     * Published unconditionally, matching `__HELIX_CAM_Z` — three float stores
+     * per frame. Only the HUD that *reads* them is gated.
+     *
+     * These are **sweep maths only**. The `bufferSubData` upload happens later
+     * inside `gl.render` and is not in this number.
+     */
+    __HELIX_SWEEP_MS?: number;
+    __HELIX_SWEEP_P95?: number;
+    __HELIX_SWEEP_N?: number;
+    __HELIX_SWEEP_VERTS?: number;
   }
 }
 
@@ -85,6 +99,36 @@ function FrameProbe() {
   return null;
 }
 
+/** Dev-only debug HUD for the sweep meter. See `SweepStatsProbe`. */
+const SWEEP_HUD_ID = 'helix-sweep-hud';
+
+/**
+ * Writes the sweep meter into a plain DOM node outside the canvas.
+ *
+ * Plain DOM on purpose: the HUD must not be a React state update, or measuring
+ * the helix would cost more than running it. Throttled to every 15 frames,
+ * matching the `dataset` cadence.
+ *
+ * The node is looked up by id rather than handed over as a ref — the React
+ * Compiler's immutability rule treats a ref passed as a prop as read-only, and
+ * the whole point here is to write to it.
+ */
+function SweepStatsProbe() {
+  const tick = useRef(0);
+  useFrame(() => {
+    tick.current += 1;
+    if (tick.current % 15 !== 0) return;
+    const el = document.getElementById(SWEEP_HUD_ID);
+    if (!el) return;
+    el.textContent =
+      `sweep ${(window.__HELIX_SWEEP_MS ?? 0).toFixed(2)} ms` +
+      ` · p95 ${(window.__HELIX_SWEEP_P95 ?? 0).toFixed(2)}` +
+      ` · ${window.__HELIX_SWEEP_VERTS ?? 0} verts` +
+      ` · n=${window.__HELIX_SWEEP_N ?? 0}`;
+  });
+  return null;
+}
+
 /**
  * Page-level helix. The canvas is a fixed backdrop; sections scroll over it.
  * Measurement is synchronous in the scroll handler — no rAF on that path.
@@ -101,6 +145,17 @@ export function HelixStage({ children }: { children: React.ReactNode }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [loop, setLoop] = useState<'always' | 'demand'>('always');
   const lastBeat = useRef(0);
+
+  /* Dev-only, opt-in. Production never renders the node, so the probe is a
+     null check per frame and nothing more. Lazily initialised: the query
+     string is read once, and it is read during render because the alternative
+     is a setState in an effect, which costs a second pass for a debug flag. */
+  const [showSweepStats] = useState(
+    () =>
+      process.env.NODE_ENV !== 'production' &&
+      typeof window !== 'undefined' &&
+      new URLSearchParams(window.location.search).get('sweepStats') === '1',
+  );
 
   useLayoutEffect(() => {
     if (!animated) return;
@@ -180,6 +235,7 @@ export function HelixStage({ children }: { children: React.ReactNode }) {
           >
             <HelixScene state={state} tier={quality} />
             <FrameProbe />
+            <SweepStatsProbe />
           </Canvas>
         </div>
       )}
@@ -188,6 +244,13 @@ export function HelixStage({ children }: { children: React.ReactNode }) {
           ref={scrim}
           aria-hidden="true"
           className="pointer-events-none fixed inset-0 z-[1]"
+        />
+      )}
+      {animated && showSweepStats && (
+        <div
+          id={SWEEP_HUD_ID}
+          aria-hidden="true"
+          className="text-faint pointer-events-none fixed bottom-3 left-3 z-50 font-mono text-[11px] leading-tight"
         />
       )}
       <div className="relative z-10">{children}</div>

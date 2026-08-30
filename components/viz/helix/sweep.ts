@@ -67,29 +67,87 @@ export type SweepTuning = {
   radiusWave1: number;
   /** Radius modulation, second harmonic. */
   radiusWave2: number;
+  /**
+   * Non-circular cross-section, as a fraction of the tube radius.
+   *
+   * **Ships at 0 and is meant to stay there.** It costs three `Math.sin` per
+   * vertex — roughly 52 000 trig calls a frame at high tier — and a lumpy
+   * cross-section is wrong for a sugar-phosphate backbone. This is a vine
+   * term. It is exposed through `?sweepLump=` so the cost and the look can be
+   * judged rather than argued about; 0.02–0.04 is the ceiling for a hint.
+   */
+  lump: number;
 };
 
+/**
+ * Tuned for DNA, not for vine.
+ *
+ * The reference values this started from (`speed 0.34`, `wobble 0.03`,
+ * `radiusWave 0.13/0.09`) describe a plant: a slow screw, a wandering
+ * cross-section and a ±13% thickness ripple that reads as a pinch. A
+ * backbone is a clean regular helix, so the screw is ~3× faster and every
+ * irregularity is roughly halved — except `lean`, the one term that is alive
+ * rather than noisy, which goes slightly up.
+ */
 export const SWEEP_TUNING: SweepTuning = {
   amplitude: 1,
-  speed: 0.34,
-  wobble: 0.03,
-  lean: 0.13,
-  radiusWave1: 0.13,
-  radiusWave2: 0.09,
+  speed: 1.1,
+  wobble: 0.015,
+  lean: 0.14,
+  radiusWave1: 0.05,
+  radiusWave2: 0.03,
+  lump: 0,
 };
 
-/** `?sweep=0` reverts; `?sweepAmp=<n>` scales. Follows the `?tubular=` idiom. */
+/**
+ * Every knob, in one table.
+ *
+ * It used to be two ad-hoc branches that clamped `sweepAmp` and forgot
+ * everything else, so each new knob was one more place to forget a clamp. A
+ * knob added here cannot be read without one.
+ */
+const SWEEP_KNOBS = [
+  { param: 'sweepAmp', key: 'amplitude', min: 0, max: 3 },
+  { param: 'sweepSpeed', key: 'speed', min: 0, max: 4 },
+  { param: 'sweepWobble', key: 'wobble', min: 0, max: 0.2 },
+  { param: 'sweepLean', key: 'lean', min: 0, max: 0.6 },
+  { param: 'sweepLump', key: 'lump', min: 0, max: 0.08 },
+  { param: 'sweepR1', key: 'radiusWave1', min: 0, max: 0.5 },
+  { param: 'sweepR2', key: 'radiusWave2', min: 0, max: 0.5 },
+] as const satisfies ReadonlyArray<{
+  param: string;
+  key: keyof SweepTuning;
+  min: number;
+  max: number;
+}>;
+
+/**
+ * `?sweep=0` reverts; every other knob is optional and clamped. Follows the
+ * `?tubular=` idiom.
+ */
 export function sweepTuningFor(search: string): SweepTuning {
   const params = new URLSearchParams(search);
+
+  /* The master revert, and it wins over every other knob: `?sweep=0` has to
+     mean "the baked geometry and nothing else" no matter what else is in the
+     query string. */
   if (params.get('sweep') === '0') return { ...SWEEP_TUNING, amplitude: 0 };
-  const raw = params.get('sweepAmp');
-  if (raw !== null) {
-    const amplitude = Number(raw);
-    if (Number.isFinite(amplitude)) {
-      return { ...SWEEP_TUNING, amplitude: Math.min(3, Math.max(0, amplitude)) };
-    }
+
+  let tuning: SweepTuning = SWEEP_TUNING;
+  for (const knob of SWEEP_KNOBS) {
+    const raw = params.get(knob.param);
+    if (raw === null) continue;
+    const value = Number(raw);
+    /* Garbage falls through to the default rather than becoming NaN. A NaN
+       reaches a vertex position and the strand never comes back. */
+    if (!Number.isFinite(value)) continue;
+    const clamped = Math.min(knob.max, Math.max(knob.min, value));
+    if (clamped === tuning[knob.key]) continue;
+    /* Shared with `SWEEP_TUNING` until something actually moves, so the
+       common case — no query string — allocates nothing. */
+    tuning = { ...tuning, [knob.key]: clamped };
   }
-  return SWEEP_TUNING;
+  return tuning;
 }
 
 /* ------------------------------------------------------------- geometry */
@@ -548,6 +606,32 @@ export function sampleLiveInto(
   return target.set(RING[0]!, RING[1]!, RING[2]!);
 }
 
+/** Second rail scratch for `rungCenterInto`. */
+const RING_B = new Float32Array(3);
+
+/**
+ * Where the centre of the rung at `t` belongs: the midpoint of the two rails.
+ *
+ * Not the collapsed axis. The rails sit at `C ± (1−w)·radius·radial`, so their
+ * midpoint is the axis **plus the organic wobble and lean** — and at
+ * `flatten > 0` it is not even the axis, because `A` squashes `z` by
+ * `1 − 0.85·flatten` while the rails only follow it by `w = 0.42`. Pinning the
+ * rung to `A` therefore detaches it from the very thing it connects, by up to
+ * 0.83 world units at full flatten.
+ *
+ * `Rungs` calls this, and `check-sweep-parity.ts` asserts it against an
+ * independent average of two `sampleLiveInto` calls, so the two cannot drift.
+ */
+export function rungCenterInto(live: StrandLive, t: number, target: Vector3): Vector3 {
+  liveRingIntoArray(live, 0, t, RING, 0);
+  liveRingIntoArray(live, Math.PI, t, RING_B, 0);
+  return target.set(
+    (RING[0]! + RING_B[0]!) * 0.5,
+    (RING[1]! + RING_B[1]!) * 0.5,
+    (RING[2]! + RING_B[2]!) * 0.5,
+  );
+}
+
 /**
  * The radial axis of the helix at `t`, screw included.
  *
@@ -563,4 +647,68 @@ export function liveRadialInto(live: StrandLive, t: number, target: Vector3): Ve
     .addScaledVector(u, Math.cos(angle))
     .addScaledVector(v, Math.sin(angle))
     .normalize();
+}
+
+/**
+ * How far each cylinder end buries into the tube, as a fraction of the live
+ * tube radius. Centreline-to-centreline (`2 * spec.radius`) is the air-gap
+ * bug: the backbone has thickness, so the mesh stopped short of the surface.
+ * 0.72 puts the cap inside the tube without punching out the far wall.
+ */
+export const RUNG_BURY = 0.72;
+
+/** Instantaneous tube radius at `t` — the same modulation `writeCenterlines` writes. */
+export function liveRadiusAt(
+  live: StrandLive,
+  t: number,
+  tubeRadius: number,
+  tuning: SweepTuning = SWEEP_TUNING,
+): number {
+  const f = t * live.length - live.distance;
+  return (
+    tubeRadius *
+    (1 +
+      live.amp *
+        (tuning.radiusWave1 * Math.sin(f * 1.9 + 1.3) +
+          tuning.radiusWave2 * Math.sin(f * 4.3 + 0.4)))
+  );
+}
+
+/**
+ * Cylinder length that reaches **into** both rails.
+ *
+ * `distance(rail0, rail1)` is the centreline span. Adding `2 * liveRadius * bury`
+ * is what closes the air gap. Direction stays `liveRadialInto` — this helper
+ * never returns a vector, so `converge → 1` cannot emit NaN.
+ */
+export function rungSpanInto(
+  live: StrandLive,
+  t: number,
+  tubeRadius: number,
+  tuning: SweepTuning = SWEEP_TUNING,
+  bury: number = RUNG_BURY,
+): number {
+  liveRingIntoArray(live, 0, t, RING, 0);
+  liveRingIntoArray(live, Math.PI, t, RING_B, 0);
+  const rail = Math.hypot(
+    RING[0]! - RING_B[0]!,
+    RING[1]! - RING_B[1]!,
+    RING[2]! - RING_B[2]!,
+  );
+  return rail + 2 * liveRadiusAt(live, t, tubeRadius, tuning) * bury;
+}
+
+/**
+ * Same contract when the live sweep is off (`?sweep=0`, low tier): rail
+ * separation from the collapse weight, bury against the baked tube radius.
+ */
+export function rungSpanBaked(
+  spec: StrandSpec,
+  flatten: number,
+  converge: number,
+  tubeRadius: number,
+  bury: number = RUNG_BURY,
+): number {
+  const w = Math.min(1, Math.max(0, flatten * FLATTEN_MIX + converge));
+  return 2 * spec.radius * (1 - w) + 2 * tubeRadius * bury;
 }
