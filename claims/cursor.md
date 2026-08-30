@@ -1,25 +1,26 @@
-# Cursor — Phase 10 landed
+# Cursor — Phase 11 landed
 
-Lineage Health is the fan-out of M-94012. The helix already recovers; the plate names the inheritors.
+KEYLIT is the origin story. It is not the product.
 
 ## Already on main
 
-- `0270743` — Phase 9: Trace Failure rewind state machine.
+- `24fdc13` — Phase 10: Lineage Health descendant fan-out.
 
-## Phase 10
+## Phase 11
 
-- Homepage 14 `HealthSection` (`#health`, beat 10): One mutation. Thousands of descendants.
-- `LineageHealth` is a 2D readout of `recovery` / `upstream` — inherited warning fan-out, then replacement from generation 118. Marks ! / ▣ / ✓. No robot mesh.
-- Sample: AXIS Mutant, Agent Build, Verified, Quarantine + 3,838 remainder = 3,842. KEYLIT is not the demo.
-- Connected both ways: Trace descendants → `#health`; Health → `#trace`.
+- Homepage 15 `OriginSection` (`#origin`, beat 11 / `zoomOut`): Where the idea began.
+- `KeylitOrigin` is the specified sketch — KEYLIT → Kids (Spanish, Quechua, Accessibility) / Studio / Classroom. Marks ● / ○ / ◇. Quechua is asked, not seeded.
+- Close: KEYLIT was the example. CodeAncestry became the bigger question.
+- Seeded records link out to `/family/keylit` and project pages. The registry tree is not loaded on the homepage.
+- Hero still does not name KEYLIT.
 
 ## Verified
 
 - `tsc`, eslint, `check-beats` green.
-- Browser: default inherited warning; Replacement retargets every row; Open the trace lands on `#trace`; Trace 3,842 link returns to `#health`.
+- Browser: tree selectable; Quechua reads “Not seeded”; hero has no KEYLIT.
 - Desktop + 390px: plate readable.
-- Contrast `.captures/phase10-r1/`: 12 beats, 287 blocks, **0 fails**, `helixFramesDelta: 0`. Beat 10 is Lineage Health; helix is the recovery pose.
+- Contrast `.captures/phase11-r1/`: 12 beats, 286 blocks, **0 fails**, `helixFramesDelta: 0`. Beat 11 is the origin plate on `zoomOut`.
 
 ## Not started
 
-- Phase 11 KEYLIT origin story.
+- Phase 12 Research + final story.

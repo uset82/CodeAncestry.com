@@ -9,6 +9,7 @@ import { HealthSection } from '@/components/marketing/HealthSection';
 import { JoinSection } from '@/components/marketing/JoinSection';
 import { MachineSection } from '@/components/marketing/MachineSection';
 import { MutationSection } from '@/components/marketing/MutationSection';
+import { OriginSection } from '@/components/marketing/OriginSection';
 import { PlatformSection } from '@/components/marketing/PlatformSection';
 import { ProblemSection } from '@/components/marketing/ProblemSection';
 import { PropagationStrip } from '@/components/marketing/PropagationStrip';
@@ -69,6 +70,9 @@ export default function HomePage() {
       <TraceSection />
       <Reveal>
         <HealthSection />
+      </Reveal>
+      <Reveal>
+        <OriginSection />
       </Reveal>
       <Reveal>
         <JoinSection />

@@ -40,5 +40,5 @@ export const HOMEPAGE_BEAT_STANDINS = [
   { beat: 8, id: 'trace', side: 'left', standIn: 'TraceSection entry' },
   { beat: 9, id: 'trace-rewind', side: 'left', standIn: 'TraceSection rewind' },
   { beat: 10, id: 'health', side: 'left', standIn: 'HealthSection' },
-  { beat: 11, id: 'close', side: 'left', standIn: 'JoinSection' },
+  { beat: 11, id: 'origin', side: 'left', standIn: 'OriginSection' },
 ] as const;

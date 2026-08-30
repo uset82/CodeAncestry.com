@@ -6,6 +6,7 @@ import { blastHits } from './blast';
 import { demoGenes } from './genes';
 import { lineageHealth } from './health';
 import { mutationM94012 } from './mutation-m94012';
+import { keylitOrigin } from './origin';
 import { traceFailure } from './trace';
 import { trustEvidence } from './trust';
 
@@ -14,6 +15,7 @@ export type { DemoHonesty, DemoMeta } from './kind';
 export type { BlastActionId, BlastHit, BlastModeId } from './blast';
 export type { DemoGene } from './genes';
 export type { EvolutionDirectionId } from './evolution';
+export type { OriginNode } from './origin';
 export type { HealthStatus, HealthViewId } from './health';
 export type { TraceActionId, TracePhase } from './trace';
 export type { EvidenceState } from './trust';
@@ -23,6 +25,7 @@ export { EVOLUTION_DIRECTIONS } from './evolution';
 export { LINEAGE_KIND_META, LINEAGE_KINDS } from './lineage-kinds';
 export { AXIS_IDS, axisFamily, axisLineageKinds, getAxisNode } from './axis-family';
 export { futureCompatibility, trustEvidence } from './trust';
+export { ORIGIN_NODES, keylitOrigin, originChildren } from './origin';
 export { HEALTH_VIEWS, healthInheritors, lineageHealth } from './health';
 export { TRACE_ACTION_COPY, TRACE_ACTIONS, TRACE_STEPS, traceFailure } from './trace';
 export { agentA184, ax2041, axisRobot, demoGenes, mutationM94012 };
@@ -38,6 +41,7 @@ export const homepageDemo = {
   trust: trustEvidence,
   trace: traceFailure,
   health: lineageHealth,
+  origin: keylitOrigin,
 } as const;
 
 export function getDemoGene(id: string) {
