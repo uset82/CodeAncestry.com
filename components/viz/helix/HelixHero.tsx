@@ -7,6 +7,7 @@ import { useReducedMotion } from '@/lib/hooks/useReducedMotion';
 import { ButtonLink } from '@/components/ui/Button';
 import { connectCta } from '@/lib/site';
 import { BEATS } from './beats';
+import { LOCUS_LABELS } from './strands';
 import { useHelixDriver } from './HelixStage';
 import { HeroFallback } from './HeroFallback';
 
@@ -129,12 +130,20 @@ function WhatAmILookingAt() {
   );
 }
 
-function BeatBody({ index, headline, outlined, body }: (typeof BEATS)[number]) {
+function BeatBody({
+  index,
+  headline,
+  outlined,
+  body,
+  hideIndex,
+}: (typeof BEATS)[number] & { hideIndex?: boolean }) {
   return (
     <>
-      <p className="text-muted font-mono text-micro uppercase">
-        {index} / {String(BEATS.length).padStart(2, '0')}
-      </p>
+      {!hideIndex && (
+        <p className="text-muted font-mono text-micro uppercase">
+          {index} / {String(BEATS.length).padStart(2, '0')}
+        </p>
+      )}
       <p className="text-title mt-3">
         {headline}
         {outlined && (
@@ -146,6 +155,52 @@ function BeatBody({ index, headline, outlined, body }: (typeof BEATS)[number]) {
       </p>
       <p className="text-text-soft mt-3 max-w-[560px] leading-relaxed">{body}</p>
     </>
+  );
+}
+
+/**
+ * Six capability genes, in DOM text.
+ *
+ * The chips on the canvas show the same six accessions, but at `tier === 'low'`,
+ * on reduced motion, or without WebGL the chips are not mounted and the
+ * universal gene labels disappear from the page. `docs/design-system.md` says
+ * "3D must not hold unique information", so this is the text equivalent.
+ *
+ * The voice matches `LocusLabels` in `HelixScene.tsx`: `text-acid` accession,
+ * `text-faint` short label, `font-mono text-[9px] tracking-[0.14em] uppercase`.
+ * `LOCUS_LABELS.filter(l => l.strand === 'keylit')` is the same set beat 1
+ * lights via `geneFocus: 1` — the section the headline refers to.
+ */
+function GeneReadout() {
+  const keylitLoci = LOCUS_LABELS.filter((locus) => locus.strand === 'keylit');
+  return (
+    <figure
+      aria-label="Six capability genes at generation 0"
+      className="border-line bg-panel-2 mt-8 max-w-[560px] rounded-xs border p-5"
+    >
+      <figcaption className="text-faint mb-3 font-mono text-nano uppercase">
+        Generation 0 · capability genes
+      </figcaption>
+      <ul className="border-line/60 border-t">
+        {keylitLoci.map((locus) => (
+          <li
+            key={locus.accession}
+            data-locus={locus.accession}
+            className="border-line/60 flex items-baseline justify-between gap-4 border-b py-2 last:border-b-0"
+          >
+            <div className="flex items-baseline gap-3">
+              <span className="text-acid font-mono text-[9px] tracking-[0.14em] uppercase">
+                {locus.accession}
+              </span>
+              <span className="text-text text-[14px]">{locus.gene}</span>
+            </div>
+            <span className="text-faint font-mono text-[10px] tracking-[0.08em] uppercase">
+              {locus.short}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </figure>
   );
 }
 
@@ -177,12 +232,14 @@ function StaticHero() {
         <HeroCopy />
 
         <ol className="mt-14 grid max-w-[1080px] gap-x-12 gap-y-10 sm:grid-cols-2 xl:max-w-[640px] xl:grid-cols-1">
-          {BEATS.map((beat) => (
+          {BEATS.slice(1).map((beat) => (
             <li key={beat.id} className="border-line/70 border-l pl-5">
               <BeatBody {...beat} />
             </li>
           ))}
         </ol>
+
+        <GeneReadout />
 
         <div className="mt-12 lg:hidden">
           <HeroFallback />
@@ -207,9 +264,9 @@ function AnimatedHero() {
         data-beat="0"
         data-beat-side="left"
         aria-labelledby="hero-title"
-        className="relative min-h-screen"
+        className="relative min-h-svh"
       >
-        <div className="shell-wide relative z-10 flex min-h-screen flex-col justify-center pt-24 pb-16">
+        <div className="shell-wide relative z-10 flex min-h-svh flex-col justify-center pt-24 pb-16">
           <HeroCopy />
           <p className="text-muted mt-10 font-mono text-nano uppercase">
             Scroll to descend the lineage
@@ -225,10 +282,11 @@ function AnimatedHero() {
         data-beat="1"
         data-beat-side="left"
         aria-label={genes.headline}
-        className="relative min-h-screen"
+        className="relative"
       >
-        <div className="shell-wide relative z-10 flex min-h-screen flex-col justify-center py-16">
-          <BeatBody {...genes} />
+        <div className="shell-wide relative z-10 flex min-h-[68svh] flex-col justify-center py-16">
+          <BeatBody {...genes} hideIndex />
+          <GeneReadout />
         </div>
       </section>
     </div>
