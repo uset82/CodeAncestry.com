@@ -7,6 +7,7 @@ import { EvolutionSection } from '@/components/marketing/EvolutionSection';
 import { GenesSection } from '@/components/marketing/GenesSection';
 import { GenomeSection } from '@/components/marketing/GenomeSection';
 import { JoinSection } from '@/components/marketing/JoinSection';
+import { MachineSection } from '@/components/marketing/MachineSection';
 import { MutationSection } from '@/components/marketing/MutationSection';
 import { PlatformSection } from '@/components/marketing/PlatformSection';
 import { ProblemSection } from '@/components/marketing/ProblemSection';
@@ -57,6 +58,9 @@ export default function HomePage() {
       </Reveal>
       <Reveal>
         <TrustLadder />
+      </Reveal>
+      <Reveal>
+        <MachineSection />
       </Reveal>
       <Reveal>
         <Endgame />

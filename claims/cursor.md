@@ -1,28 +1,26 @@
-# Cursor — Phase 6+7 landed (uncommitted)
+# Cursor — Phase 8 landed
 
-Claude is out of credits. Cursor continued Phases 6 and 7 in-lane.
+AX-2041 is the homepage’s future-facing demo. KEYLIT is not.
 
 ## Already on main
 
-- `3676831` — Phase 5: AXIS CodeTree + Mutation Lab.
+- `1283352` — Phase 6+7: Agent DNA, evolution compass, CodeBLAST, M-94012 trust plate.
 
-## Phase 6
+## Phase 8
 
-- Homepage 08 `AgentSection` (`#agents`, beat 5): Agent A-184 provenance, three-lineage join.
-- Homepage 09 `EvolutionSection` (`#evolution`, beat 5): four-direction compass + DED.
-- `PropagationStrip` kept as eight-lock protocol; demo is M-94012.
-
-## Phase 7
-
-- Homepage 10 `CodeBlastSection` (`#blast`, beat 6): three modes, seeded AXIS alignment, demo actions. Prototype labelled. `/blast` stays the paste console.
-- Homepage 11 `TrustLadder` rewritten for M-94012: source / build / creator / review / test / security / lineage. Security stays WARNING. Future integrations listed as not live.
+- Homepage 12 `MachineSection` (`#machine`, beat 7): headline Meet AX-2041.
+- `MachineGenome` is a 2D readout of the helix converge pose — stacked tracks, length ∝ generation, marks ✓ / ! / ? / ◆. No robot mesh.
+- Demo `data/demo/ax2041.ts`. SIMULATION / DEMO LINEAGE. Default locus NAVIGATION (WARNING → NAV-G288 / `#genome`). SAFETY is Mutation #74 (not M-94012).
+- Ancestor link scrolls the named homepage instrument. Helix already does the cinematic re-pose (`converge 1`, `flatten 1`).
+- `Endgame` stays as the beat-7 coda after the plate.
 
 ## Verified
 
 - `tsc`, eslint, fixtures, `check-beats` green.
-- Browser: CodeBLAST modes, Align, Test Compatibility (WARNING). Trust plate shows M-94012 security open.
-- Contrast `.captures/phase7-r1/`: 12 beats, 215 blocks, **0 fails**, `helixFramesDelta: 0`.
+- Browser: default WARNING selected; SAFETY selectable; ancestor opens `#genes`.
+- Desktop + 390px: plate readable; tracks remain the encoding.
+- Contrast `.captures/phase8-r1/`: 12 beats, 236 blocks, **0 fails**, `helixFramesDelta: 0`. Beat 7 is Meet AX-2041; helix is the stacked-track converge pose.
 
 ## Not started
 
-- Phase 8 AX-2041.
+- Phase 9 Trace Failure.

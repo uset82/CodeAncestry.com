@@ -36,7 +36,7 @@ export const HOMEPAGE_BEAT_STANDINS = [
   { beat: 4, id: 'codetree', side: 'left', standIn: 'CodeTreeSection' },
   { beat: 5, id: 'agents', side: 'left', standIn: 'AgentSection' },
   { beat: 6, id: 'blast', side: 'left', standIn: 'CodeBlastSection' },
-  { beat: 7, id: 'machine', side: 'left', standIn: 'Endgame' },
+  { beat: 7, id: 'machine', side: 'left', standIn: 'MachineSection' },
   { beat: 8, id: 'trace', side: 'left', standIn: 'BeatScaffold entry' },
   { beat: 9, id: 'trace', side: 'left', standIn: 'BeatScaffold rewind' },
   { beat: 10, id: 'health', side: 'left', standIn: 'BeatScaffold' },

@@ -23,9 +23,10 @@ export function Endgame() {
         </blockquote>
 
         <figcaption className="text-muted mt-9 max-w-[620px] text-[15px] leading-relaxed">
-          That is a long way off, and it starts somewhere unglamorous: being able to say which
-          project a single capability came from, and proving it. Everything on this site is that
-          first step, built on eight seeded projects so the shape is arguable before it is real.
+          AX-2041 is the simulation of that question. It is a long way off, and it starts by being
+          able to say which project a single capability came from, and proving it. Everything on
+          this site is that first step, built on eight seeded projects so the shape is arguable
+          before it is real.
         </figcaption>
       </figure>
     </Section>
