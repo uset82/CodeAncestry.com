@@ -12,6 +12,7 @@ import { MutationSection } from '@/components/marketing/MutationSection';
 import { PlatformSection } from '@/components/marketing/PlatformSection';
 import { ProblemSection } from '@/components/marketing/ProblemSection';
 import { PropagationStrip } from '@/components/marketing/PropagationStrip';
+import { TraceSection } from '@/components/marketing/TraceSection';
 import { TrustLadder } from '@/components/marketing/TrustLadder';
 import { Reveal } from '@/components/motion/Reveal';
 import { HelixHero } from '@/components/viz/helix/HelixHero';
@@ -65,19 +66,7 @@ export default function HomePage() {
       <Reveal>
         <Endgame />
       </Reveal>
-      <BeatScaffold
-        beat={8}
-        id="trace"
-        index="13"
-        title="Trace Failure · entry"
-        arrives="Arrives in Phase 9"
-      />
-      <BeatScaffold
-        beat={9}
-        index="13"
-        title="Trace Failure · rewind"
-        arrives="Arrives in Phase 9"
-      />
+      <TraceSection />
       <BeatScaffold
         beat={10}
         id="health"

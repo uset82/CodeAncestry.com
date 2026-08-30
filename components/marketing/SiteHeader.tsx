@@ -2,14 +2,24 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { cn } from '@/lib/cn';
 import { connectCta, nav, site, type NavItem } from '@/lib/site';
 import { HelixMark } from '@/components/ui/HelixMark';
 import { ButtonLink } from '@/components/ui/Button';
 
 const isActive = (pathname: string, href: string) =>
-  pathname === href || (href !== '/' && pathname.startsWith(`${href}/`));
+  pathname === href || (href !== '/' && !href.includes('#') && pathname.startsWith(`${href}/`));
+
+const handleHashNav = (event: ReactMouseEvent<HTMLAnchorElement>, href: string) => {
+  if (!href.startsWith('/#')) return;
+  const node = document.getElementById(href.slice(2));
+  if (!node) return;
+  event.preventDefault();
+  const top = window.scrollY + node.getBoundingClientRect().top - 80;
+  window.scrollTo({ top, behavior: 'instant' });
+  window.history.pushState(null, '', href);
+};
 
 export function SiteHeader() {
   const pathname = usePathname();
@@ -58,6 +68,7 @@ export function SiteHeader() {
               <Link
                 key={item.label}
                 href={item.href}
+                onClick={(event) => handleHashNav(event, item.href)}
                 aria-current={isActive(pathname, item.href) ? 'page' : undefined}
                 className={cn(
                   'text-[13px] transition-colors',
@@ -107,7 +118,10 @@ export function SiteHeader() {
               <li key={item.label}>
                 <Link
                   href={item.href}
-                  onClick={() => setOpen(false)}
+                  onClick={(event) => {
+                    handleHashNav(event, item.href);
+                    setOpen(false);
+                  }}
                   className="text-text-soft hover:text-text block py-2.5 text-sm"
                 >
                   {item.label}

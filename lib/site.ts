@@ -67,6 +67,7 @@ export const researchMenu = [
 export const nav: readonly NavItem[] = [
   { href: '/explore', label: 'Explore', menu: exploreMenu },
   { href: '/lineage', label: 'Lineage' },
+  { href: '/#trace', label: 'Trace' },
   { href: '/explore', label: 'Genome' },
   { href: '/explore', label: 'Agents' },
   { href: '/research', label: 'Research', menu: researchMenu },

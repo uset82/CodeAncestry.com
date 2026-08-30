@@ -1,26 +1,26 @@
-# Cursor — Phase 8 landed
+# Cursor — Phase 9 landed
 
-AX-2041 is the homepage’s future-facing demo. KEYLIT is not.
+Trace Failure is the homepage’s highest-priority demo. The helix already alarms and inverts pulses; the plate is the state machine.
 
 ## Already on main
 
-- `1283352` — Phase 6+7: Agent DNA, evolution compass, CodeBLAST, M-94012 trust plate.
+- `dc40868` — Phase 8: AX-2041 capability-column machine genome.
 
-## Phase 8
+## Phase 9
 
-- Homepage 12 `MachineSection` (`#machine`, beat 7): headline Meet AX-2041.
-- `MachineGenome` is a 2D readout of the helix converge pose — stacked tracks, length ∝ generation, marks ✓ / ! / ? / ◆. No robot mesh.
-- Demo `data/demo/ax2041.ts`. SIMULATION / DEMO LINEAGE. Default locus NAVIGATION (WARNING → NAV-G288 / `#genome`). SAFETY is Mutation #74 (not M-94012).
-- Ancestor link scrolls the named homepage instrument. Helix already does the cinematic re-pose (`converge 1`, `flatten 1`).
-- `Endgame` stays as the beat-7 coda after the plate.
+- Homepage 13 `TraceSection` (`#trace` beat 8, `#trace-rewind` beat 9).
+- Trigger: Unexpected navigation behavior detected. Button TRACE FAILURE. Reset returns to armed.
+- Rewind chain: behavior → NAV-G288 → M-94012 → gen 119 → A-918 → A-771 → 3,842 descendants → confirmed → generation 118.
+- Recovery actions are labelled demo states. None write.
+- Reduced motion skips the rise and keeps the stepped list. No `scrollY` reverse on the helix. No rAF on the scroll path.
+- Header: Trace → `/#trace` (retarget `/trace` when that route exists).
 
 ## Verified
 
-- `tsc`, eslint, fixtures, `check-beats` green.
-- Browser: default WARNING selected; SAFETY selectable; ancestor opens `#genes`.
-- Desktop + 390px: plate readable; tracks remain the encoding.
-- Contrast `.captures/phase8-r1/`: 12 beats, 236 blocks, **0 fails**, `helixFramesDelta: 0`. Beat 7 is Meet AX-2041; helix is the stacked-track converge pose.
+- `tsc`, eslint, `check-beats` green.
+- Browser: trigger scrolls to rewind; QUARANTINE shows demo copy; reset returns to alarm and clears the action.
+- Contrast `.captures/phase9-r1/`: 12 beats, 265 blocks, **0 fails**, `helixFramesDelta: 0`. Beat 8 is the alarm plate; beat 9 is the rewind chain.
 
 ## Not started
 
-- Phase 9 Trace Failure.
+- Phase 10 Lineage Health.
