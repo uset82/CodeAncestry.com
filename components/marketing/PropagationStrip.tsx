@@ -1,6 +1,5 @@
 import Link from 'next/link';
-import { getHeroMutation } from '@/lib/registry';
-import { demo } from '@/lib/site';
+import { demoAccession, mutationM94012 } from '@/data/demo';
 import { Eyebrow, Section } from './Section';
 
 /**
@@ -53,21 +52,21 @@ const STEPS = [
 ] as const;
 
 export function PropagationStrip() {
-  const mutation = getHeroMutation();
+  const mutation = demoAccession(mutationM94012.id);
 
   return (
     <Section id="propagation" beat={5} beatSide="left">
       <div className="max-w-[640px]">
-        <Eyebrow index="04">Propagation protocol</Eyebrow>
+        <Eyebrow>Offer protocol</Eyebrow>
         <h2 className="text-headline mt-4 text-balance">
-          A descendant can teach
+          Eight locks between
           <br />
-          <span className="text-emphasis">its ancestor something.</span>
+          <span className="text-emphasis">an offer and a write.</span>
         </h2>
         <p className="text-text-soft mt-6 max-w-[540px] leading-relaxed">
-          When {mutation.shortId} improved {mutation.title.toLowerCase()} four generations down, its
-          ancestors were <em>offered</em> the change. Eight steps stand between noticing something
-          and anything moving.
+          When {mutation} improved navigation on generation 119, ancestors were{' '}
+          <em>offered</em> the change. Eight steps stand between noticing something and anything
+          moving. Nothing is adopted automatically.
         </p>
       </div>
 
@@ -89,7 +88,7 @@ export function PropagationStrip() {
                     className={`h-px flex-1 ${terminal ? 'bg-amber/30' : 'bg-acid/25'}`}
                   />
                   {!terminal && (
-                    <span aria-hidden="true" className="text-faint text-[10px]">
+                    <span aria-hidden="true" className="text-muted text-[10px]">
                       →
                     </span>
                   )}
@@ -115,10 +114,7 @@ export function PropagationStrip() {
           Propagation is always an offer. Every arrow in the CodeTree that carries a change ends at
           a decision made by the receiving project&rsquo;s maintainer, under rules that maintainer
           wrote.{' '}
-          <Link
-            href={demo.heroMutation}
-            className="text-text-soft hover:text-text underline decoration-dotted"
-          >
+          <Link href="#mutation" className="text-text-soft hover:text-text underline decoration-dotted">
             See the decision surface
           </Link>
           .

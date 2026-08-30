@@ -1,25 +1,28 @@
-# Cursor — Phase 5 landed (uncommitted until push)
+# Cursor — Phase 6+7 landed (uncommitted)
 
-Claude is out of credits. Cursor continued Phase 5 in-lane.
+Claude is out of credits. Cursor continued Phases 6 and 7 in-lane.
 
 ## Already on main
 
-- `77d96bb` — Phase 3+4: homepage argument through AXIS genome.
+- `3676831` — Phase 5: AXIS CodeTree + Mutation Lab.
 
-## Landed (this commit)
+## Phase 6
 
-- Homepage 06 `CodeTreeSection` replaces CodePainting. AXIS family, not KEYLIT. Beat 4 left.
-- Nine lineage types with glyph + shape + connection (not colour alone).
-- `AxisCodeTree`: tidy layout via existing `FamilyTree` geometry, zoom/pan, collapse Field fork, follow M-94012, compare two descendants. No rAF.
-- Homepage 07 `MutationSection`: M-94012 inspector + ADOPT/TEST/SIMULATE/REJECT/QUARANTINE as labelled demo states.
-- 15-node AXIS family (`data/demo/axis-family.ts`). Field starts collapsed (11 visible).
+- Homepage 08 `AgentSection` (`#agents`, beat 5): Agent A-184 provenance, three-lineage join.
+- Homepage 09 `EvolutionSection` (`#evolution`, beat 5): four-direction compass + DED.
+- `PropagationStrip` kept as eight-lock protocol; demo is M-94012.
+
+## Phase 7
+
+- Homepage 10 `CodeBlastSection` (`#blast`, beat 6): three modes, seeded AXIS alignment, demo actions. Prototype labelled. `/blast` stays the paste console.
+- Homepage 11 `TrustLadder` rewritten for M-94012: source / build / creator / review / test / security / lineage. Security stays WARNING. Future integrations listed as not live.
 
 ## Verified
 
-- `tsc`, eslint green.
-- Browser: default AXIS Robot Core; Follow mutation → AXIS Mutant; ADOPT copy is demo-only.
-- Contrast `.captures/phase5-r1/`: 12 beats, 189 blocks, **0 helix fails**, footer `helixFramesDelta: 0`.
+- `tsc`, eslint, fixtures, `check-beats` green.
+- Browser: CodeBLAST modes, Align, Test Compatibility (WARNING). Trust plate shows M-94012 security open.
+- Contrast `.captures/phase7-r1/`: 12 beats, 215 blocks, **0 fails**, `helixFramesDelta: 0`.
 
 ## Not started
 
-- Phase 6 Agent DNA / distributed evolution.
+- Phase 8 AX-2041.
