@@ -372,14 +372,58 @@ export function axisPointAt(spec: StrandSpec, t: number, flatten: number): Vecto
   return axisPointAtInto(spec, t, flatten, new Vector3());
 }
 
+/* The extent of the whole lineage, measured from the strands rather than typed
+   in, so moving a branch cannot silently crop the closing frame. */
+const FAMILY_TOP = Math.max(...STRANDS.map((spec) => Math.max(spec.start.y, spec.end.y)));
+const FAMILY_BOTTOM = Math.min(...STRANDS.map((spec) => Math.min(spec.start.y, spec.end.y)));
+
+/** Vertical centre of the whole lineage. */
+export const FAMILY_Y = (FAMILY_TOP + FAMILY_BOTTOM) / 2;
 /**
- * Re-pose a point toward a capability column. Generation becomes the track.
- * Same instances, a second layout — not new geometry.
+ * Half the height the reveal has to cover: the family plus a quarter of margin.
+ *
+ * A tenth was not enough. The sticky header sits over the top 8% of the frame,
+ * so a crown placed 5% from the top edge lands underneath it, and the trunk —
+ * the one strand the whole story starts from — was the part being clipped.
  */
-export function applyConvergeInto(spec: StrandSpec, converge: number, target: Vector3): Vector3 {
+export const FAMILY_HALF_HEIGHT = ((FAMILY_TOP - FAMILY_BOTTOM) * 1.06) / 2;
+
+/**
+ * converge = 1 re-poses each strand into a horizontal track. Tracks stack
+ * vertically in STRANDS order (loci 6/5/5/5/4/4/4/3), length ∝ gene count.
+ * Same nodes, a second layout — the genome-browser idiom, not a spindle.
+ */
+const CONVERGE_MAX_LOCI = Math.max(...STRANDS.map((spec) => spec.loci));
+const CONVERGE_PITCH = 1.24;
+const CONVERGE_STACK = CONVERGE_PITCH * Math.max(1, STRANDS.length - 1);
+const CONVERGE_TOP = FAMILY_Y + CONVERGE_STACK / 2;
+const CONVERGE_UNIT = (FAMILY_HALF_HEIGHT * 0.7) / CONVERGE_MAX_LOCI;
+const CONVERGE_ORIGIN_X = -2.1;
+
+/**
+ * Re-pose a point toward its capability track. Generation becomes the track.
+ * Same instances, a second layout — not new geometry.
+ *
+ * **Affine in `t`.** That is the property the live sweep depends on: it lets
+ * the CPU collapse a whole ring at parameter `t` while the shader's
+ * `mix(uStart, uEnd, vPath)` computes the same point, so the two cannot drift.
+ *
+ * `t` is required. A default that projected `target` back onto the axis was
+ * only ever correct for a point already exactly on it.
+ */
+export function applyConvergeInto(
+  spec: StrandSpec,
+  converge: number,
+  target: Vector3,
+  t: number,
+): Vector3 {
   if (converge <= 0) return target;
-  const columnX = (spec.generation - 1.5) * 0.95;
-  target.x += (columnX - target.x) * converge;
+  const row = STRANDS.findIndex((entry) => entry.id === spec.id);
+  const poseX = CONVERGE_ORIGIN_X + t * spec.loci * CONVERGE_UNIT;
+  const poseY = CONVERGE_TOP - Math.max(0, row) * CONVERGE_PITCH;
+  target.x += (poseX - target.x) * converge;
+  target.y += (poseY - target.y) * converge;
+  target.z += (0 - target.z) * converge;
   return target;
 }
 
