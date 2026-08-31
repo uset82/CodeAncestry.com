@@ -10,9 +10,10 @@ import {
   BEATS,
   beatStateAt,
   daylight,
-  LOOK_X_EXTENT,
+  lookXExtent,
   lookXForSide,
   measureViewportBeat,
+  widthFit,
   type BeatSide,
   type BeatState,
 } from './beats';
@@ -21,17 +22,19 @@ import { FAMILY_HALF_HEIGHT, FAMILY_LOOK_LIFT, grownFamilyY } from './strands';
 const HERO_FOV = 42;
 
 function bootCamera() {
-  const lookX = typeof window === 'undefined' ? -LOOK_X_EXTENT : lookXForSide('left');
+  const lookX = lookXForSide('left');
   const lookY = grownFamilyY(1) + FAMILY_LOOK_LIFT;
   const z =
-    (FAMILY_HALF_HEIGHT / Math.tan((HERO_FOV * Math.PI) / 360)) * BEATS[0]!.cameraMultiple;
+    (FAMILY_HALF_HEIGHT / Math.tan((HERO_FOV * Math.PI) / 360)) *
+    BEATS[0]!.cameraMultiple *
+    widthFit();
   return { lookX, lookY, z };
 }
 
 function initialBeatState(): BeatState {
   const base = beatStateAt(0, 0);
   if (typeof window === 'undefined') return base;
-  return { ...base, lookX: lookXForSide('left'), side: 'left' };
+  return { ...base, lookX: lookXForSide('left', base.cameraMultiple), side: 'left' };
 }
 
 const HelixScene = dynamic(() => import('./HelixScene').then((m) => m.HelixScene), {
@@ -79,9 +82,16 @@ declare global {
   }
 }
 
-function paintScrim(node: HTMLDivElement, lookX: number) {
-  const left = Math.max(0, -lookX / LOOK_X_EXTENT);
-  const right = Math.max(0, lookX / LOOK_X_EXTENT);
+/**
+ * Normalised against the *live* extent, not a constant. The old denominator
+ * was a fixed world-unit number, so as soon as the aim became distance-aware
+ * the division produced 0.3 and the scrim faded out — precisely when the
+ * specimen moved close enough to the copy to need it most.
+ */
+function paintScrim(node: HTMLDivElement, lookX: number, extent: number) {
+  const span = extent || 1;
+  const left = Math.max(0, -lookX / span);
+  const right = Math.max(0, lookX / span);
   if (left < 0.02 && right < 0.02) {
     node.style.background = 'transparent';
     node.style.opacity = '0';
@@ -89,7 +99,7 @@ function paintScrim(node: HTMLDivElement, lookX: number) {
   }
   const toward = left >= right ? '90deg' : '270deg';
   node.style.background = `linear-gradient(${toward}, #07090d 0%, color-mix(in oklab, #07090d 88%, transparent) 34%, transparent 62%)`;
-  node.style.opacity = String(Math.max(left, right));
+  node.style.opacity = String(Math.min(1, Math.max(left, right)));
 }
 
 function FrameProbe() {
@@ -185,7 +195,9 @@ export function HelixStage({ children }: { children: React.ReactNode }) {
         '--daylight',
         daylight(nextState.progress).toFixed(4),
       );
-      if (scrim.current) paintScrim(scrim.current, nextState.lookX);
+      if (scrim.current) {
+        paintScrim(scrim.current, nextState.lookX, lookXExtent(nextState.cameraMultiple));
+      }
       setLoop((prev) => (prev === nextLoop ? prev : nextLoop));
       setActiveIndex((prev) => (prev === nextState.activeIndex ? prev : nextState.activeIndex));
       invalidate.current?.();

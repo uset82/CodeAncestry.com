@@ -32,31 +32,152 @@ export type Beat = {
 
 export type BeatSide = 'left' | 'right' | 'full';
 
-/** Camera aim offset at the capture frame (1600×900). Copy left → lineage right. */
-export const LOOK_X_EXTENT = 4.6;
-
-/** Capture aspect. Narrower frames must scale lookX or the specimen leaves the view. */
-const LOOK_X_REF_ASPECT = 1600 / 900;
+import { FAMILY_HALF_HEIGHT } from './strands';
 
 /**
- * Horizontal aim used by the driver and the camera.
+ * The composition, in pixels.
  *
- * At 1600×900 this is exactly `LOOK_X_EXTENT`. A linear aspect scale keeps
- * the tubes in a narrower frame, but the chips sit outside the rail — so a
- * mid-width window that fits the helix still walks VISION and SAFETY off
- * the right edge. The reserve grows as the aspect drops; capture (t = 1)
- * is unchanged.
+ * The aim used to be one world-unit constant shared by all twelve beats. World
+ * units are the wrong currency: the beats do not share a camera distance, so a
+ * beat at `cameraMultiple: 0.45` aimed its specimen about 640px off centre
+ * while a beat at `1.25` aimed the same specimen about 230px off centre. The
+ * frame was never composed — it was a side effect of the distance.
+ *
+ * On the hero it produced a 598px hole between the last glyph (x 707) and the
+ * first rail (x 1305), which is the gap this replaces.
  */
-export function lookXExtent(): number {
-  if (typeof window === 'undefined') return LOOK_X_EXTENT;
-  const aspect = window.innerWidth / Math.max(1, window.innerHeight);
-  const t = Math.min(1, aspect / LOOK_X_REF_ASPECT);
-  const chipReserve = (1 - t) * 1.7;
-  return Math.max(1.35, LOOK_X_EXTENT * t - chipReserve);
+/** Room the specimen keeps from the right edge of the shell. */
+const SPECIMEN_RIGHT_MARGIN = 40;
+/**
+ * Mirrors `.shell-wide` in `app/globals.css`. The page is not full-bleed, so
+ * the specimen has to park against the *shell*, not the window. Parking
+ * against the window put it 200px outside the layout on a 1920 screen and
+ * left a 411px hole between it and the copy.
+ */
+const SHELL_MAX_WIDTH = 1480;
+const SHELL_GUTTER = 40;
+/**
+ * Width of the drawn specimen in world units. Measured, not assumed:
+ * `scripts/measure-hero-gap.mjs` differences a frame against one with the
+ * canvas hidden and reports 287px at 139.8px per world unit.
+ */
+const SPECIMEN_WORLD_WIDTH = 2.05;
+/** The frame the composition is authored against. Narrower frames pull back. */
+const REFERENCE_WIDTH = 1600;
+/** Reference height, for the server render where there is no window. */
+const REFERENCE_HEIGHT = 900;
+
+function viewportWidth(): number {
+  return typeof window === 'undefined' ? REFERENCE_WIDTH : Math.max(1, window.innerWidth);
 }
 
-export function lookXForSide(side: BeatSide): number {
-  const extent = lookXExtent();
+function viewportHeight(): number {
+  return typeof window === 'undefined' ? REFERENCE_HEIGHT : Math.max(1, window.innerHeight);
+}
+
+/**
+ * Debug framing overrides, read once and cached.
+ *
+ * `?extent=` pins the horizontal aim in world units, `?zoom=` scales every
+ * beat's camera distance. They exist so the hero framing can be swept by
+ * measurement instead of by eye: `scripts/measure-hero-gap.mjs` reports where
+ * the specimen actually lands. The gap between copy and helix was guessed at
+ * for a long time and was wrong by hundreds of pixels every time.
+ */
+let cachedFraming: { extent: number | null; zoom: number | null } | null = null;
+
+function framingOverrides(): { extent: number | null; zoom: number | null } {
+  if (cachedFraming) return cachedFraming;
+  if (typeof window === 'undefined') {
+    cachedFraming = { extent: null, zoom: null };
+    return cachedFraming;
+  }
+  const params = new URLSearchParams(window.location.search);
+  const extent = Number(params.get('extent'));
+  const zoom = Number(params.get('zoom'));
+  cachedFraming = {
+    extent: Number.isFinite(extent) && extent >= 0.4 && extent <= 8 ? extent : null,
+    zoom: Number.isFinite(zoom) && zoom >= 0.2 && zoom <= 4 ? zoom : null,
+  };
+  return cachedFraming;
+}
+
+/** Debug camera-distance scale. `1` unless `?zoom=` asks otherwise. */
+export function framingZoom(): number {
+  return framingOverrides().zoom ?? 1;
+}
+
+/**
+ * Extra camera distance for frames narrower than the reference.
+ *
+ * The copy column is text at fixed pixel sizes, so it gives up very little
+ * when the window narrows. Whatever room is left has to come out of the
+ * specimen instead, or the two collide. `1` at the reference width and above;
+ * grows as the window narrows, never shrinks.
+ */
+export function widthFit(width: number = viewportWidth()): number {
+  return Math.max(1, REFERENCE_WIDTH / Math.max(320, width));
+}
+
+/**
+ * The whole framing, as pure arithmetic over one viewport.
+ *
+ * Kept pure and exported so `scripts/check-beats.ts` can assert the
+ * composition at several widths. The window-reading helpers below are thin
+ * wrappers over it.
+ *
+ * Vertical fov is fixed, so the horizontal scale follows viewport height and
+ * the distance — never the width. That is exactly why width has to be handled
+ * separately, by `widthFit`.
+ */
+export function framingAt(width: number, height: number, cameraMultiple: number) {
+  const ppu = height / (2 * FAMILY_HALF_HEIGHT * cameraMultiple * widthFit(width));
+  const span = SPECIMEN_WORLD_WIDTH * ppu;
+  const centre = specimenRightEdge(width) - span / 2;
+  return { ppu, span, centre, lookX: (centre - width / 2) / ppu };
+}
+
+/** Pixels per world unit at a beat's camera distance. */
+export function pixelsPerUnit(cameraMultiple: number): number {
+  return framingAt(viewportWidth(), viewportHeight(), cameraMultiple).ppu;
+}
+
+/** On-screen width of the specimen at a beat's camera distance, in pixels. */
+export function specimenSpan(cameraMultiple: number): number {
+  return framingAt(viewportWidth(), viewportHeight(), cameraMultiple).span;
+}
+
+/**
+ * Screen x of the specimen's right edge, in a viewport `width` px wide.
+ *
+ * Measured from the shell, so a 1920 screen parks the specimen in the same
+ * place relative to the copy as a 1600 one instead of sliding it out past the
+ * layout's right edge.
+ */
+export function specimenRightEdge(width: number): number {
+  const shell = Math.min(SHELL_MAX_WIDTH, Math.max(320, width - SHELL_GUTTER));
+  return (width + shell) / 2 - SPECIMEN_RIGHT_MARGIN;
+}
+
+/**
+ * World-space aim that parks the specimen against the right of the shell.
+ *
+ * Stated as a target in pixels and converted, so every beat lands its specimen
+ * in the same place however far away its own camera sits.
+ */
+export function lookXExtent(cameraMultiple: number = BEATS[0]!.cameraMultiple): number {
+  const forced = framingOverrides().extent;
+  if (forced !== null) return forced;
+  const w = typeof window === 'undefined' ? REFERENCE_WIDTH : window.innerWidth;
+  const centre = specimenRightEdge(w) - specimenSpan(cameraMultiple) / 2;
+  return (centre - w / 2) / pixelsPerUnit(cameraMultiple);
+}
+
+export function lookXForSide(
+  side: BeatSide,
+  cameraMultiple: number = BEATS[0]!.cameraMultiple,
+): number {
+  const extent = lookXExtent(cameraMultiple);
   if (side === 'left') return -extent;
   if (side === 'right') return extent;
   return 0;
@@ -90,7 +211,18 @@ export const BEATS: Beat[] = [
     body: 'CodeAncestry creates a living genealogy for software, AI agents, and machines — tracking the capabilities they inherit, the mutations they acquire, and the generations that shaped them.',
     ...ZERO_POSE,
     generations: 1,
-    cameraMultiple: 0.45,
+    /* 0.45 framed the specimen at 287px of a 1600px frame — 18% of the width,
+       pinned to the right edge, with a 598px hole between it and the copy.
+       0.20 puts it at roughly 645px, which is the right side of the page
+       actually being occupied.
+
+       Both this beat and beat 1 are set together on purpose. The hero section
+       is one viewport tall, so `measureViewportBeat` reads t = 0.5 at the top
+       of the page and the opening frame is a blend of the two — beat 0 on its
+       own is never actually seen. 0.16 and 0.24 blend to 0.20, which is the
+       size the opening frame needs. Beat 1 is a gene close-up, so sitting
+       closer suits it anyway. */
+    cameraMultiple: 0.15,
   },
   {
     id: 'genes',
@@ -100,7 +232,8 @@ export const BEATS: Beat[] = [
     ...ZERO_POSE,
     generations: 1,
     geneFocus: 1,
-    cameraMultiple: 0.45,
+    /* Paired with beat 0 — see the note there. Was 0.45. */
+    cameraMultiple: 0.21,
   },
   {
     id: 'mutation',
@@ -281,7 +414,10 @@ export function beatStateAt(index: number, t = 0) {
   return {
     progress: last === 0 ? 0 : (i + mixT) / last,
     activeIndex: i,
-    lookX: -LOOK_X_EXTENT,
+    /* Aimed per beat. `cameraMultiple` is interpolated with everything else,
+       so the specimen slides to the same place on the way between beats
+       instead of jumping when the scalar does. */
+    lookX: -lookXExtent(scalars.cameraMultiple),
     side: 'left' as BeatSide,
     ...scalars,
   };
@@ -304,8 +440,14 @@ function sideOf(el: HTMLElement, beat: number, previous?: BeatSide): BeatSide {
 
 function withSide(index: number, t: number, from: BeatSide, to: BeatSide): BeatState {
   const mixT = Math.min(1, Math.max(0, t));
-  const lookX = lookXForSide(from) + (lookXForSide(to) - lookXForSide(from)) * mixT;
-  return { ...beatStateAt(index, t), lookX, side: mixT < 0.5 ? from : to };
+  const base = beatStateAt(index, t);
+  /* The aim has to be taken at the *interpolated* distance. Resolving it from
+     the beat's own scalar alone used beat 0's camera multiple for every beat,
+     so the specimen was aimed by one distance and drawn at another: on the
+     hero that put it 250px further right than the composition asked for. */
+  const aim = (side: BeatSide) => lookXForSide(side, base.cameraMultiple);
+  const lookX = aim(from) + (aim(to) - aim(from)) * mixT;
+  return { ...base, lookX, side: mixT < 0.5 ? from : to };
 }
 
 export function measureViewportBeat(): { state: BeatState; owns3d: boolean } {
@@ -381,7 +523,9 @@ export function holdProgress(state: Pick<BeatState, 'zoomOut'>): number {
   return state.zoomOut;
 }
 
-export function climaxAmount(state: Pick<BeatState, 'progress' | 'upstream' | 'recovery' | 'zoomOut'>): number {
+export function climaxAmount(
+  state: Pick<BeatState, 'progress' | 'upstream' | 'recovery' | 'zoomOut'>,
+): number {
   return Math.max(state.upstream, state.recovery) + state.zoomOut * 1.15;
 }
 

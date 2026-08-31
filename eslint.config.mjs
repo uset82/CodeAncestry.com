@@ -11,6 +11,9 @@ const config = [
       'reference/**',
       'research/**',
       'next-env.d.ts',
+      /* Screenshot output. Gitignored, generated, and occasionally the home of
+         a throwaway diagnostic script that has no business failing CI. */
+      '.captures/**',
     ],
   },
   ...nextCoreWebVitals,

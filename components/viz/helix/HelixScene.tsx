@@ -59,7 +59,15 @@ import {
   type SweepBuffers,
   type SweepTuning,
 } from './sweep';
-import { climaxAmount, daylight, holdProgress, LOOK_X_EXTENT, type BeatState } from './beats';
+import {
+  climaxAmount,
+  daylight,
+  framingZoom,
+  holdProgress,
+  lookXExtent,
+  widthFit,
+  type BeatState,
+} from './beats';
 import {
   climaxEmissive,
   depthMaterialOf,
@@ -338,7 +346,10 @@ function radialInto(
 /** Pointer lean may pull toward the specimen, never toward the copy. */
 const LEAN_CURSOR = { x: 0, y: 0 };
 
-function leanCursor(beat: BeatState, pointer: { x: number; y: number }): { x: number; y: number } {
+function leanCursor(
+  beat: BeatState,
+  pointer: { x: number; y: number },
+): { x: number; y: number } {
   LEAN_CURSOR.x = pointer.x;
   LEAN_CURSOR.y = pointer.y;
   if (beat.lookX < -0.2) LEAN_CURSOR.x = Math.max(0, LEAN_CURSOR.x);
@@ -396,24 +407,8 @@ function runSweep(
        `?sweepAmp=` really is one master scalar and not five. */
     const lump = ledger.lump * ledger.amplitude;
 
-    sweepInto(
-      buffers[0],
-      rings.centersA,
-      rings.radii,
-      rings.phases,
-      lump,
-      live.basis.u,
-      track,
-    );
-    sweepInto(
-      buffers[1],
-      rings.centersB,
-      rings.radii,
-      rings.phases,
-      lump,
-      live.basis.u,
-      track,
-    );
+    sweepInto(buffers[0], rings.centersA, rings.radii, rings.phases, lump, live.basis.u, track);
+    sweepInto(buffers[1], rings.centersB, rings.radii, rings.phases, lump, live.basis.u, track);
 
     buffers[0].positionAttribute.needsUpdate = true;
     buffers[0].normalAttribute.needsUpdate = true;
@@ -1053,7 +1048,13 @@ function chipNudgeInto(
   return target;
 }
 
-function labelHitsChrome(box: { top: number; left: number; right: number; width: number; height: number }): boolean {
+function labelHitsChrome(box: {
+  top: number;
+  left: number;
+  right: number;
+  width: number;
+  height: number;
+}): boolean {
   if (box.width < 2 || box.height < 2) return false;
   if (box.top < HEADER_CLEAR - 0.5) return true;
   if (box.left < EDGE_CLEAR - 0.5) return true;
@@ -1104,10 +1105,7 @@ function LocusLabels({ state }: Pick<Props, 'state'>) {
           /* Live sample is already on the rail. The extra 0.9·radius keeps
              the chip outside the tube, matching the baked 1.9·radius offset
              from the axis. */
-          position.addScaledVector(
-            direction,
-            anchor.spec.radius * 0.9 * (1 - current.flatten),
-          );
+          position.addScaledVector(direction, anchor.spec.radius * 0.9 * (1 - current.flatten));
         } else {
           axisPointAtInto(anchor.spec, anchor.t, current.flatten, position);
           applyConvergeInto(anchor.spec, current.converge, position, anchor.t);
@@ -1348,11 +1346,14 @@ function CameraRig({
   const { camera } = useThree();
   const settled = useRef(false);
   const target = useMemo(
-    () => new Vector3(-LOOK_X_EXTENT, grownFamilyY(1) + FAMILY_LOOK_LIFT, 0),
+    () => new Vector3(-lookXExtent(), grownFamilyY(1) + FAMILY_LOOK_LIFT, 0),
     [],
   );
   const desired = useMemo(() => new Vector3(), []);
   const lookAt = useMemo(() => new Vector3(), []);
+  /* Read once. `?zoom=` scales the distance so framing can be swept without
+     recompiling; the query string is not a per-frame concern. */
+  const zoom = useMemo(() => framingZoom(), []);
 
   useEffect(() => {
     const handlePointerMove = (event: PointerEvent) => {
@@ -1372,7 +1373,7 @@ function CameraRig({
        lookX follows the reading side so the lineage never sits on the copy. */
     const fov = 'fov' in camera ? (camera.fov as number) : 42;
     const fit = FAMILY_HALF_HEIGHT / Math.tan((fov * Math.PI) / 360);
-    const z = fit * current.cameraMultiple;
+    const z = fit * current.cameraMultiple * zoom * widthFit();
     const lookY = grownFamilyY(current.generations) + FAMILY_LOOK_LIFT;
     const lookX = current.lookX;
 

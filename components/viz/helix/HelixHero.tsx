@@ -14,7 +14,15 @@ import { HeroFallback } from './HeroFallback';
 gsap.registerPlugin(useGSAP);
 
 /** The eyebrow, headline and calls to action, shared by both hero variants. */
-function HeroCopy({ children }: { children?: React.ReactNode }) {
+function HeroCopy({
+  children,
+  width = 'wider',
+}: {
+  children?: React.ReactNode;
+  /** Wider for the animated hero (the helix absorbs the right edge).
+   *  Narrower for the static hero, where a fallback image claims the right 46%. */
+  width?: 'wider' | 'narrower';
+}) {
   const copy = useRef<HTMLDivElement>(null);
   const reducedMotion = useReducedMotion();
 
@@ -38,21 +46,33 @@ function HeroCopy({ children }: { children?: React.ReactNode }) {
   const origin = BEATS[0];
 
   return (
-    <div ref={copy} className="lg:border-line/40 max-w-[720px] lg:border-r lg:pr-10">
-      {/* The beat counter is the seam. The page is a twelve-position sequence
-          and the helix is standing at position one, so naming it here is what
-          tells the reader the copy and the specimen are the same object. The
-          acid rule reaches right, toward the helix it belongs to.
-          It is `text-text-soft`, not `text-muted`. It sits at the top of the
-          column where the specimen's upper coils pass behind it, which put
-          `muted` at 4.64:1 on the composited frame — the lowest ratio on the
-          page and only 0.14 above the AA floor. Size and face already carry
-          the hierarchy against a 128px serif H1, so within the small mono
-          lines colour is the legibility lever, not the rank. */}
-      <p className="text-text-soft text-micro mb-6 flex flex-wrap items-center gap-x-3 gap-y-2 font-mono uppercase">
-        <span className="text-acid flex items-center gap-2">
-          <span aria-hidden="true" className="bg-acid h-px w-16 shrink-0" />
-          {origin?.index ?? '01'} / {total}
+    // The column leaves the specimen a zone. A fixed 1040px was right at 1600
+    // and far too much at 1280, where the shell is only 1240px and the column
+    // ran straight under the helix. 58% keeps the split at every width.
+    <div
+      ref={copy}
+      data-hero-copy={width}
+      className={width === 'wider' ? 'max-w-[min(1040px,58%)]' : 'max-w-[640px]'}
+    >
+      {/* The seam. A horizontal rule across the top of the copy column with the
+          beat index on top of it. The rule runs from the column's left edge
+          to the column's right edge, so the copy column now physically reaches
+          toward the helix instead of stopping with empty void between them.
+          At 1600 viewport the column is 1040px (87.5% of the 1480px shell)
+          and the helix's first visible rail sits around x=920-1000, so the
+          rule and the rail overlap by about 80-120px. That overlap is the
+          seam: the index lives at the column's left edge, the rule travels
+          across, and the helix begins where the rule ends.
+          The line is `bg-line`, not `bg-acid`: the rule is the structural
+          line of the page, the acid index is the mark on top of it. */}
+      <div aria-hidden="true" className="border-line/70 relative mb-12 h-px w-full border-t" />
+      <p className="text-text-soft -mt-[28px] mb-12 flex flex-wrap items-center gap-x-3 gap-y-2 pr-4 font-mono text-[13px] tracking-[0.14em] uppercase">
+        <span className="text-acid border-acid/40 bg-void inline-flex items-center gap-2 rounded-xs border px-2 py-1 text-[13px] leading-none tracking-[0.14em]">
+          {origin?.index ?? '01'}
+          <span aria-hidden="true" className="text-acid/50">
+            /
+          </span>
+          {total}
         </span>
         <span aria-hidden="true" className="text-faint">
           ·
@@ -64,38 +84,45 @@ function HeroCopy({ children }: { children?: React.ReactNode }) {
         <span>A living genealogy for software</span>
       </p>
 
-      <h1 id="hero-title" className="text-hero">
+      {/* `text-hero` topped out at 92px, which put the widest line at x 537 —
+          a headline occupying a third of a 1600px frame, with the specimen
+          starting 770px later. `text-display` is 128px: the line reaches x 724
+          and the headline finally has the size the page is asking for. */}
+      <h1 id="hero-title" className="text-display">
         What if software
         <br />
         <span className="text-emphasis">had DNA?</span>
       </h1>
 
-      {/* The setup is prose, so it takes the reading serif at lead size. It
-          used to share `text-title` with the thesis below, which put two
-          identical 32px lines on either side of a 16px paragraph and left the
-          column with no direction. Now the ramp descends to the description
-          and then climbs once, to the thesis. */}
-      <p className="text-lead text-text-soft mt-5 max-w-[34ch] text-balance">
+      {/* The deck is short and it is the sentence that earns the scroll, so it
+          gets `text-title` (32px) rather than sharing the body's 20px. At 20px
+          it read as a third paragraph instead of the turn in the argument. */}
+      <p className="text-title text-text mt-8 max-w-[22ch] text-balance">
         Humans have family trees.
         <br />
-        Why shouldn&rsquo;t machines?
+        <span className="text-emphasis">Why shouldn&rsquo;t machines?</span>
       </p>
 
-      <p className="text-text-soft mt-4 max-w-[600px] leading-[1.75]">
-        CodeAncestry creates a living genealogy for software, AI agents, and machines — tracking
-        the capabilities they inherit, the mutations they acquire, and the generations that
-        shaped them.
+      {/* 52ch, not 58ch. At 1280 the body was the widest thing in the column —
+          wider than the headline — so it, not the H1, decided where the copy
+          ended and how much room the specimen had. */}
+      <p className="text-lead text-text-soft mt-7 max-w-[52ch] leading-[1.7]">
+        CodeAncestry creates a living genealogy for software, AI agents, and machines &mdash;
+        tracking the capabilities they inherit, the mutations they acquire, and the generations
+        that shaped them.
       </p>
 
-      {/* The thesis. `text-headline` is the one size between the H1 and the
-          body that still reads as a statement rather than a caption. */}
-      <p className="text-headline mt-8 max-w-[22ch] text-balance">
-        Every machine has ancestors.
+      {/* The thesis used to be `text-headline` (40-64px). It competed with the
+          H1 instead of supporting it. At `text-title` (24-32px) it reads as
+          a quiet conclusion, weighted by `font-emphasis` to mark it as the
+          sentence the rest has been building to. */}
+      <p className="text-title text-text mt-10 max-w-[28ch] text-balance">
+        <span className="text-emphasis">Every machine has ancestors.</span>
       </p>
 
       {children}
 
-      <div className="mt-6 flex flex-wrap items-center gap-3">
+      <div className="mt-10 flex flex-wrap items-center gap-3">
         <ButtonLink href="/lineage" size="lg">
           Explore the Lineage
         </ButtonLink>
@@ -104,11 +131,12 @@ function HeroCopy({ children }: { children?: React.ReactNode }) {
         </ButtonLink>
       </div>
 
-      <p className="text-muted text-micro mt-6 font-mono uppercase">
-        Git tracks code. CodeAncestry tracks evolution.
-      </p>
+      {/* `Git tracks code. CodeAncestry tracks evolution.` is dropped.
+          It repeated the page's title sentence in eleven pixels at the bottom
+          of the column, where it sat as a small voice the reader had to lean
+          in to hear. The lead now carries that idea at body weight. */}
 
-      <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2">
+      <div className="mt-7 flex flex-wrap items-center gap-x-4 gap-y-2">
         <WhatAmILookingAt />
       </div>
     </div>
@@ -129,7 +157,7 @@ function WhatAmILookingAt() {
         onClick={handleToggle}
         aria-expanded={open}
         aria-controls={panelId}
-        className="border-line text-muted hover:border-line-strong hover:text-text text-micro inline-flex items-center gap-2 rounded-xs border px-3.5 py-2 font-mono uppercase transition-colors"
+        className="border-line text-text hover:border-line-strong hover:text-text inline-flex items-center gap-2 rounded-xs border px-4 py-2.5 font-mono text-[13px] tracking-[0.08em] uppercase transition-colors"
       >
         <span aria-hidden="true" className="text-acid">
           ?
@@ -142,18 +170,18 @@ function WhatAmILookingAt() {
           id={panelId}
           className="border-line bg-panel-2 order-last w-full max-w-[560px] rounded-xs border p-4"
         >
-          <ol className="text-text-soft space-y-2 text-[14px] leading-relaxed">
+          <ol className="text-text-soft space-y-2.5 text-[15px] leading-[1.6]">
             <li>
-              <span className="text-acid text-micro mr-2 font-mono">01</span>
+              <span className="text-acid mr-3 font-mono text-[13px] tracking-[0.06em]">01</span>
               Each strand is one software project. Each dot on it is one thing that project can
               do.
             </li>
             <li>
-              <span className="text-acid text-micro mr-2 font-mono">02</span>
+              <span className="text-acid mr-3 font-mono text-[13px] tracking-[0.06em]">02</span>
               Strands branching downward are projects that came from the one above them.
             </li>
             <li>
-              <span className="text-acid text-micro mr-2 font-mono">03</span>
+              <span className="text-acid mr-3 font-mono text-[13px] tracking-[0.06em]">03</span>
               The violet dot travelling upward is an improvement a descendant found, being
               offered back to its ancestors.
             </li>
@@ -267,7 +295,7 @@ function StaticHero() {
       </div>
 
       <div className="shell-wide relative pt-[168px] pb-24">
-        <HeroCopy />
+        <HeroCopy width="narrower" />
 
         <ol className="mt-14 grid max-w-[1080px] gap-x-12 gap-y-10 sm:grid-cols-2 xl:max-w-[640px] xl:grid-cols-1">
           {BEATS.slice(1).map((beat) => (
@@ -283,7 +311,7 @@ function StaticHero() {
           <HeroFallback />
         </div>
 
-        <p className="text-muted text-micro mt-10 font-mono uppercase">
+        <p className="text-text-soft mt-10 font-mono text-[13px] tracking-[0.14em] uppercase">
           Static view · reduced motion
         </p>
       </div>
@@ -311,7 +339,7 @@ function AnimatedHero() {
               let it stretch across all 1480px of the shell and run out under
               the specimen, making it the one line in the hero that does not
               belong to the column it is the foot of. */}
-          <p className="text-muted text-micro mt-10 max-w-[720px] font-mono uppercase">
+          <p className="text-text-soft mt-12 max-w-[720px] font-mono text-[13px] tracking-[0.14em] uppercase">
             Scroll to descend the lineage
           </p>
         </div>
