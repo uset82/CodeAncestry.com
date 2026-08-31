@@ -34,11 +34,34 @@ function HeroCopy({ children }: { children?: React.ReactNode }) {
     { scope: copy, dependencies: [reducedMotion] },
   );
 
+  const total = String(BEATS.length).padStart(2, '0');
+  const origin = BEATS[0];
+
   return (
-    <div ref={copy} className="max-w-[720px]">
-      <p className="text-muted mb-6 flex items-center gap-3 font-mono text-micro uppercase">
-        <span aria-hidden="true" className="bg-acid h-px w-8 shrink-0" />
-        A living genealogy for software
+    <div ref={copy} className="lg:border-line/40 max-w-[720px] lg:border-r lg:pr-10">
+      {/* The beat counter is the seam. The page is a twelve-position sequence
+          and the helix is standing at position one, so naming it here is what
+          tells the reader the copy and the specimen are the same object. The
+          acid rule reaches right, toward the helix it belongs to.
+          It is `text-text-soft`, not `text-muted`. It sits at the top of the
+          column where the specimen's upper coils pass behind it, which put
+          `muted` at 4.64:1 on the composited frame — the lowest ratio on the
+          page and only 0.14 above the AA floor. Size and face already carry
+          the hierarchy against a 128px serif H1, so within the small mono
+          lines colour is the legibility lever, not the rank. */}
+      <p className="text-text-soft text-micro mb-6 flex flex-wrap items-center gap-x-3 gap-y-2 font-mono uppercase">
+        <span className="text-acid flex items-center gap-2">
+          <span aria-hidden="true" className="bg-acid h-px w-16 shrink-0" />
+          {origin?.index ?? '01'} / {total}
+        </span>
+        <span aria-hidden="true" className="text-faint">
+          ·
+        </span>
+        <span>{origin?.id ?? 'project'}</span>
+        <span aria-hidden="true" className="text-faint">
+          ·
+        </span>
+        <span>A living genealogy for software</span>
       </p>
 
       <h1 id="hero-title" className="text-hero">
@@ -47,18 +70,28 @@ function HeroCopy({ children }: { children?: React.ReactNode }) {
         <span className="text-emphasis">had DNA?</span>
       </h1>
 
-      <p className="text-title mt-5 max-w-[34ch] text-balance">
+      {/* The setup is prose, so it takes the reading serif at lead size. It
+          used to share `text-title` with the thesis below, which put two
+          identical 32px lines on either side of a 16px paragraph and left the
+          column with no direction. Now the ramp descends to the description
+          and then climbs once, to the thesis. */}
+      <p className="text-lead text-text-soft mt-5 max-w-[34ch] text-balance">
         Humans have family trees.
         <br />
         Why shouldn&rsquo;t machines?
       </p>
 
-      <p className="text-text-soft mt-4 max-w-[540px] leading-relaxed">
-        CodeAncestry creates a living genealogy for software, AI agents, and machines — tracking the
-        capabilities they inherit, the mutations they acquire, and the generations that shaped them.
+      <p className="text-text-soft mt-4 max-w-[600px] leading-[1.75]">
+        CodeAncestry creates a living genealogy for software, AI agents, and machines — tracking
+        the capabilities they inherit, the mutations they acquire, and the generations that
+        shaped them.
       </p>
 
-      <p className="text-title mt-4">Every machine has ancestors.</p>
+      {/* The thesis. `text-headline` is the one size between the H1 and the
+          body that still reads as a statement rather than a caption. */}
+      <p className="text-headline mt-8 max-w-[22ch] text-balance">
+        Every machine has ancestors.
+      </p>
 
       {children}
 
@@ -71,7 +104,7 @@ function HeroCopy({ children }: { children?: React.ReactNode }) {
         </ButtonLink>
       </div>
 
-      <p className="text-muted mt-5 font-mono text-nano uppercase">
+      <p className="text-muted text-micro mt-6 font-mono uppercase">
         Git tracks code. CodeAncestry tracks evolution.
       </p>
 
@@ -96,7 +129,7 @@ function WhatAmILookingAt() {
         onClick={handleToggle}
         aria-expanded={open}
         aria-controls={panelId}
-        className="border-line text-muted hover:border-line-strong hover:text-text inline-flex items-center gap-2 rounded-xs border px-3 py-1.5 font-mono text-nano uppercase transition-colors"
+        className="border-line text-muted hover:border-line-strong hover:text-text text-micro inline-flex items-center gap-2 rounded-xs border px-3.5 py-2 font-mono uppercase transition-colors"
       >
         <span aria-hidden="true" className="text-acid">
           ?
@@ -111,17 +144,18 @@ function WhatAmILookingAt() {
         >
           <ol className="text-text-soft space-y-2 text-[14px] leading-relaxed">
             <li>
-              <span className="text-acid mr-2 font-mono text-nano">01</span>
-              Each strand is one software project. Each dot on it is one thing that project can do.
+              <span className="text-acid text-micro mr-2 font-mono">01</span>
+              Each strand is one software project. Each dot on it is one thing that project can
+              do.
             </li>
             <li>
-              <span className="text-acid mr-2 font-mono text-nano">02</span>
+              <span className="text-acid text-micro mr-2 font-mono">02</span>
               Strands branching downward are projects that came from the one above them.
             </li>
             <li>
-              <span className="text-acid mr-2 font-mono text-nano">03</span>
-              The violet dot travelling upward is an improvement a descendant found, being offered
-              back to its ancestors.
+              <span className="text-acid text-micro mr-2 font-mono">03</span>
+              The violet dot travelling upward is an improvement a descendant found, being
+              offered back to its ancestors.
             </li>
           </ol>
         </div>
@@ -140,7 +174,7 @@ function BeatBody({
   return (
     <>
       {!hideIndex && (
-        <p className="text-muted font-mono text-micro uppercase">
+        <p className="text-muted text-micro font-mono uppercase">
           {index} / {String(BEATS.length).padStart(2, '0')}
         </p>
       )}
@@ -166,8 +200,16 @@ function BeatBody({
  * universal gene labels disappear from the page. `docs/design-system.md` says
  * "3D must not hold unique information", so this is the text equivalent.
  *
- * The voice matches `LocusLabels` in `HelixScene.tsx`: `text-acid` accession,
- * `text-faint` short label, `font-mono text-[9px] tracking-[0.14em] uppercase`.
+ * It deliberately does NOT match `LocusLabels` in `HelixScene.tsx` in size.
+ * The canvas chips stay at 9px because they are annotations pinned to a
+ * specimen — growing them would let the labels compete with the thing they
+ * label. This ledger is the readable copy, so it sits at `text-micro` (11px):
+ * two steps of hierarchy, 11 / 15 / 11, instead of the chips' flat 9.
+ *
+ * The right column is `text-muted`, not `text-faint`. `faint` is a void token
+ * — 4.78:1 measured against `#07090d` — and this figure sits on `bg-panel-2`
+ * (`#111722`), where it drops under AA.
+ *
  * `LOCUS_LABELS.filter(l => l.strand === 'keylit')` is the same set beat 1
  * lights via `geneFocus: 1` — the section the headline refers to.
  */
@@ -178,7 +220,7 @@ function GeneReadout() {
       aria-label="Six capability genes at generation 0"
       className="border-line bg-panel-2 mt-8 max-w-[560px] rounded-xs border p-5"
     >
-      <figcaption className="text-faint mb-3 font-mono text-nano uppercase">
+      <figcaption className="text-muted text-micro mb-3 font-mono uppercase">
         Generation 0 · capability genes
       </figcaption>
       <ul className="border-line/60 border-t">
@@ -186,17 +228,13 @@ function GeneReadout() {
           <li
             key={locus.accession}
             data-locus={locus.accession}
-            className="border-line/60 flex items-baseline justify-between gap-4 border-b py-2 last:border-b-0"
+            className="border-line/60 flex items-baseline justify-between gap-4 border-b py-2.5 last:border-b-0"
           >
             <div className="flex items-baseline gap-3">
-              <span className="text-acid font-mono text-[9px] tracking-[0.14em] uppercase">
-                {locus.accession}
-              </span>
-              <span className="text-text text-[14px]">{locus.gene}</span>
+              <span className="text-acid text-micro font-mono">{locus.accession}</span>
+              <span className="text-text text-[15px]">{locus.gene}</span>
             </div>
-            <span className="text-faint font-mono text-[10px] tracking-[0.08em] uppercase">
-              {locus.short}
-            </span>
+            <span className="text-muted text-micro font-mono">{locus.short}</span>
           </li>
         ))}
       </ul>
@@ -245,7 +283,7 @@ function StaticHero() {
           <HeroFallback />
         </div>
 
-        <p className="text-muted mt-10 font-mono text-nano uppercase">
+        <p className="text-muted text-micro mt-10 font-mono uppercase">
           Static view · reduced motion
         </p>
       </div>
@@ -268,7 +306,12 @@ function AnimatedHero() {
       >
         <div className="shell-wide relative z-10 flex min-h-svh flex-col justify-center pt-24 pb-16">
           <HeroCopy />
-          <p className="text-muted mt-10 font-mono text-nano uppercase">
+          {/* The cue is the last line of the copy column, so it takes the
+              column's width. It used to be a bare sibling of `HeroCopy`, which
+              let it stretch across all 1480px of the shell and run out under
+              the specimen, making it the one line in the hero that does not
+              belong to the column it is the foot of. */}
+          <p className="text-muted text-micro mt-10 max-w-[720px] font-mono uppercase">
             Scroll to descend the lineage
           </p>
         </div>

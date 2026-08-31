@@ -230,10 +230,34 @@ const probeContrast = async (beat, png) => {
       if (seen.has(key)) continue;
       seen.add(key);
 
-      const x = Math.max(0, Math.floor(box.left));
-      const y = Math.max(0, Math.floor(box.top));
-      const w = Math.max(1, Math.min(c.width - x, Math.ceil(box.width)));
-      const h = Math.max(1, Math.min(c.height - y, Math.ceil(box.height)));
+      /* Measure the text run, not the block box.
+       *
+       * A block element stretches to its container whether or not its text
+       * fills it. Sampling the element's rect therefore averages in pixels
+       * beside the line and charges the text for them. The hero's scroll cue
+       * was the victim: a 1480px box around a 245px line reached under the
+       * specimen, and 935 bright helix pixels at x 1352-1540 — over 1000px
+       * from the last glyph at x 305 — dragged its score to 4.07:1 while the
+       * pixels actually behind the ink sat at 6.34:1.
+       *
+       * Range.getClientRects() gives the rects of the rendered glyph runs,
+       * so the sample is the pixels behind the ink and nothing else. */
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const runs = [...range.getClientRects()].filter((r) => r.width >= 1 && r.height >= 1);
+      const runBox = runs.length
+        ? {
+            left: Math.min(...runs.map((r) => r.left)),
+            top: Math.min(...runs.map((r) => r.top)),
+            right: Math.max(...runs.map((r) => r.right)),
+            bottom: Math.max(...runs.map((r) => r.bottom)),
+          }
+        : box;
+
+      const x = Math.max(0, Math.floor(runBox.left));
+      const y = Math.max(0, Math.floor(runBox.top));
+      const w = Math.max(1, Math.min(c.width - x, Math.ceil(runBox.right - x)));
+      const h = Math.max(1, Math.min(c.height - y, Math.ceil(runBox.bottom - y)));
       const pix = ctx.getImageData(x, y, w, h).data;
       const rgb = parseRgb(style.color);
       const textL = lum(rgb);
