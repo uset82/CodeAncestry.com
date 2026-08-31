@@ -8,12 +8,14 @@ import {
   FogExp2,
   MeshPhysicalMaterial,
   MeshStandardMaterial,
+  Vector3,
   type DirectionalLight,
   type HemisphereLight,
   type PointLight,
 } from 'three';
 import { climaxAmount, daylight, holdProgress, type BeatState } from './beats';
 import { patchGrowingMaterial } from './organic';
+import { STRANDS } from './strands';
 
 /** Token-locked specimen palette. Same hexes as `app/globals.css`. */
 export const HELIX = {
@@ -32,6 +34,77 @@ export const HELIX = {
   rose: new Color('#ff5c7a'),
 } as const;
 
+const KEY_LIGHT = new Vector3(4.4, 6.6, 3.6);
+
+/**
+ * Ortho frustum that just covers the grown family AABB from the key light.
+ * The old ±8 / −12 box spent most of its 1024² map on empty void, so the
+ * strand-on-rung contacts never got enough texels to read.
+ */
+function familyShadowFrustum() {
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+  let minZ = Infinity;
+  let maxZ = -Infinity;
+  for (const spec of STRANDS) {
+    const pad = spec.radius + 0.2;
+    for (const point of [spec.start, spec.end]) {
+      minX = Math.min(minX, point.x - pad);
+      maxX = Math.max(maxX, point.x + pad);
+      minY = Math.min(minY, point.y - pad);
+      maxY = Math.max(maxY, point.y + pad);
+      minZ = Math.min(minZ, point.z - pad);
+      maxZ = Math.max(maxZ, point.z + pad);
+    }
+  }
+
+  const center = new Vector3((minX + maxX) / 2, (minY + maxY) / 2, (minZ + maxZ) / 2);
+  const forward = center.clone().sub(KEY_LIGHT).normalize();
+  const up = new Vector3(0, 1, 0);
+  if (Math.abs(forward.y) > 0.92) up.set(0, 0, 1);
+  const right = new Vector3().crossVectors(forward, up).normalize();
+  up.crossVectors(right, forward).normalize();
+
+  let minR = Infinity;
+  let maxR = -Infinity;
+  let minU = Infinity;
+  let maxU = -Infinity;
+  let minD = Infinity;
+  let maxD = -Infinity;
+  const world = new Vector3();
+  for (const x of [minX, maxX]) {
+    for (const y of [minY, maxY]) {
+      for (const z of [minZ, maxZ]) {
+        world.set(x, y, z).sub(KEY_LIGHT);
+        const d = world.dot(forward);
+        const r = world.dot(right);
+        const u = world.dot(up);
+        minR = Math.min(minR, r);
+        maxR = Math.max(maxR, r);
+        minU = Math.min(minU, u);
+        maxU = Math.max(maxU, u);
+        minD = Math.min(minD, d);
+        maxD = Math.max(maxD, d);
+      }
+    }
+  }
+
+  const slack = 0.4;
+  return {
+    left: minR - slack,
+    right: maxR + slack,
+    bottom: minU - slack,
+    top: maxU + slack,
+    near: Math.max(0.4, minD - slack),
+    far: maxD + slack,
+    target: center,
+  };
+}
+
+const SHADOW_FRUSTUM = familyShadowFrustum();
+
 /**
  * Shared material kit — one role, many meshes. Named the way a Three.js
  * editor scene graph would name them, so the helix reads as a lit specimen
@@ -44,7 +117,7 @@ export function createHelixMaterials() {
   const backboneOrigin = new MeshPhysicalMaterial({
     color: HELIX.acidDim,
     emissive: HELIX.acid,
-    emissiveIntensity: 0.55,
+    emissiveIntensity: 0.22,
     roughness: 0.34,
     metalness: 0.12,
     clearcoat: 0.22,
@@ -61,7 +134,7 @@ export function createHelixMaterials() {
   const backboneMutated = new MeshPhysicalMaterial({
     color: HELIX.violet,
     emissive: HELIX.violet,
-    emissiveIntensity: 0.62,
+    emissiveIntensity: 0.25,
     roughness: 0.36,
     metalness: 0.1,
     sheen: 0.4,
@@ -72,7 +145,7 @@ export function createHelixMaterials() {
   const backboneDescendant = new MeshPhysicalMaterial({
     color: HELIX.cyanDim,
     emissive: HELIX.cyan,
-    emissiveIntensity: 0.42,
+    emissiveIntensity: 0.17,
     roughness: 0.4,
     metalness: 0.08,
     sheen: 0.4,
@@ -92,7 +165,7 @@ export function createHelixMaterials() {
     rung: new MeshStandardMaterial({
       color: HELIX.rung,
       emissive: HELIX.rungGlow,
-      emissiveIntensity: 0.5,
+      emissiveIntensity: 0.2,
       roughness: 0.5,
       metalness: 0.2,
     }),
@@ -225,7 +298,7 @@ function GroundRig({ state }: { state: React.RefObject<BeatState> }) {
        of these objects is to be written to. Both are torn down in the layout
        effect above. */
     fog.density = 0.022 - day * 0.0125 - hold * 0.006;
-    scene.environmentIntensity = 0.34 + day * 0.28 + hold * 0.55;
+    scene.environmentIntensity = 0.22 + day * 0.2 + hold * 0.4;
     /* eslint-enable react-hooks/immutability */
   });
 
@@ -279,19 +352,25 @@ export function StudioRig({
       <hemisphereLight ref={sky} args={['#63e7ff', '#07090d', 0.55]} />
       <directionalLight
         ref={key}
-        position={[4.4, 6.6, 3.6]}
+        position={[KEY_LIGHT.x, KEY_LIGHT.y, KEY_LIGHT.z]}
         intensity={1.55}
         color="#f4ffe8"
         castShadow={shadows}
         shadow-mapSize={[1024, 1024]}
         shadow-bias={-0.00035}
-        shadow-camera-near={1}
-        shadow-camera-far={28}
-        shadow-camera-left={-8}
-        shadow-camera-right={8}
-        shadow-camera-top={6}
-        shadow-camera-bottom={-12}
-      />
+        shadow-normalBias={0.02}
+        shadow-camera-near={SHADOW_FRUSTUM.near}
+        shadow-camera-far={SHADOW_FRUSTUM.far}
+        shadow-camera-left={SHADOW_FRUSTUM.left}
+        shadow-camera-right={SHADOW_FRUSTUM.right}
+        shadow-camera-top={SHADOW_FRUSTUM.top}
+        shadow-camera-bottom={SHADOW_FRUSTUM.bottom}
+      >
+        <object3D
+          attach="target"
+          position={[SHADOW_FRUSTUM.target.x, SHADOW_FRUSTUM.target.y, SHADOW_FRUSTUM.target.z]}
+        />
+      </directionalLight>
       <directionalLight ref={rim} position={[-5.4, 1.1, -3.2]} intensity={0.7} color="#63e7ff" />
       <pointLight
         ref={acid}
