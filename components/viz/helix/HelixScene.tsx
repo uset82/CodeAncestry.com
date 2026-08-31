@@ -29,6 +29,7 @@ import {
   axisPointAtInto,
   backbonePointAtInto,
   GROW_WIDTH,
+  RUNG_RADIUS,
   growthAlong,
   growthJitterAt,
   pathTaper,
@@ -838,7 +839,17 @@ function Rungs({ state, materials, tier }: Pick<Props, 'state' | 'materials' | '
          needle-thin backbone is the floating dash at every terminus.
          Converge still collapses the ledger — this is a layout, not a vine. */
       const taper = pathTaper(slot.t, eased, startTaperWidth(slot.spec.generation));
-      scale.set(1, railSpan * breathe * front * taper * (1 - current.converge * 0.82), 1);
+      /* `breathe` belongs on the thickness, not the length.
+
+         A rung's length is fully determined by geometry: it has to span the two
+         rails plus the bury that sinks each cap into them. That bury is
+         `RUNG_BURY * tubeRadius` — 5.89% of the span — so the old +/-6% length
+         pulse was larger than the entire margin it was eating. At the bottom of
+         the cycle the tip stopped 0.8px short of the rail centreline; at the
+         top it punched 7.8px out through the far wall of the backbone.
+
+         Breathing the thickness reads the same and cannot detach anything. */
+      scale.set(breathe, railSpan * front * taper * (1 - current.converge * 0.82), breathe);
 
       matrix.compose(position, quaternion, scale);
       node.setMatrixAt(i, matrix);
@@ -856,7 +867,7 @@ function Rungs({ state, materials, tier }: Pick<Props, 'state' | 'materials' | '
       castShadow
       receiveShadow
     >
-      <cylinderGeometry args={[0.02, 0.02, 1, 8]} />
+      <cylinderGeometry args={[RUNG_RADIUS, RUNG_RADIUS, 1, 8]} />
     </instancedMesh>
   );
 }

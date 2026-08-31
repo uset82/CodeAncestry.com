@@ -289,6 +289,15 @@ export const GROWTH_NOISE_DONE = 1;
 export const TUBE_CHILD_START = 0.06;
 export const TUBE_GROW_TAPER = 0.045;
 
+/**
+ * Radius of a base-pair cylinder.
+ *
+ * Exported because the shadow bias has to be sized against the thinnest
+ * caster in the scene, and that is the rung, not the backbone — a bias taken
+ * from the backbone's radius is twice what a rung can survive.
+ */
+export const RUNG_RADIUS = 0.02;
+
 export function startTaperWidth(generation: number): number {
   return generation === 0 ? TUBE_END_TAPER : TUBE_CHILD_START;
 }
@@ -357,7 +366,13 @@ export function growthAlong(
   /* `overshoot` is 0 for rungs and gene loci — the 1.08 term used to cancel
      the trail and hang them past the tube. Only a finished end cap (t = 1,
      grow = 1) passes GROW_WIDTH, which is the bug this term originally fixed. */
-  return Math.min(1, Math.max(0, (eased * (1 + overshoot) - t) / width));
+  const front = Math.min(1, Math.max(0, (eased * (1 + overshoot) - t) / width));
+  /* A finished strand is finished. The ramp needs `eased > t + width`, and the
+     last rung slot sits at t = 0.9265 with `width` 0.08 — so it needed
+     `eased > 1.0065`, which never happens. The final rung on every strand sat
+     pinned at 0.919 of its length for good, retracting its tip by about 14px
+     at the hero's scale. Slot 23 was the worst case on every strand measured. */
+  return eased >= 1 ? 1 : front;
 }
 
 /** Centre-line position at parameter t. Writes into `target` — no allocation. */

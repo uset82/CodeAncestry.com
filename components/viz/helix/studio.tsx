@@ -13,9 +13,15 @@ import {
   type HemisphereLight,
   type PointLight,
 } from 'three';
-import { climaxAmount, daylight, holdProgress, type BeatState } from './beats';
+import {
+  climaxAmount,
+  daylight,
+  holdProgress,
+  pixelsPerUnit,
+  type BeatState,
+} from './beats';
 import { patchGrowingMaterial } from './organic';
-import { STRANDS } from './strands';
+import { RUNG_RADIUS, STRANDS, strandEased } from './strands';
 
 /** Token-locked specimen palette. Same hexes as `app/globals.css`. */
 export const HELIX = {
@@ -36,74 +42,207 @@ export const HELIX = {
 
 const KEY_LIGHT = new Vector3(4.4, 6.6, 3.6);
 
+type ShadowBox = {
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+  minZ: number;
+  maxZ: number;
+};
+
+type ShadowProjection = {
+  minR: number;
+  maxR: number;
+  minU: number;
+  maxU: number;
+  minD: number;
+  maxD: number;
+};
+
 /**
- * Ortho frustum that just covers the grown family AABB from the key light.
- * The old ±8 / −12 box spent most of its 1024² map on empty void, so the
- * strand-on-rung contacts never got enough texels to read.
+ * Strands count as present at the same threshold `grownFamilyY` already uses,
+ * so the shadow box and the camera can never disagree about what exists.
  */
-function familyShadowFrustum() {
-  let minX = Infinity;
-  let maxX = -Infinity;
-  let minY = Infinity;
-  let maxY = -Infinity;
-  let minZ = Infinity;
-  let maxZ = -Infinity;
+const GROWN_EPSILON = 0.08;
+const SHADOW_SLACK = 0.4;
+
+function emptyBox(): ShadowBox {
+  return {
+    minX: Infinity,
+    maxX: -Infinity,
+    minY: Infinity,
+    maxY: -Infinity,
+    minZ: Infinity,
+    maxZ: -Infinity,
+  };
+}
+
+/** Bounds of the whole lineage, the way the old fitted frustum measured it. */
+function familyBounds(): ShadowBox {
+  const out = emptyBox();
   for (const spec of STRANDS) {
     const pad = spec.radius + 0.2;
     for (const point of [spec.start, spec.end]) {
-      minX = Math.min(minX, point.x - pad);
-      maxX = Math.max(maxX, point.x + pad);
-      minY = Math.min(minY, point.y - pad);
-      maxY = Math.max(maxY, point.y + pad);
-      minZ = Math.min(minZ, point.z - pad);
-      maxZ = Math.max(maxZ, point.z + pad);
+      out.minX = Math.min(out.minX, point.x - pad);
+      out.maxX = Math.max(out.maxX, point.x + pad);
+      out.minY = Math.min(out.minY, point.y - pad);
+      out.maxY = Math.max(out.maxY, point.y + pad);
+      out.minZ = Math.min(out.minZ, point.z - pad);
+      out.maxZ = Math.max(out.maxZ, point.z + pad);
     }
   }
+  return out;
+}
 
-  const center = new Vector3((minX + maxX) / 2, (minY + maxY) / 2, (minZ + maxZ) / 2);
+const FAMILY_BOX = familyBounds();
+
+/**
+ * The light basis, fixed for the whole scroll. Only the ortho extents move.
+ *
+ * Re-aiming the light would mean moving its `target`, and R3F attaches that
+ * outside the scene graph — its world matrix then only refreshes when
+ * something asks it to, while the shadow camera reads it raw every frame. A
+ * fixed basis with asymmetric extents gets the same tight fit with none of
+ * that. `right` and `up` are both perpendicular to `forward`, and `forward` is
+ * the light-to-centre line, so the frustum origin projects to zero on both and
+ * needs no offset.
+ */
+const SHADOW_BASIS = (() => {
+  const center = new Vector3(
+    (FAMILY_BOX.minX + FAMILY_BOX.maxX) / 2,
+    (FAMILY_BOX.minY + FAMILY_BOX.maxY) / 2,
+    (FAMILY_BOX.minZ + FAMILY_BOX.maxZ) / 2,
+  );
   const forward = center.clone().sub(KEY_LIGHT).normalize();
   const up = new Vector3(0, 1, 0);
   if (Math.abs(forward.y) > 0.92) up.set(0, 0, 1);
   const right = new Vector3().crossVectors(forward, up).normalize();
   up.crossVectors(right, forward).normalize();
+  return { center, forward, right, up };
+})();
 
-  let minR = Infinity;
-  let maxR = -Infinity;
-  let minU = Infinity;
-  let maxU = -Infinity;
-  let minD = Infinity;
-  let maxD = -Infinity;
-  const world = new Vector3();
-  for (const x of [minX, maxX]) {
-    for (const y of [minY, maxY]) {
-      for (const z of [minZ, maxZ]) {
-        world.set(x, y, z).sub(KEY_LIGHT);
-        const d = world.dot(forward);
-        const r = world.dot(right);
-        const u = world.dot(up);
-        minR = Math.min(minR, r);
-        maxR = Math.max(maxR, r);
-        minU = Math.min(minU, u);
-        maxU = Math.max(maxU, u);
-        minD = Math.min(minD, d);
-        maxD = Math.max(maxD, d);
+const GROWN_BOX: ShadowBox = emptyBox();
+const SHADOW_PROJECTION: ShadowProjection = {
+  minR: 0,
+  maxR: 0,
+  minU: 0,
+  maxU: 0,
+  minD: 0,
+  maxD: 0,
+};
+const SHADOW_POINT = new Vector3();
+
+/**
+ * Bounds of the strands that exist at `generations`, grown ends included.
+ *
+ * A strand mid-reveal only reaches part of the way along its own axis, so a
+ * box taken from `spec.end` would overshoot by the unrevealed remainder — the
+ * same reason `grownFamilyY` interpolates instead of jumping.
+ */
+function grownBoxInto(generations: number, out: ShadowBox) {
+  Object.assign(out, emptyBox());
+  for (const spec of STRANDS) {
+    const grow = strandEased(generations, spec.generation);
+    if (grow < GROWN_EPSILON) continue;
+    const pad = spec.radius + 0.2;
+    const ex = spec.start.x + (spec.end.x - spec.start.x) * grow;
+    const ey = spec.start.y + (spec.end.y - spec.start.y) * grow;
+    const ez = spec.start.z + (spec.end.z - spec.start.z) * grow;
+    out.minX = Math.min(out.minX, spec.start.x - pad, ex - pad);
+    out.maxX = Math.max(out.maxX, spec.start.x + pad, ex + pad);
+    out.minY = Math.min(out.minY, spec.start.y - pad, ey - pad);
+    out.maxY = Math.max(out.maxY, spec.start.y + pad, ey + pad);
+    out.minZ = Math.min(out.minZ, spec.start.z - pad, ez - pad);
+    out.maxZ = Math.max(out.maxZ, spec.start.z + pad, ez + pad);
+  }
+  if (out.minX > out.maxX) Object.assign(out, FAMILY_BOX);
+}
+
+/** Box corners onto the fixed light basis. Allocation-free; runs every frame. */
+function projectBoxInto(box: ShadowBox, out: ShadowProjection): ShadowProjection {
+  const { forward, right, up } = SHADOW_BASIS;
+  out.minR = Infinity;
+  out.maxR = -Infinity;
+  out.minU = Infinity;
+  out.maxU = -Infinity;
+  out.minD = Infinity;
+  out.maxD = -Infinity;
+  for (const x of [box.minX, box.maxX]) {
+    for (const y of [box.minY, box.maxY]) {
+      for (const z of [box.minZ, box.maxZ]) {
+        SHADOW_POINT.set(x, y, z).sub(KEY_LIGHT);
+        const r = SHADOW_POINT.dot(right);
+        const u = SHADOW_POINT.dot(up);
+        const d = SHADOW_POINT.dot(forward);
+        if (r < out.minR) out.minR = r;
+        if (r > out.maxR) out.maxR = r;
+        if (u < out.minU) out.minU = u;
+        if (u > out.maxU) out.maxU = u;
+        if (d < out.minD) out.minD = d;
+        if (d > out.maxD) out.maxD = d;
       }
     }
   }
-
-  const slack = 0.4;
-  return {
-    left: minR - slack,
-    right: maxR + slack,
-    bottom: minU - slack,
-    top: maxU + slack,
-    near: Math.max(0.4, minD - slack),
-    far: maxD + slack,
-    target: center,
-  };
+  return out;
 }
 
-const SHADOW_FRUSTUM = familyShadowFrustum();
+/**
+ * How far the shadow lookup is pushed along the surface normal, in *screen
+ * pixels* — held constant instead of constant in world units.
+ *
+ * The old flat 0.02 was added to kill acne from the tighter frustum, but it is
+ * a world-space offset, so the 2.5x hero zoom made it 2.5x worse on screen.
+ * Worse, 0.02 is exactly `RUNG_RADIUS`: the rungs — the thinnest casters in
+ * the scene — had their lookup lifted a full radius clear of the surface,
+ * which is why they read as floating rather than joined.
+ */
+const SHADOW_BIAS_PX = 2;
+
+function normalBiasFor(ppu: number): number {
+  return Math.min(0.25 * RUNG_RADIUS, Math.max(0.0015, SHADOW_BIAS_PX / ppu));
+}
+
+/**
+ * Refit the key light's ortho box to whatever is on screen this beat.
+ *
+ * Beats 0 to 2 draw one trunk and the map was sized for eight branches, so
+ * 2.87x of its 1024² was spent on empty void at exactly the beats the hero is
+ * zoomed hardest into. Beat 0's texel drops from 6.91px to 2.41px.
+ */
+function aimShadow(light: DirectionalLight, generations: number, ppu: number) {
+  grownBoxInto(generations, GROWN_BOX);
+  const p = projectBoxInto(GROWN_BOX, SHADOW_PROJECTION);
+  const cam = light.shadow.camera;
+  cam.left = p.minR - SHADOW_SLACK;
+  cam.right = p.maxR + SHADOW_SLACK;
+  cam.bottom = p.minU - SHADOW_SLACK;
+  cam.top = p.maxU + SHADOW_SLACK;
+  cam.near = Math.max(0.4, p.minD - SHADOW_SLACK);
+  cam.far = p.maxD + SHADOW_SLACK;
+  cam.updateProjectionMatrix();
+  light.shadow.normalBias = normalBiasFor(ppu);
+}
+
+/** Boot fit, before the first frame tightens it. Covers the whole family. */
+const SHADOW_FRUSTUM = (() => {
+  const p = projectBoxInto(FAMILY_BOX, {
+    minR: 0,
+    maxR: 0,
+    minU: 0,
+    maxU: 0,
+    minD: 0,
+    maxD: 0,
+  });
+  return {
+    left: p.minR - SHADOW_SLACK,
+    right: p.maxR + SHADOW_SLACK,
+    bottom: p.minU - SHADOW_SLACK,
+    top: p.maxU + SHADOW_SLACK,
+    near: Math.max(0.4, p.minD - SHADOW_SLACK),
+    far: p.maxD + SHADOW_SLACK,
+  };
+})();
 
 /**
  * Shared material kit — one role, many meshes. Named the way a Three.js
@@ -343,6 +482,13 @@ export function StudioRig({
       sky.current.groundColor.copy(VOID);
     }
     if (rim.current) rim.current.intensity = 0.7 + hold * 0.55;
+
+    /* Refit the shadow box every frame, not once at module scope. `generations`
+       moves continuously and the grown set grows in steps, so this is the only
+       way the map tracks what is actually drawn. */
+    if (key.current) {
+      aimShadow(key.current, current.generations, pixelsPerUnit(current.cameraMultiple));
+    }
   });
 
   return (
@@ -358,7 +504,7 @@ export function StudioRig({
         castShadow={shadows}
         shadow-mapSize={[1024, 1024]}
         shadow-bias={-0.00035}
-        shadow-normalBias={0.02}
+        shadow-normalBias={0.25 * RUNG_RADIUS}
         shadow-camera-near={SHADOW_FRUSTUM.near}
         shadow-camera-far={SHADOW_FRUSTUM.far}
         shadow-camera-left={SHADOW_FRUSTUM.left}
@@ -368,7 +514,7 @@ export function StudioRig({
       >
         <object3D
           attach="target"
-          position={[SHADOW_FRUSTUM.target.x, SHADOW_FRUSTUM.target.y, SHADOW_FRUSTUM.target.z]}
+          position={[SHADOW_BASIS.center.x, SHADOW_BASIS.center.y, SHADOW_BASIS.center.z]}
         />
       </directionalLight>
       <directionalLight ref={rim} position={[-5.4, 1.1, -3.2]} intensity={0.7} color="#63e7ff" />
